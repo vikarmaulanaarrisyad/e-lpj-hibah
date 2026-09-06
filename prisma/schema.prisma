@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String
+  password    String
+  role        Role      @default(USER)
+  institution String?   // Nama lembaga / instansi penerima hibah jika role USER
+  leaderName  String?   // Nama Ketua Lembaga (Setuju Dibayar)
+  nip         String?   // NIP jika verifikator / admin
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  receipts           Receipt[]
+  bkuTransactions    BkuTransaction[]
+  rabItems           RabItem[]
+  bastDocuments      BastDocument[]
+  purchaseOrders     PurchaseOrder[]
+  institutionProfile InstitutionProfile?
+
+  @@map("users")
+}
+
+model Receipt {
+  id              String          @id @default(cuid())
+  nomorBukti      String          @unique // Contoh: BKU-HB/014/VIII/2026
+  tanggal         DateTime
+  pemberi         String          // Entitas Pemberi (contoh: PR Fatayat NU Dawuhan Selatan)
+  nominal         Float           // Nominal angka (misal: 3000000)
+  terbilang       String          // Teks terbilang otomatis (Tiga Juta Rupiah)
+  uraian          String          // Guna membayar / rincian belanja barang/jasa
+  ketua           String          // Nama Ketua (Setuju Dibayar)
+  bendahara       String          // Nama Bendahara (Lunas Dibayar)
+  penerima        String          // Nama Penerima / Toko Rekanan
+  denganMaterai   Boolean         @default(false)
+  template        String          @default("bank") // 'bank' | 'folio' | 'triple'
+  kategoriRab     String?         // Contoh: '5.2.1 Perlengkapan'
+  
+  // Kalkulator Pajak Otomatis
+  isPpn           Boolean         @default(false)
+  ppnRate         Float           @default(0.11)
+  ppnNominal      Float           @default(0)
+  isPph21         Boolean         @default(false)
+  pph21Rate       Float           @default(0.05)
+  pph21Nominal    Float           @default(0)
+  isPph22         Boolean         @default(false)
+  pph22Rate       Float           @default(0.015)
+  pph22Nominal    Float           @default(0)
+  isPph23         Boolean         @default(false)
+  pph23Rate       Float           @default(0.02)
+  pph23Nominal    Float           @default(0)
+  dpp             Float           @default(0)
+  totalPajak      Float           @default(0)
+  nominalBersih   Float           @default(0)
+  keteranganPajak String?
+
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bkuTransaction  BkuTransaction?
+  bastDocument    BastDocument?
+  purchaseOrder   PurchaseOrder?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([tanggal])
+  @@map("receipts")
+}
+
+enum BkuType {
+  PENERIMAAN  // Kas Masuk (Debet) - misal: Pencairan Hibah NPHD/SP2D, Bunga Bank
+  PENGELUARAN // Kas Keluar (Kredit) - misal: Bukti Belanja Kwitansi
+}
+
+model BkuTransaction {
+  id          String    @id @default(cuid())
+  nomorBukti  String    // Nomor bukti transaksi kas (Kwitansi / SP2D / BKU)
+  tanggal     DateTime
+  uraian      String    // Keterangan transaksi pengeluaran atau sumber penerimaan
+  jenis       BkuType   // PENERIMAAN | PENGELUARAN
+  kategoriRab String?   // Pos anggaran RAB (e.g. "5.2.1 Perlengkapan", "Pencairan Hibah")
+  nominal     Float     // Nilai uang transaksi
+  receiptId   String?   @unique
+  receipt     Receipt?  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([tanggal])
+  @@map("bku_transactions")
+}
+
+model RabItem {
+  id          String    @id @default(cuid())
+  kode        String    // Contoh: "5.2.1", "5.2.2", "5.2.3", "5.2.4"
+  nama        String    // Contoh: "Belanja Peralatan & Perlengkapan"
+  anggaran    Float     // Total pagu anggaran NPHD (contoh: 10000000)
+  keterangan  String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, kode])
+  @@index([userId])
+  @@map("rab_items")
+}
+
+model BastDocument {
+  id               String    @id @default(cuid())
+  nomorBast        String    @unique // Contoh: "014/BAST-HB/FTY/VII/2026"
+  tanggal          DateTime
+  hariTanggal      String    // Contoh: "Senin, 31 Juli 2026"
+  tanggalTerbilang String   // Contoh: "Senin tanggal tiga puluh satu bulan Juli tahun Dua Ribu Dua Puluh Enam (31 - 07 - 2026)"
+  nomorSpk         String    // Nomor Surat Pesanan / SPK
+  tanggalSpk       String    // Tanggal Surat Pesanan
+  namaKegiatan     String    // Rincian Kegiatan / Pengadaan
+  pihak1Nama       String    // Nama Ketua (Penerima)
+  pihak1Jabatan    String    // Jabatan Ketua
+  pihak2Nama       String    // Nama Rekanan/Toko (Penyedia)
+  pihak2Toko       String    // Nama Toko Rekanan
+  itemsJson        String    // JSON array barang: [{ no, jenisBarang, spesifikasi, pesanan, realisasi, kondisi }]
+  catatanUji       String?   // Uji fungsi audio/fisik
+  statusUji        String    @default("Lulus Uji Coba")
+  fotoFisikUrl     String?   // Lampiran dokumentasi serah terima
+  fotoFisikNama    String?
+  receiptId        String?   @unique
+  receipt          Receipt?  @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([tanggal])
+  @@map("bast_documents")
+}
+
+model InstitutionProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Kop Surat 3 Level
+  namaLembaga   String   @default("PIMPINAN RANTING FATAYAT NU")
+  subNama       String   @default("DAWUHAN SELATAN")
+  instansiInduk String   @default("KECAMATAN TALANG KABUPATEN TEGAL")
+
+  // Kontak & Alamat
+  alamat        String   @default("Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06 Talang – Tegal 52193")
+  email         String   @default("prfnudawuhanselatan@gmail.com")
+  noHp          String   @default("085642719869")
+  noRegistrasi  String   @default("HBH-2026-NU-0428")
+
+  // Logo Cloudinary
+  logoUrl       String?
+  logoPublicId  String?
+
+  // Pejabat Lembaga
+  namaKetua     String?  @default("HENI FUJIATI")
+  jabatanKetua  String?  @default("Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan")
+  namaBendahara String?  @default("NUR ALIMAH")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("institution_profiles")
+}
+
+model PurchaseOrder {
+  id                 String    @id @default(cuid())
+  nomorSp            String    @unique // Contoh: "014/SP/SPK-FTY/VII/2026"
+  tanggal            DateTime  // Tanggal Surat Pesanan
+  namaPaket          String    // Paket Pekerjaan / Pengadaan (cth: "Pembelian Sound Aktif & Sarana")
+
+  // Pihak Kesatu (Pemesan)
+  pihak1Nama         String    // Nama Ketua (cth: "HENI FUJIATI")
+  pihak1Jabatan      String    // Jabatan Pemesan
+  pihak1Alamat       String?   // Alamat Sekretariat
+
+  // Pihak Kedua (Penyedia / Rekanan)
+  pihak2Toko         String    // Nama Toko / Badan Usaha (cth: "Surya Mas")
+  pihak2Nama         String    // Nama Pemilik / Pimpinan Toko (cth: "Anshori")
+  pihak2Alamat       String?   // Alamat Toko Penyedia
+
+  // Rincian Barang (JSON): [{ no, jenisBarang, spesifikasi, jumlah, satuan, hargaSatuan, totalHarga }]
+  itemsJson          String
+
+  // Keuangan
+  subtotal           Float     @default(0)
+  pajak              Float     @default(0)
+  pajakKeterangan    String?   // cth: "- (Sudah Termasuk)"
+  totalHarga         Float     @default(0)
+  terbilang          String    // cth: "Tiga Juta Rupiah"
+
+  // Ketentuan & Klausul Tambahan
+  batasWaktu         String?   // Batas waktu penerimaan (YYYY-MM-DD)
+  waktuPenyelesaian  String?   // cth: "1 (satu) hari kalender"
+  alamatPengiriman   String?
+  alamatPemeriksaan  String?
+  dendaKeterlambatan String?   // cth: "1/500 dari nilai pekerjaan sebelum PPN per hari keterlambatan"
+
+  // Relasi Opsional
+  receiptId          String?   @unique
+  receipt            Receipt?  @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([tanggal])
+  @@map("purchase_orders")
+}

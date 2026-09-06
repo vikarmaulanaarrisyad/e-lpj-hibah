@@ -1,0 +1,116 @@
+"use server";
+
+import { receiptSchema, type ReceiptValidationInput } from "@/lib/validations/receipt";
+import { receiptService } from "@/services/receipt.service";
+import { authService } from "@/services/auth.service";
+import type { ActionResponse, Receipt } from "@/types";
+
+/**
+ * Server action to save/persist receipt into BKU
+ */
+export async function saveReceiptAction(
+  data: ReceiptValidationInput
+): Promise<ActionResponse<Receipt>> {
+  try {
+    // 1. Authenticate caller
+    const session = await authService.getSession();
+    if (!session) {
+      return {
+        success: false,
+        message: "Sesi tidak valid. Silakan login terlebih dahulu.",
+      };
+    }
+
+    // 2. Validate input schema
+    const validationResult = receiptSchema.safeParse(data);
+    if (!validationResult.success) {
+      return {
+        success: false,
+        message: validationResult.error.errors[0]?.message || "Data kwitansi tidak valid.",
+      };
+    }
+
+    // 3. Call Service Layer
+    return await receiptService.saveReceipt(validationResult.data, session.sub);
+  } catch (error) {
+    console.error("[saveReceiptAction] Unexpected error:", error);
+    return {
+      success: false,
+      message: "Terjadi kesalahan internal saat menyimpan kwitansi.",
+    };
+  }
+}
+
+/**
+ * Server action to retrieve all receipts for current user
+ */
+export async function getReceiptsAction(): Promise<ActionResponse<Receipt[]>> {
+  try {
+    const session = await authService.getSession();
+    if (!session) {
+      return {
+        success: false,
+        message: "Sesi tidak valid.",
+        data: [],
+      };
+    }
+
+    return await receiptService.getReceiptsByUser(session.sub);
+  } catch (error) {
+    console.error("[getReceiptsAction] Error:", error);
+    return {
+      success: false,
+      message: "Gagal memuat kwitansi.",
+      data: [],
+    };
+  }
+}
+
+/**
+ * Server action to retrieve a specific receipt by nomorBukti
+ */
+export async function getReceiptByNomorBuktiAction(
+  nomorBukti: string
+): Promise<ActionResponse<Receipt | null>> {
+  try {
+    const session = await authService.getSession();
+    if (!session) {
+      return {
+        success: false,
+        message: "Sesi tidak valid.",
+        data: null,
+      };
+    }
+
+    return await receiptService.getReceiptByNomorBukti(nomorBukti, session.sub);
+  } catch (error) {
+    console.error("[getReceiptByNomorBuktiAction] Error:", error);
+    return {
+      success: false,
+      message: "Gagal memuat kwitansi dari database.",
+      data: null,
+    };
+  }
+}
+
+/**
+ * Server action to get next suggested BKU nomor bukti
+ */
+export async function getNextNomorBuktiAction(): Promise<ActionResponse<string>> {
+  try {
+    const session = await authService.getSession();
+    const userId = session?.sub || "default";
+    const nextNomor = await receiptService.generateNextNomorBukti(userId);
+    return {
+      success: true,
+      message: "Nomor bukti dibuat.",
+      data: nextNomor,
+    };
+  } catch {
+    return {
+      success: true,
+      message: "Nomor bukti default.",
+      data: "BKU-HB/001/VIII/2026",
+    };
+  }
+}

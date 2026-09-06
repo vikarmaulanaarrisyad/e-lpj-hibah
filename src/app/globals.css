@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --brand-primary: #065F46;
+  --brand-secondary: #047857;
+  --brand-tertiary: #D97706;
+  --brand-neutral: #0F172A;
+}
+
+body {
+  color: #F8FAFC;
+  background-color: #0F172A;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for dark mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0B1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* ================= PRINT STYLESHEET ================= */
+@media print {
+  @page {
+    size: 330mm 215mm; /* Ukuran Kertas F4 / Folio Landscape (330mm × 215mm) */
+    margin: 0mm;
+  }
+
+  /* Sembunyikan seluruh UI luar (navbar, header, footer, form ledger, dsb) */
+  header,
+  nav,
+  footer,
+  aside,
+  .no-print,
+  #formLedgerPanel,
+  #topCommandBar,
+  #actionToolbar {
+    display: none !important;
+  }
+
+  /* ================= KWITANSI PRINT SPEC (F4 LANDSCAPE CENTERED) ================= */
+  body:has(#kwitansiPrintContainer) {
+    width: 330mm !important;
+    height: 215mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Kontainer Induk Menempati 1 Lembar Penuh F4 Landscape & Menengahkan Konten */
+  #kwitansiPrintContainer {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 330mm !important;
+    height: 215mm !important;
+    min-height: 215mm !important;
+    max-height: 215mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Lembar Kertas F4 Transparan Saat Cetak */
+  #f4PaperSheet {
+    width: 330mm !important;
+    height: 215mm !important;
+    min-width: 330mm !important;
+    max-width: 330mm !important;
+    min-height: 215mm !important;
+    max-height: 215mm !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* Kanvas Blanko Kwitansi Berada Tepat di Tengah Lembar F4 (Ukuran Presisi 9,6 cm x 27,99 cm) */
+  #kwitansiCanvas {
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+    width: 27.99cm !important;
+    height: 9.6cm !important;
+    min-width: 27.99cm !important;
+    max-width: 27.99cm !important;
+    min-height: 9.6cm !important;
+    max-height: 9.6cm !important;
+    aspect-ratio: 27.99 / 9.6 !important;
+    margin: auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #kwitansiCanvas,
+  #kwitansiCanvas * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ================= BUKU KAS UMUM (BKU) PRINT SPEC ================= */
+  body:has(#bkuPrintArea) {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 8mm 12mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body:has(#bkuPrintArea) #bkuPrintArea {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  body:has(#bkuPrintArea) table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  body:has(#bkuPrintArea) thead {
+    display: table-header-group !important;
+  }
+
+  body:has(#bkuPrintArea) tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  body:has(#bkuPrintArea) th,
+  body:has(#bkuPrintArea) td {
+    border: 1px solid #334155 !important;
+    color: #000000 !important;
+  }
+}
+

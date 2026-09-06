@@ -1,0 +1,172 @@
+import { prisma } from "@/lib/prisma";
+import type { Receipt } from "@/types";
+
+export interface CreateReceiptRepoData {
+  nomorBukti: string;
+  tanggal: Date;
+  pemberi: string;
+  nominal: number;
+  terbilang: string;
+  uraian: string;
+  ketua: string;
+  bendahara: string;
+  penerima: string;
+  denganMaterai: boolean;
+  template: string;
+  kategoriRab?: string | null;
+  userId: string;
+
+  // Pajak Otomatis
+  isPpn?: boolean;
+  ppnRate?: number;
+  ppnNominal?: number;
+  isPph21?: boolean;
+  pph21Rate?: number;
+  pph21Nominal?: number;
+  isPph22?: boolean;
+  pph22Rate?: number;
+  pph22Nominal?: number;
+  isPph23?: boolean;
+  pph23Rate?: number;
+  pph23Nominal?: number;
+  dpp?: number;
+  totalPajak?: number;
+  nominalBersih?: number;
+  keteranganPajak?: string | null;
+}
+
+export class ReceiptRepository {
+  /**
+   * Save a new receipt record into database.
+   * Strictly raw Prisma database query.
+   */
+  async create(data: CreateReceiptRepoData): Promise<Receipt> {
+    try {
+      return await prisma.receipt.upsert({
+        where: { nomorBukti: data.nomorBukti },
+        update: {
+          tanggal: data.tanggal,
+          pemberi: data.pemberi,
+          nominal: data.nominal,
+          terbilang: data.terbilang,
+          uraian: data.uraian,
+          ketua: data.ketua,
+          bendahara: data.bendahara,
+          penerima: data.penerima,
+          denganMaterai: data.denganMaterai,
+          template: data.template,
+          kategoriRab: data.kategoriRab ?? null,
+          isPpn: data.isPpn ?? false,
+          ppnRate: data.ppnRate ?? 0.11,
+          ppnNominal: data.ppnNominal ?? 0,
+          isPph21: data.isPph21 ?? false,
+          pph21Rate: data.pph21Rate ?? 0.05,
+          pph21Nominal: data.pph21Nominal ?? 0,
+          isPph22: data.isPph22 ?? false,
+          pph22Rate: data.pph22Rate ?? 0.015,
+          pph22Nominal: data.pph22Nominal ?? 0,
+          isPph23: data.isPph23 ?? false,
+          pph23Rate: data.pph23Rate ?? 0.02,
+          pph23Nominal: data.pph23Nominal ?? 0,
+          dpp: data.dpp ?? data.nominal,
+          totalPajak: data.totalPajak ?? 0,
+          nominalBersih: data.nominalBersih ?? data.nominal,
+          keteranganPajak: data.keteranganPajak ?? null,
+        },
+        create: {
+          nomorBukti: data.nomorBukti,
+          tanggal: data.tanggal,
+          pemberi: data.pemberi,
+          nominal: data.nominal,
+          terbilang: data.terbilang,
+          uraian: data.uraian,
+          ketua: data.ketua,
+          bendahara: data.bendahara,
+          penerima: data.penerima,
+          denganMaterai: data.denganMaterai,
+          template: data.template,
+          kategoriRab: data.kategoriRab ?? null,
+          isPpn: data.isPpn ?? false,
+          ppnRate: data.ppnRate ?? 0.11,
+          ppnNominal: data.ppnNominal ?? 0,
+          isPph21: data.isPph21 ?? false,
+          pph21Rate: data.pph21Rate ?? 0.05,
+          pph21Nominal: data.pph21Nominal ?? 0,
+          isPph22: data.isPph22 ?? false,
+          pph22Rate: data.pph22Rate ?? 0.015,
+          pph22Nominal: data.pph22Nominal ?? 0,
+          isPph23: data.isPph23 ?? false,
+          pph23Rate: data.pph23Rate ?? 0.02,
+          pph23Nominal: data.pph23Nominal ?? 0,
+          dpp: data.dpp ?? data.nominal,
+          totalPajak: data.totalPajak ?? 0,
+          nominalBersih: data.nominalBersih ?? data.nominal,
+          keteranganPajak: data.keteranganPajak ?? null,
+          userId: data.userId,
+        },
+      });
+    } catch (error) {
+      console.error("[ReceiptRepository] Error in create:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find a receipt by its unique nomorBukti.
+   */
+  async findByNomorBukti(nomorBukti: string): Promise<Receipt | null> {
+    try {
+      return await prisma.receipt.findUnique({
+        where: { nomorBukti },
+      });
+    } catch (error) {
+      console.error("[ReceiptRepository] Error in findByNomorBukti:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all receipts belonging to a user/grant recipient.
+   */
+  async findManyByUserId(userId: string): Promise<Receipt[]> {
+    try {
+      return await prisma.receipt.findMany({
+        where: { userId },
+        orderBy: { tanggal: "desc" },
+      });
+    } catch (error) {
+      console.error("[ReceiptRepository] Error in findManyByUserId:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Count total receipts recorded for a specific user.
+   */
+  async countByUserId(userId: string): Promise<number> {
+    try {
+      return await prisma.receipt.count({
+        where: { userId },
+      });
+    } catch (error) {
+      console.error("[ReceiptRepository] Error in countByUserId:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a receipt record.
+   */
+  async delete(id: string, userId: string): Promise<Receipt> {
+    try {
+      return await prisma.receipt.delete({
+        where: { id, userId },
+      });
+    } catch (error) {
+      console.error("[ReceiptRepository] Error in delete:", error);
+      throw error;
+    }
+  }
+}
+
+export const receiptRepository = new ReceiptRepository();
