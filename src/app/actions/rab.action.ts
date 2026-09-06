@@ -97,3 +97,67 @@ export async function updateRabAllocationAction(
     };
   }
 }
+
+/**
+ * Server Action: Menambahkan pos rekening RAB baru
+ */
+export async function createRabItemAction(
+  input: UpdateRabItemInput
+): Promise<ServiceResponse<RabStatusItem>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return {
+        success: false,
+        message: "Sesi tidak valid.",
+      };
+    }
+
+    const res = await rabService.createRabItem(session.sub, input);
+    if (res.success) {
+      revalidatePath("/user");
+      revalidatePath("/user/rab");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+    }
+    return res;
+  } catch (error) {
+    console.error("[createRabItemAction] Error:", error);
+    return {
+      success: false,
+      message: "Terjadi kesalahan saat menambahkan pos rekening RAB.",
+    };
+  }
+}
+
+/**
+ * Server Action: Menghapus pos rekening RAB
+ */
+export async function deleteRabItemAction(
+  id: string
+): Promise<ServiceResponse<boolean>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return {
+        success: false,
+        message: "Sesi tidak valid.",
+      };
+    }
+
+    const res = await rabService.deleteRabItem(session.sub, id);
+    if (res.success) {
+      revalidatePath("/user");
+      revalidatePath("/user/rab");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+    }
+    return res;
+  } catch (error) {
+    console.error("[deleteRabItemAction] Error:", error);
+    return {
+      success: false,
+      message: "Terjadi kesalahan saat menghapus pos rekening RAB.",
+    };
+  }
+}

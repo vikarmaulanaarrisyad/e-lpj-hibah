@@ -251,6 +251,96 @@ export class RabService {
       };
     }
   }
+
+  /**
+   * Menambahkan pos rekening RAB baru
+   */
+  async createRabItem(
+    userId: string,
+    input: UpdateRabItemInput
+  ): Promise<ServiceResponse<RabStatusItem>> {
+    try {
+      if (!input.kode || !input.nama) {
+        return {
+          success: false,
+          message: "Kode rekening dan nama pos anggaran wajib diisi.",
+        };
+      }
+      if (input.anggaran < 0) {
+        return {
+          success: false,
+          message: "Pagu anggaran tidak boleh bernilai negatif.",
+        };
+      }
+
+      const cleanKode = input.kode.trim();
+      const existing = await rabRepository.findByUserIdAndKode(userId, cleanKode);
+      if (existing) {
+        return {
+          success: false,
+          message: `Kode rekening ${cleanKode} sudah terdaftar dengan nama "${existing.nama}". Silakan gunakan kode rekening yang berbeda atau ubah alokasi yang ada.`,
+        };
+      }
+
+      return await this.updateRabAllocation(userId, {
+        ...input,
+        kode: cleanKode,
+        nama: input.nama.trim(),
+      });
+    } catch (error) {
+      console.error("[RabService] Failed to create RAB item:", error);
+      return {
+        success: false,
+        message: "Gagal menambahkan pos rekening RAB.",
+      };
+    }
+  }
+
+  /**
+   * Menghapus pos rekening RAB
+   */
+  async deleteRabItem(
+    userId: string,
+    id: string
+  ): Promise<ServiceResponse<boolean>> {
+    try {
+      const rabItems = await rabRepository.findByUserId(userId);
+      const target = rabItems.find((r) => r.id === id);
+      if (!target) {
+        return {
+          success: false,
+          message: "Pos rekening tidak ditemukan.",
+        };
+      }
+
+      // Pastikan tidak ada kwitansi yang menggunakan pos rekening ini
+      const receipts = await receiptRepository.findManyByUserId(userId);
+      const hasTransactions = receipts.some((r) =>
+        this.isCategoryMatch(r.kategoriRab, target.kode)
+      );
+
+      if (hasTransactions) {
+        return {
+          success: false,
+          message: `Tidak dapat menghapus pos rekening ${target.kode} (${target.nama}) karena sudah memiliki riwayat transaksi kwitansi belanja tersimpan.`,
+        };
+      }
+
+      const deleted = await rabRepository.delete(userId, id);
+      return {
+        success: deleted,
+        message: deleted
+          ? `Pos rekening ${target.kode} (${target.nama}) berhasil dihapus.`
+          : "Gagal menghapus pos rekening.",
+      };
+    } catch (error) {
+      console.error("[RabService] Failed to delete RAB item:", error);
+      return {
+        success: false,
+        message: "Terjadi kesalahan saat menghapus pos rekening.",
+      };
+    }
+  }
 }
 
 export const rabService = new RabService();
