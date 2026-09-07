@@ -280,7 +280,21 @@ export async function exportKwitansiToPdf(options: ExportKwitansiOptions = {}): 
       cleanNoBukti = cleanNoBukti.slice(0, -4);
     }
 
-    const filename = `Kwitansi_${cleanNoBukti}_F4.pdf`;
+    // Sertakan uraian/realisasi belanja dalam filename agar mudah diidentifikasi
+    const rawUraian = options.formData?.uraian || "";
+    const cleanUraian = rawUraian
+      ? rawUraian
+          .split(/\s+sebanyak\s+/i)[0] // potong suffix "sebanyak N buah/unit"
+          .trim()
+          .replace(/[/\\?%*:|"<>.]/g, "_")
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_")
+          .slice(0, 50) // batasi panjang nama file
+      : "";
+
+    const filename = cleanUraian
+      ? `Kwitansi_${cleanNoBukti}_${cleanUraian}.pdf`
+      : `Kwitansi_${cleanNoBukti}_F4.pdf`;
     const blobUrl = window.URL.createObjectURL(fileBlob);
 
     // Download otomatis via elemen anchor
