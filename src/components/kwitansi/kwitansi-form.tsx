@@ -30,12 +30,18 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingBag,
+  Trash2,
 } from "lucide-react";
 import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib/utils/terbilang";
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
-import { saveReceiptAction, getNextNomorBuktiAction, getReceiptByNomorBuktiAction } from "@/app/actions/receipt.action";
+import {
+  saveReceiptAction,
+  getNextNomorBuktiAction,
+  getReceiptByNomorBuktiAction,
+  deleteReceiptAction,
+} from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
-import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { KwitansiCanvas } from "./kwitansi-canvas";
 import type {
   Receipt,
@@ -364,7 +370,39 @@ export function KwitansiForm({
     );
   };
 
-  // Switch Paper Template Mode
+  // Handle Delete current loaded receipt
+  const handleDeleteCurrentReceipt = async () => {
+    if (selectedReceiptNo === "NEW") return;
+    const currentReceipt = receiptsList.find((r) => r.nomorBukti === selectedReceiptNo);
+    if (!currentReceipt) return;
+
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Kwitansi Belanja?",
+      text: `Apakah Anda yakin ingin menghapus kwitansi "${selectedReceiptNo}" senilai Rp ${formatRupiahNumber(currentReceipt.nominal)}? Pengeluaran pada Buku Kas Umum (BKU) dan serapan RAB juga akan disesuaikan kembali.`,
+      confirmText: "Ya, Hapus Kwitansi!",
+      cancelText: "Batal",
+    });
+
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus Kwitansi...", "Menyesuaikan kembali saldo kas BKU dan alokasi RAB...");
+    startTransition(async () => {
+      const res = await deleteReceiptAction(currentReceipt.id);
+      if (res.success) {
+        setReceiptsList((prev) => prev.filter((r) => r.id !== currentReceipt.id));
+        handleResetForm();
+        const rabRes = await getRabStatusAction();
+        if (rabRes.success && rabRes.data) {
+          setRabSummary(rabRes.data);
+        }
+        swalSuccess("Kwitansi Dihapus!", res.message);
+      } else {
+        swalError("Gagal Menghapus Kwitansi", res.message);
+      }
+    });
+  };
+
+  // Quick select / change receipt template mode
   const handleTemplateSelect = (template: ReceiptTemplateMode) => {
     setFormData((prev) => ({ ...prev, template }));
   };
@@ -1500,6 +1538,20 @@ export function KwitansiForm({
                   <span className="truncate">Buat BAST</span>
                 </Link>
               </div>
+
+              {/* Tombol Hapus Kwitansi (Muncul jika sedang membuka kwitansi tersimpan) */}
+              {selectedReceiptNo !== "NEW" && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleDeleteCurrentReceipt}
+                  className="w-full mt-2 px-3 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  title="Hapus kwitansi ini secara permanen dari database dan BKU"
+                >
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  <span>Hapus Kwitansi Ini ({selectedReceiptNo})</span>
+                </button>
+              )}
             </div>
 
             {/* Mini Alert Audit Notice */}

@@ -36,6 +36,7 @@ export interface BastFormData {
 }
 
 export interface CreateBastInput {
+  id?: string;
   nomorBast: string;
   tanggal: string | Date;
   hariTanggal: string;

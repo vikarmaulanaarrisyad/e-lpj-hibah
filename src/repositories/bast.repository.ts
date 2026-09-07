@@ -25,42 +25,57 @@ export class BastRepository {
 
       const itemsJsonString = JSON.stringify(input.items || []);
 
+      const dataFields = {
+        nomorBast: input.nomorBast,
+        tanggal: parsedDate,
+        hariTanggal: input.hariTanggal,
+        tanggalTerbilang: input.tanggalTerbilang,
+        nomorSpk: input.nomorSpk,
+        tanggalSpk: input.tanggalSpk,
+        namaKegiatan: input.namaKegiatan,
+        pihak1Nama: input.pihak1Nama,
+        pihak1Jabatan: input.pihak1Jabatan,
+        pihak2Nama: input.pihak2Nama,
+        pihak2Toko: input.pihak2Toko,
+        itemsJson: itemsJsonString,
+        catatanUji: input.catatanUji ?? null,
+        statusUji: input.statusUji ?? "Lulus Uji Coba",
+        fotoFisikNama: input.fotoFisikNama ?? null,
+        receiptId: input.receiptId ?? null,
+      };
+
+      // 1. If explicit ID provided and exists, update that record
+      if (input.id) {
+        const existingById = await prisma.bastDocument.findUnique({
+          where: { id: input.id },
+        });
+        if (existingById && existingById.userId === userId) {
+          return await prisma.bastDocument.update({
+            where: { id: input.id },
+            data: dataFields,
+          });
+        }
+      }
+
+      // 2. If receiptId provided and an existing BAST is already linked, update it
+      if (input.receiptId) {
+        const existingByReceipt = await prisma.bastDocument.findUnique({
+          where: { receiptId: input.receiptId },
+        });
+        if (existingByReceipt && existingByReceipt.userId === userId) {
+          return await prisma.bastDocument.update({
+            where: { id: existingByReceipt.id },
+            data: dataFields,
+          });
+        }
+      }
+
+      // 3. Fallback to upsert by nomorBast
       return await prisma.bastDocument.upsert({
         where: { nomorBast: input.nomorBast },
-        update: {
-          tanggal: parsedDate,
-          hariTanggal: input.hariTanggal,
-          tanggalTerbilang: input.tanggalTerbilang,
-          nomorSpk: input.nomorSpk,
-          tanggalSpk: input.tanggalSpk,
-          namaKegiatan: input.namaKegiatan,
-          pihak1Nama: input.pihak1Nama,
-          pihak1Jabatan: input.pihak1Jabatan,
-          pihak2Nama: input.pihak2Nama,
-          pihak2Toko: input.pihak2Toko,
-          itemsJson: itemsJsonString,
-          catatanUji: input.catatanUji ?? null,
-          statusUji: input.statusUji ?? "Lulus Uji Coba",
-          fotoFisikNama: input.fotoFisikNama ?? null,
-          receiptId: input.receiptId ?? null,
-        },
+        update: dataFields,
         create: {
-          nomorBast: input.nomorBast,
-          tanggal: parsedDate,
-          hariTanggal: input.hariTanggal,
-          tanggalTerbilang: input.tanggalTerbilang,
-          nomorSpk: input.nomorSpk,
-          tanggalSpk: input.tanggalSpk,
-          namaKegiatan: input.namaKegiatan,
-          pihak1Nama: input.pihak1Nama,
-          pihak1Jabatan: input.pihak1Jabatan,
-          pihak2Nama: input.pihak2Nama,
-          pihak2Toko: input.pihak2Toko,
-          itemsJson: itemsJsonString,
-          catatanUji: input.catatanUji ?? null,
-          statusUji: input.statusUji ?? "Lulus Uji Coba",
-          fotoFisikNama: input.fotoFisikNama ?? null,
-          receiptId: input.receiptId ?? null,
+          ...dataFields,
           userId,
         },
       });

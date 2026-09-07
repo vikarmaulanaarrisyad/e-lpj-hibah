@@ -14,52 +14,62 @@ export class PesananRepository {
 
       const itemsJsonString = JSON.stringify(input.items || []);
 
+      const dataFields = {
+        nomorSp: input.nomorSp,
+        tanggal: parsedDate,
+        namaPaket: input.namaPaket,
+        pihak1Nama: input.pihak1Nama,
+        pihak1Jabatan: input.pihak1Jabatan,
+        pihak1Alamat: input.pihak1Alamat ?? null,
+        pihak2Toko: input.pihak2Toko,
+        pihak2Nama: input.pihak2Nama,
+        pihak2Alamat: input.pihak2Alamat ?? null,
+        itemsJson: itemsJsonString,
+        subtotal: input.subtotal,
+        pajak: input.pajak,
+        pajakKeterangan: input.pajakKeterangan ?? null,
+        totalHarga: input.totalHarga,
+        terbilang: input.terbilang,
+        batasWaktu: input.batasWaktu ?? null,
+        waktuPenyelesaian: input.waktuPenyelesaian ?? null,
+        alamatPengiriman: input.alamatPengiriman ?? null,
+        alamatPemeriksaan: input.alamatPemeriksaan ?? null,
+        dendaKeterlambatan: input.dendaKeterlambatan ?? null,
+        receiptId: input.receiptId ?? null,
+      };
+
+      // 1. If explicit ID provided and exists, update that record
+      if (input.id) {
+        const existingById = await prisma.purchaseOrder.findUnique({
+          where: { id: input.id },
+        });
+        if (existingById && existingById.userId === userId) {
+          return await prisma.purchaseOrder.update({
+            where: { id: input.id },
+            data: dataFields,
+          });
+        }
+      }
+
+      // 2. If receiptId provided and an existing PO is already linked, update it
+      if (input.receiptId) {
+        const existingByReceipt = await prisma.purchaseOrder.findUnique({
+          where: { receiptId: input.receiptId },
+        });
+        if (existingByReceipt && existingByReceipt.userId === userId) {
+          return await prisma.purchaseOrder.update({
+            where: { id: existingByReceipt.id },
+            data: dataFields,
+          });
+        }
+      }
+
+      // 3. Fallback to upsert by nomorSp
       return await prisma.purchaseOrder.upsert({
         where: { nomorSp: input.nomorSp },
-        update: {
-          tanggal: parsedDate,
-          namaPaket: input.namaPaket,
-          pihak1Nama: input.pihak1Nama,
-          pihak1Jabatan: input.pihak1Jabatan,
-          pihak1Alamat: input.pihak1Alamat ?? null,
-          pihak2Toko: input.pihak2Toko,
-          pihak2Nama: input.pihak2Nama,
-          pihak2Alamat: input.pihak2Alamat ?? null,
-          itemsJson: itemsJsonString,
-          subtotal: input.subtotal,
-          pajak: input.pajak,
-          pajakKeterangan: input.pajakKeterangan ?? null,
-          totalHarga: input.totalHarga,
-          terbilang: input.terbilang,
-          batasWaktu: input.batasWaktu ?? null,
-          waktuPenyelesaian: input.waktuPenyelesaian ?? null,
-          alamatPengiriman: input.alamatPengiriman ?? null,
-          alamatPemeriksaan: input.alamatPemeriksaan ?? null,
-          dendaKeterlambatan: input.dendaKeterlambatan ?? null,
-          receiptId: input.receiptId ?? null,
-        },
+        update: dataFields,
         create: {
-          nomorSp: input.nomorSp,
-          tanggal: parsedDate,
-          namaPaket: input.namaPaket,
-          pihak1Nama: input.pihak1Nama,
-          pihak1Jabatan: input.pihak1Jabatan,
-          pihak1Alamat: input.pihak1Alamat ?? null,
-          pihak2Toko: input.pihak2Toko,
-          pihak2Nama: input.pihak2Nama,
-          pihak2Alamat: input.pihak2Alamat ?? null,
-          itemsJson: itemsJsonString,
-          subtotal: input.subtotal,
-          pajak: input.pajak,
-          pajakKeterangan: input.pajakKeterangan ?? null,
-          totalHarga: input.totalHarga,
-          terbilang: input.terbilang,
-          batasWaktu: input.batasWaktu ?? null,
-          waktuPenyelesaian: input.waktuPenyelesaian ?? null,
-          alamatPengiriman: input.alamatPengiriman ?? null,
-          alamatPemeriksaan: input.alamatPemeriksaan ?? null,
-          dendaKeterlambatan: input.dendaKeterlambatan ?? null,
-          receiptId: input.receiptId ?? null,
+          ...dataFields,
           userId,
         },
       });

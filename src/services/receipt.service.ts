@@ -1,6 +1,7 @@
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { bkuRepository } from "@/repositories/bku.repository";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
+import { getRomanMonth } from "@/lib/utils/pesanan-date";
 import type { Receipt, CreateReceiptInput, ServiceResponse } from "@/types";
 
 export class ReceiptService {
@@ -148,14 +149,47 @@ export class ReceiptService {
   }
 
   /**
+   * Delete a receipt and its associated BKU transaction
+   */
+  async deleteReceipt(id: string, userId: string): Promise<ServiceResponse<boolean>> {
+    try {
+      const receipt = await receiptRepository.findById(id);
+      if (!receipt || receipt.userId !== userId) {
+        return {
+          success: false,
+          message: "Kwitansi tidak ditemukan atau bukan milik Anda.",
+          data: false,
+        };
+      }
+
+      await receiptRepository.delete(id, userId);
+
+      return {
+        success: true,
+        message: `Kwitansi ${receipt.nomorBukti} berhasil dihapus dari sistem dan Buku Kas Umum!`,
+        data: true,
+      };
+    } catch (error) {
+      console.error("[ReceiptService] Failed to delete receipt:", error);
+      return {
+        success: false,
+        message: "Gagal menghapus kwitansi dari database.",
+        data: false,
+      };
+    }
+  }
+
+  /**
    * Helper to generate next suggested BKU nomor bukti (e.g. BKU-HB/015/VIII/2026)
    */
   async generateNextNomorBukti(userId: string): Promise<string> {
     try {
       const count = await receiptRepository.countByUserId(userId);
       const nextNum = (count + 1).toString().padStart(3, "0");
+      const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      return `BKU-HB/${nextNum}/VIII/${currentYear}`;
+      const romanMonth = getRomanMonth(currentMonth);
+      return `BKU-HB/${nextNum}/${romanMonth}/${currentYear}`;
     } catch {
       return `BKU-HB/001/VIII/2026`;
     }

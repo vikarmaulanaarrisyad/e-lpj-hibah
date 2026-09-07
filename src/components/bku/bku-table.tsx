@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { deleteBkuTransactionAction } from "@/app/actions/bku.action";
+import { deleteReceiptAction } from "@/app/actions/receipt.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 
 interface BkuTableProps {
@@ -79,6 +80,25 @@ export function BkuTable({
       onRefresh();
     } else {
       swalError("Gagal Menghapus Transaksi", res.message);
+    }
+  };
+
+  const handleDeleteReceipt = async (receiptId: string, nomorBukti: string) => {
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Kwitansi LPJ?",
+      text: `Apakah Anda yakin ingin menghapus kwitansi ${nomorBukti}? Dokumen kwitansi beserta pencatatan mutasi kas di BKU akan dihapus, dan plafon anggaran RAB terkait akan dipulihkan secara otomatis.`,
+      confirmText: "Ya, Hapus Kwitansi!",
+      cancelText: "Batal",
+    });
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus Kwitansi...", "Sedang membersihkan transaksi dan memulihkan anggaran...");
+    const res = await deleteReceiptAction(receiptId);
+    if (res.success) {
+      swalSuccess("Berhasil Dihapus!", res.message);
+      onRefresh();
+    } else {
+      swalError("Gagal Menghapus Kwitansi", res.message);
     }
   };
 
@@ -257,13 +277,23 @@ export function BkuTable({
                       <td className="py-3 px-3 text-center no-print">
                         <div className="flex items-center justify-center gap-1.5">
                           {entry.receiptId ? (
-                            <Link
-                              href={`/user/kwitansi?no=${encodeURIComponent(entry.nomorBukti)}`}
-                              className="p-1 rounded bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-300 text-slate-400 transition-colors"
-                              title="Buka Lembar Kwitansi"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </Link>
+                            <>
+                              <Link
+                                href={`/user/kwitansi?no=${encodeURIComponent(entry.nomorBukti)}`}
+                                className="p-1 rounded bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-300 text-slate-400 transition-colors"
+                                title="Buka Lembar Kwitansi"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteReceipt(entry.receiptId!, entry.nomorBukti)}
+                                className="p-1 rounded bg-slate-800 hover:bg-red-900/60 hover:text-red-300 text-slate-400 transition-colors"
+                                title="Hapus Kwitansi & Pulihkan Anggaran"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
                           ) : (
                             <button
                               type="button"

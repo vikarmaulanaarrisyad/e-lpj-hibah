@@ -4,6 +4,7 @@ import { receiptSchema, type ReceiptValidationInput } from "@/lib/validations/re
 import { receiptService } from "@/services/receipt.service";
 import { authService } from "@/services/auth.service";
 import type { ActionResponse, Receipt } from "@/types";
+import { revalidatePath } from "next/cache";
 
 /**
  * Server action to save/persist receipt into BKU
@@ -111,6 +112,38 @@ export async function getNextNomorBuktiAction(): Promise<ActionResponse<string>>
       success: true,
       message: "Nomor bukti default.",
       data: "BKU-HB/001/VIII/2026",
+    };
+  }
+}
+
+/**
+ * Server action to delete a receipt
+ */
+export async function deleteReceiptAction(id: string): Promise<ActionResponse<boolean>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return {
+        success: false,
+        message: "Sesi tidak valid. Silakan login kembali.",
+        data: false,
+      };
+    }
+
+    const res = await receiptService.deleteReceipt(id, session.sub);
+    if (res.success) {
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+      revalidatePath("/user/rab");
+      revalidatePath("/user");
+    }
+    return res;
+  } catch (error) {
+    console.error("[deleteReceiptAction] Error:", error);
+    return {
+      success: false,
+      message: "Gagal menghapus kwitansi.",
+      data: false,
     };
   }
 }

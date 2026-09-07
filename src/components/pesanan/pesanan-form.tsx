@@ -31,8 +31,8 @@ import {
   addDaysToDate,
   syncNomorSpBulanTahun,
 } from "@/lib/utils/pesanan-date";
-import { savePurchaseOrderAction } from "@/app/actions/pesanan.action";
-import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
+import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { PesananCanvas } from "./pesanan-canvas";
 import type {
@@ -411,6 +411,29 @@ export function PesananForm({
         const err = res.message || "Gagal menyimpan Surat Pesanan.";
         setSaveErrorMsg(err);
         swalError("Gagal Menyimpan", err);
+      }
+    });
+  };
+
+  const handleDeletePesanan = async () => {
+    if (!formData.id) return;
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Surat Pesanan?",
+      text: `Apakah Anda yakin ingin menghapus Surat Pesanan "${formData.nomorSp}" secara permanen?`,
+      confirmText: "Ya, Hapus!",
+      cancelText: "Batal",
+    });
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus...", "Sedang menghapus dokumen Surat Pesanan...");
+    startTransition(async () => {
+      const res = await deletePurchaseOrderAction(formData.id!);
+      if (res.success) {
+        setPesananList((prev) => prev.filter((p) => p.id !== formData.id));
+        handleCreateNew();
+        swalSuccess("Berhasil Dihapus!", res.message);
+      } else {
+        swalError("Gagal Menghapus", res.message);
       }
     });
   };
@@ -983,6 +1006,19 @@ export function PesananForm({
                     )}
                     <span>Simpan Surat Pesanan</span>
                   </button>
+
+                  {formData.id && (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={handleDeletePesanan}
+                      className="px-3.5 py-2.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
+                      title="Hapus Dokumen Surat Pesanan Ini"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                      <span>Hapus</span>
+                    </button>
+                  )}
 
                   <Link
                     href={`/user/bast?receiptNo=${formData.receiptId ? "linked" : ""}`}

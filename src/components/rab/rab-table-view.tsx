@@ -255,7 +255,7 @@ export function RabTableView({
   };
 
   return (
-    <div className="space-y-6">
+    <div id="rabPrintArea" className="space-y-6">
       {/* ================= ACTIONS & TOOLBAR ================= */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-sm no-print">
         <div>

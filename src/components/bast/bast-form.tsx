@@ -28,8 +28,8 @@ import {
 } from "lucide-react";
 import { BastCanvas } from "./bast-canvas";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
-import { saveBastAction } from "@/app/actions/bast.action";
-import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
+import { saveBastAction, deleteBastAction } from "@/app/actions/bast.action";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { formatTanggalTerbilang } from "@/services/bast.service";
 import type {
   BastDocument,
@@ -389,6 +389,29 @@ export function BastForm({
         const err = res.message || "Gagal menyimpan BAST";
         setSaveErrorMsg(err);
         swalError("Gagal Menyimpan BAST", err);
+      }
+    });
+  };
+
+  const handleDeleteBast = async () => {
+    if (!formData.id) return;
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Dokumen BAST?",
+      text: `Apakah Anda yakin ingin menghapus Berita Acara "${formData.nomorBast}" secara permanen?`,
+      confirmText: "Ya, Hapus!",
+      cancelText: "Batal",
+    });
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus...", "Sedang menghapus dokumen BAST...");
+    startTransition(async () => {
+      const res = await deleteBastAction(formData.id!);
+      if (res.success) {
+        setBastList((prev) => prev.filter((b) => b.id !== formData.id));
+        handleCreateNew();
+        swalSuccess("Berhasil Dihapus!", res.message);
+      } else {
+        swalError("Gagal Menghapus", res.message);
       }
     });
   };
@@ -976,6 +999,19 @@ export function BastForm({
                     )}
                     <span>Simpan BAST</span>
                   </button>
+
+                  {formData.id && (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={handleDeleteBast}
+                      className="px-3.5 py-2.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
+                      title="Hapus Dokumen BAST Ini"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                      <span>Hapus</span>
+                    </button>
+                  )}
 
                   <Link
                     href="/user/bku"

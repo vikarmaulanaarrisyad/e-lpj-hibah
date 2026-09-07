@@ -13,7 +13,24 @@ const NAMA_BULAN = [
  * Format tanggal menjadi pernyataan hukum pembuka BAST:
  * Contoh: "Senin tanggal tiga puluh satu bulan Juli tahun Dua Ribu Dua Puluh Enam (31 - 07 - 2026)"
  */
-export function formatTanggalTerbilang(d: Date): { hariTanggal: string; terbilangResmi: string } {
+export function formatTanggalTerbilang(input: Date | string): { hariTanggal: string; terbilangResmi: string } {
+  let d: Date;
+  if (typeof input === "string") {
+    const clean = input.split("T")[0].trim();
+    const parts = clean.split("-").map(Number);
+    if (parts.length === 3 && !parts.some(isNaN)) {
+      d = new Date(parts[0], parts[1] - 1, parts[2]);
+    } else {
+      d = new Date(input);
+    }
+  } else {
+    d = input;
+  }
+
+  if (isNaN(d.getTime())) {
+    d = new Date();
+  }
+
   const hari = NAMA_HARI[d.getDay()];
   const tgl = d.getDate();
   const bln = NAMA_BULAN[d.getMonth()];

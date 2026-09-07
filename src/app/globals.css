@@ -38,7 +38,12 @@ body {
 /* ================= PRINT STYLESHEET ================= */
 @media print {
   @page {
-    size: 330mm 215mm; /* Ukuran Kertas F4 / Folio Landscape (330mm × 215mm) */
+    size: auto;
+    margin: 10mm;
+  }
+
+  @page kwitansiF4 {
+    size: 330mm 215mm; /* Kertas F4 / Folio Landscape Khusus Cetak Blanko Kwitansi */
     margin: 0mm;
   }
 
@@ -69,6 +74,7 @@ body {
 
   /* Kontainer Induk Menempati 1 Lembar Penuh F4 Landscape & Menengahkan Konten */
   #kwitansiPrintContainer {
+    page: kwitansiF4;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -127,6 +133,33 @@ body {
     print-color-adjust: exact !important;
   }
 
+  /* ================= SURAT PESANAN & BAST PRINT SPEC (PORTRAIT) ================= */
+  body:has(#pesananPrintArea),
+  body:has(#bastPrintArea) {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body:has(#pesananPrintArea) #pesananPrintArea,
+  body:has(#bastPrintArea) #bastPrintArea {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
   /* ================= BUKU KAS UMUM (BKU) PRINT SPEC ================= */
   body:has(#bkuPrintArea) {
     width: 100% !important;
@@ -167,6 +200,50 @@ body {
 
   body:has(#bkuPrintArea) th,
   body:has(#bkuPrintArea) td {
+    border: 1px solid #334155 !important;
+    color: #000000 !important;
+  }
+
+  /* ================= RAB PRINT SPEC ================= */
+  body:has(#rabPrintArea) {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 8mm 10mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body:has(#rabPrintArea) #rabPrintArea {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  body:has(#rabPrintArea) table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  body:has(#rabPrintArea) thead {
+    display: table-header-group !important;
+  }
+
+  body:has(#rabPrintArea) tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  body:has(#rabPrintArea) th,
+  body:has(#rabPrintArea) td {
     border: 1px solid #334155 !important;
     color: #000000 !important;
   }

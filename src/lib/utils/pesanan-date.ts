@@ -35,9 +35,22 @@ const ROMAN_MONTHS = [
  * Contoh: "2026-08-01" -> "01 Agustus 2026"
  */
 export function formatDateIndo(dateStr?: string | Date | null): string {
-  if (!dateStr) return "01 Agustus 2026";
+  if (!dateStr) return "-";
+  if (typeof dateStr === "string") {
+    const clean = dateStr.split("T")[0].trim();
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      const year = parts[0];
+      const monthIdx = parseInt(parts[1], 10) - 1;
+      const day = parts[2].padStart(2, "0");
+      const month = MONTH_NAMES[monthIdx];
+      if (month && year) {
+        return `${day} ${month} ${year}`;
+      }
+    }
+  }
   try {
-    const d = typeof dateStr === "string" ? new Date(dateStr.split("T")[0]) : new Date(dateStr);
+    const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
     if (isNaN(d.getTime())) return String(dateStr);
 
     const day = String(d.getDate()).padStart(2, "0");
@@ -50,7 +63,7 @@ export function formatDateIndo(dateStr?: string | Date | null): string {
 }
 
 /**
- * Mendapatkan angka romawi bulan (1-12)
+ * Mendapatkan angka romawi bulan (0-11 atau 1-12)
  */
 export function getRomanMonth(monthIndex: number): string {
   return ROMAN_MONTHS[monthIndex] || "I";
@@ -61,6 +74,16 @@ export function getRomanMonth(monthIndex: number): string {
  */
 export function addDaysToDate(dateStr: string, days: number): string {
   try {
+    const clean = dateStr.split("T")[0].trim();
+    const parts = clean.split("-").map(Number);
+    if (parts.length === 3 && !parts.some(isNaN)) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      d.setDate(d.getDate() + days);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     d.setDate(d.getDate() + days);
@@ -84,14 +107,23 @@ export function calculateDurasiDanDeskripsi(
   formattedTanggalSp: string;
   deskripsiWaktuPenyelesaian: string;
 } {
-  const dStart = new Date(tanggalSpStr);
-  const dEnd = new Date(batasWaktuStr);
+  let diffDays = 1;
+  const p1 = (tanggalSpStr || "").split("T")[0].split("-").map(Number);
+  const p2 = (batasWaktuStr || "").split("T")[0].split("-").map(Number);
 
-  dStart.setHours(0, 0, 0, 0);
-  dEnd.setHours(0, 0, 0, 0);
-
-  const diffMs = dEnd.getTime() - dStart.getTime();
-  let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (p1.length === 3 && p2.length === 3 && !p1.some(isNaN) && !p2.some(isNaN)) {
+    const d1 = new Date(p1[0], p1[1] - 1, p1[2]);
+    const d2 = new Date(p2[0], p2[1] - 1, p2[2]);
+    const diffMs = d2.getTime() - d1.getTime();
+    diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  } else {
+    const dStart = new Date(tanggalSpStr);
+    const dEnd = new Date(batasWaktuStr);
+    dStart.setHours(0, 0, 0, 0);
+    dEnd.setHours(0, 0, 0, 0);
+    const diffMs = dEnd.getTime() - dStart.getTime();
+    diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  }
 
   if (isNaN(diffDays) || diffDays < 0) {
     diffDays = 1;
@@ -126,14 +158,21 @@ export function calculateDurasiDanDeskripsi(
  */
 export function syncNomorSpBulanTahun(currentNomor: string, dateStr: string): string {
   try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return currentNomor;
+    const clean = (dateStr || "").split("T")[0].trim();
+    const partsDate = clean.split("-").map(Number);
+    let romanMonth = "I";
+    let year = "2026";
 
-    const romanMonth = getRomanMonth(d.getMonth());
-    const year = String(d.getFullYear());
+    if (partsDate.length === 3 && !partsDate.some(isNaN)) {
+      romanMonth = getRomanMonth(partsDate[1] - 1);
+      year = String(partsDate[0]);
+    } else {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return currentNomor;
+      romanMonth = getRomanMonth(d.getMonth());
+      year = String(d.getFullYear());
+    }
 
-    // Regex mencocokkan pola romawi di segmen kedua terakhir dan tahun di segmen terakhir
-    // misal: 02/A/PR.FNU/VIII/2026 atau 014/SP/SPK-FTY/VII/2026
     const parts = currentNomor.split("/");
     if (parts.length >= 4) {
       parts[parts.length - 2] = romanMonth;

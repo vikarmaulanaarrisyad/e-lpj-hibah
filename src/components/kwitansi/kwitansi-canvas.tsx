@@ -8,7 +8,7 @@ interface KwitansiCanvasProps {
 }
 
 function formatDisplayDate(dateStr?: string) {
-  if (!dateStr) return "06 Agustus 2026";
+  if (!dateStr) return "-";
   // Handle ISO YYYY-MM-DD format from <input type="date">
   if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
     const cleanDate = dateStr.split("T")[0];

@@ -126,6 +126,20 @@ export class ReceiptRepository {
   }
 
   /**
+   * Find a receipt by its primary key ID.
+   */
+  async findById(id: string): Promise<Receipt | null> {
+    try {
+      return await prisma.receipt.findUnique({
+        where: { id },
+      });
+    } catch (error) {
+      console.error("[ReceiptRepository] Error in findById:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all receipts belonging to a user/grant recipient.
    */
   async findManyByUserId(userId: string): Promise<Receipt[]> {
