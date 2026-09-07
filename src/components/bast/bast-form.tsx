@@ -347,6 +347,20 @@ export function BastForm({
     }
   };
 
+  // Handler cetak BAST dengan judul dokumen otomatis untuk opsi Save as PDF
+  const handlePrint = () => {
+    const prevTitle = document.title;
+    const cleanNo = (formData.nomorBast || "BAST")
+      .trim()
+      .replace(/[/\\?%*:|"<>.]/g, "_")
+      .replace(/\s+/g, "_");
+    document.title = `BAST_${cleanNo}`;
+    window.print();
+    setTimeout(() => {
+      document.title = prevTitle;
+    }, 2000);
+  };
+
   // Save action handler
   const handleSaveBast = () => {
     setSaveSuccessMsg(null);
@@ -1024,7 +1038,7 @@ export function BastForm({
 
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrint}
                   className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
                 >
                   <Printer className="w-4 h-4" />
@@ -1091,7 +1105,7 @@ export function BastForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrint}
                   className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-[#006c4e] hover:bg-[#004532] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
                 >
                   <Printer className="w-3.5 h-3.5" />

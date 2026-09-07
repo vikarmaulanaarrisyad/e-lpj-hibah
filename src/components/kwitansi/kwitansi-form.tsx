@@ -15,6 +15,7 @@ import {
   PlusCircle,
   Save,
   Printer,
+  FileDown,
   Sparkles,
   Scissors,
   Check,
@@ -42,6 +43,7 @@ import {
 } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import { exportKwitansiToPdf } from "@/lib/kwitansi-pdf";
 import { KwitansiCanvas } from "./kwitansi-canvas";
 import type {
   Receipt,
@@ -80,6 +82,7 @@ export function KwitansiForm({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [showCutGuides, setShowCutGuides] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
   const [receiptsList, setReceiptsList] = useState<Receipt[]>(savedReceipts);
@@ -451,6 +454,58 @@ export function KwitansiForm({
     });
   };
 
+  // Handler ekspor langsung ke dokumen PDF Kertas F4 Landscape (330mm x 215mm)
+  const handleExportPdf = async () => {
+    if (isExportingPdf) return;
+    try {
+      setIsExportingPdf(true);
+      await exportKwitansiToPdf({
+        elementId: "kwitansiCanvas",
+        nomorBukti: formData.nomorBukti,
+        penerima: formData.penerima,
+        showCutGuides: showCutGuides,
+        formData: formData,
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  // Handler cetak ke printer fisik dengan penguncian orientasi F4 Landscape khusus Kwitansi
+  const handlePrint = () => {
+    const prevTitle = document.title;
+    let cleanNoBukti = (formData.nomorBukti || "BKU")
+      .trim()
+      .replace(/[/\\?%*:|"<>]/g, "_")
+      .replace(/\s+/g, "_")
+      .replace(/_+/g, "_");
+    if (cleanNoBukti.toLowerCase().endsWith(".pdf")) {
+      cleanNoBukti = cleanNoBukti.slice(0, -4);
+    }
+    document.title = `Kwitansi_${cleanNoBukti}_F4`;
+
+    // Pastikan orientasi cetak browser terkunci khusus Kwitansi pada F4 Landscape (330mm x 215mm)
+    const printStyle = document.createElement("style");
+    printStyle.id = "kwitansi-landscape-print-rule";
+    printStyle.innerHTML = `
+      @media print {
+        @page {
+          size: 330mm 215mm landscape !important;
+          margin: 0mm !important;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
+
+    window.print();
+
+    setTimeout(() => {
+      document.title = prevTitle;
+      const el = document.getElementById("kwitansi-landscape-print-rule");
+      if (el) el.remove();
+    }, 2000);
+  };
+
   // Real-time RAB Ceiling & Deficit Calculations
   const currentRabStatus = useMemo(() => {
     if (!rabSummary || !rabSummary.items) return null;
@@ -618,11 +673,26 @@ export function KwitansiForm({
             </div>
             <button
               type="button"
-              onClick={() => window.print()}
-              className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-xs font-semibold transition-all shadow-md flex items-center gap-2 border border-emerald-600/30"
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-2 border border-emerald-500/50 disabled:opacity-50"
+              title="Ekspor Kwitansi langsung ke file PDF ukuran F4 Landscape (330mm x 215mm)"
             >
-              <Printer className="w-4 h-4" />
-              <span>Cetak Kwitansi</span>
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              <span>Ekspor PDF (F4)</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all shadow-md flex items-center gap-2 border border-slate-700"
+              title="Cetak langsung ke mesin printer fisik"
+            >
+              <Printer className="w-4 h-4 text-slate-300" />
+              <span>Cetak Printer</span>
             </button>
           </div>
         </div>
@@ -1602,11 +1672,27 @@ export function KwitansiForm({
 
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="px-4 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-white text-xs font-semibold shadow-md flex items-center gap-1.5 transition-all"
+                  onClick={handleExportPdf}
+                  disabled={isExportingPdf}
+                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md flex items-center gap-1.5 transition-all border border-emerald-500/40 disabled:opacity-50"
+                  title="Unduh langsung file PDF F4 Landscape (330mm x 215mm)"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Cetak / Ekspor PDF</span>
+                  {isExportingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>Ekspor PDF (F4)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all border border-slate-700"
+                  title="Cetak kwitansi ke mesin printer fisik"
+                >
+                  <Printer className="w-3.5 h-3.5 text-slate-300" />
+                  <span>Cetak</span>
                 </button>
               </div>
             </div>

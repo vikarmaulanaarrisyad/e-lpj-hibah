@@ -56,6 +56,7 @@ export interface UpdateRabDetailRowInput extends AddRabDetailRowInput {
 }
 
 export interface UpdateRabItemInput {
+  id?: string;
   kode: string;
   nama: string;
   anggaran: number;

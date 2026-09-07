@@ -186,7 +186,7 @@ export class RabRepository {
   /**
    * Update item RAB secara langsung berdasarkan ID
    */
-  async updateItem(id: string, data: { nama?: string; anggaran?: number; keterangan?: string | null }): Promise<RabItem> {
+  async updateItem(id: string, data: { kode?: string; nama?: string; anggaran?: number; keterangan?: string | null }): Promise<RabItem> {
     try {
       return await prisma.rabItem.update({
         where: { id },

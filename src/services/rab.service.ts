@@ -1,6 +1,7 @@
 import { rabRepository } from "@/repositories/rab.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import type {
+  RabItem,
   RabSummary,
   RabStatusItem,
   RabDetailRow,
@@ -18,10 +19,16 @@ export class RabService {
    * Contoh: "5.2.1" cocok dengan "5.2.1", "5.2.1 Perlengkapan", "5.2.1 Peralatan"
    */
   private isCategoryMatch(receiptCategory: string | null | undefined, rabKode: string): boolean {
-    if (!receiptCategory) return false;
+    if (!receiptCategory || !rabKode) return false;
     const cleanReceipt = receiptCategory.trim().toLowerCase();
     const cleanKode = rabKode.trim().toLowerCase();
-    return cleanReceipt === cleanKode || cleanReceipt.startsWith(cleanKode);
+    return (
+      cleanReceipt === cleanKode ||
+      cleanReceipt.startsWith(cleanKode + " ") ||
+      cleanReceipt.startsWith(cleanKode + ".") ||
+      cleanReceipt.startsWith(cleanKode + "-") ||
+      cleanReceipt.startsWith(cleanKode + " -")
+    );
   }
 
   /**
@@ -47,10 +54,12 @@ export class RabService {
 
         // Parse detail rincian rows jika tersimpan dalam format JSON pada kolom keterangan
         let rincian: RabDetailRow[] = [];
-        if (item.keterangan) {
+        let hasExplicitKeterangan = false;
+        if (item.keterangan !== null && item.keterangan !== undefined && item.keterangan.trim() !== "") {
           try {
             const parsed = JSON.parse(item.keterangan);
             if (Array.isArray(parsed)) {
+              hasExplicitKeterangan = true;
               rincian = parsed.map((row, idx) => {
                 const vol1 = Number(row.koefisien1Vol) || 1;
                 const vol2 = row.koefisien2Vol != null && !isNaN(Number(row.koefisien2Vol)) ? Number(row.koefisien2Vol) : null;
@@ -75,8 +84,9 @@ export class RabService {
           }
         }
 
-        // Jika rincian kosong, buatkan 1 baris representasi bawaan
-        if (rincian.length === 0) {
+        // Jika rincian kosong KARENA BELUM PERNAH ADA STRUKTUR JSON (bukan karena sengaja dihapus jadi [])
+        // dan item.anggaran > 0, buatkan 1 baris representasi bawaan
+        if (!hasExplicitKeterangan && item.anggaran > 0) {
           rincian = [
             {
               id: `${item.id}-1`,
@@ -292,7 +302,33 @@ export class RabService {
         };
       }
 
-      const updated = await rabRepository.upsert(userId, input);
+      let updated: RabItem;
+      if (input.id) {
+        const target = await rabRepository.findById(input.id);
+        if (!target || target.userId !== userId) {
+          return { success: false, message: "Pos rekening RAB tidak ditemukan." };
+        }
+
+        const cleanKode = input.kode.trim();
+        if (cleanKode !== target.kode) {
+          const existing = await rabRepository.findByUserIdAndKode(userId, cleanKode);
+          if (existing && existing.id !== input.id) {
+            return {
+              success: false,
+              message: `Kode rekening ${cleanKode} sudah digunakan oleh pos lain (${existing.nama}).`,
+            };
+          }
+        }
+
+        updated = await rabRepository.updateItem(input.id, {
+          kode: cleanKode,
+          nama: input.nama.trim(),
+          anggaran: input.anggaran,
+          keterangan: input.keterangan !== undefined ? input.keterangan : target.keterangan,
+        });
+      } else {
+        updated = await rabRepository.upsert(userId, input);
+      }
 
       // Ambil transaksi untuk menghitung realisasi
       const receipts = await receiptRepository.findManyByUserId(userId);
@@ -359,10 +395,24 @@ export class RabService {
         };
       }
 
+      // Inisialisasi rincian pertama sebagai JSON array agar valid dan siap edit/hapus
+      const initialRow: RabDetailRow = {
+        id: `row-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        no: 1,
+        uraian: input.nama.trim(),
+        koefisien1Vol: 1,
+        koefisien1Satuan: "Paket",
+        koefisien2Vol: null,
+        koefisien2Satuan: null,
+        hargaSatuan: input.anggaran,
+        total: input.anggaran,
+      };
+
       return await this.updateRabAllocation(userId, {
         ...input,
         kode: cleanKode,
         nama: input.nama.trim(),
+        keterangan: JSON.stringify([initialRow]),
       });
     } catch (error) {
       console.error("[RabService] Failed to create RAB item:", error);
@@ -434,13 +484,34 @@ export class RabService {
       }
 
       let existingRows: RabDetailRow[] = [];
+      let isLegacy = true;
       if (target.keterangan) {
         try {
           const parsed = JSON.parse(target.keterangan);
-          if (Array.isArray(parsed)) existingRows = parsed;
+          if (Array.isArray(parsed)) {
+            existingRows = parsed;
+            isLegacy = false;
+          }
         } catch {
           existingRows = [];
         }
+      }
+
+      // Jika data legacy dan target memiliki anggaran > 0, pertahankan item awal sebagai baris 1
+      if (isLegacy && existingRows.length === 0 && target.anggaran > 0) {
+        existingRows = [
+          {
+            id: `row-${target.id}-1`,
+            no: 1,
+            uraian: target.nama,
+            koefisien1Vol: 1,
+            koefisien1Satuan: "Paket",
+            koefisien2Vol: null,
+            koefisien2Satuan: null,
+            hargaSatuan: target.anggaran,
+            total: target.anggaran,
+          },
+        ];
       }
 
       const vol1 = Number(input.koefisien1Vol) || 1;
@@ -463,7 +534,7 @@ export class RabService {
       const updatedRows = [...existingRows, newRow];
       const newTotalAnggaran = updatedRows.reduce((acc, curr) => acc + curr.total, 0);
 
-      const updatedItem = await rabRepository.updateItem(rabItemId, {
+      await rabRepository.updateItem(rabItemId, {
         anggaran: newTotalAnggaran,
         keterangan: JSON.stringify(updatedRows),
       });
@@ -497,12 +568,35 @@ export class RabService {
       }
 
       let existingRows: RabDetailRow[] = [];
+      let isLegacy = true;
       if (target.keterangan) {
         try {
           const parsed = JSON.parse(target.keterangan);
-          if (Array.isArray(parsed)) existingRows = parsed;
+          if (Array.isArray(parsed)) {
+            existingRows = parsed;
+            isLegacy = false;
+          }
         } catch {
           existingRows = [];
+        }
+      }
+
+      // Jika data legacy atau ID baris belum ada di existingRows, buat baris legacy tersebut
+      if (isLegacy || !existingRows.some((r) => r.id === input.id)) {
+        if (existingRows.length === 0) {
+          existingRows = [
+            {
+              id: input.id,
+              no: 1,
+              uraian: target.nama,
+              koefisien1Vol: 1,
+              koefisien1Satuan: "Paket",
+              koefisien2Vol: null,
+              koefisien2Satuan: null,
+              hargaSatuan: target.anggaran,
+              total: target.anggaran,
+            },
+          ];
         }
       }
 
@@ -562,13 +656,34 @@ export class RabService {
       }
 
       let existingRows: RabDetailRow[] = [];
+      let isLegacy = true;
       if (target.keterangan) {
         try {
           const parsed = JSON.parse(target.keterangan);
-          if (Array.isArray(parsed)) existingRows = parsed;
+          if (Array.isArray(parsed)) {
+            existingRows = parsed;
+            isLegacy = false;
+          }
         } catch {
           existingRows = [];
         }
+      }
+
+      // Jika data legacy dan existingRows masih kosong, buat baris legacy tersebut agar bisa difilter
+      if (isLegacy && existingRows.length === 0) {
+        existingRows = [
+          {
+            id: rowId,
+            no: 1,
+            uraian: target.nama,
+            koefisien1Vol: 1,
+            koefisien1Satuan: "Paket",
+            koefisien2Vol: null,
+            koefisien2Satuan: null,
+            hargaSatuan: target.anggaran,
+            total: target.anggaran,
+          },
+        ];
       }
 
       const filtered = existingRows

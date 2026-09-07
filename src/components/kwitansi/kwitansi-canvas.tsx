@@ -30,6 +30,16 @@ export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasPr
       id="kwitansiPrintContainer"
       className="w-full overflow-x-auto pb-4 flex justify-start sm:justify-center items-center"
     >
+      {/* Khusus Kwitansi: Kunci Orientasi Cetak Browser ke F4 Landscape (330mm x 215mm) */}
+      <style>{`
+        @media print {
+          @page {
+            size: 330mm 215mm landscape !important;
+            margin: 0mm !important;
+          }
+        }
+      `}</style>
+
       {/* ================= F4 PAPER SHEET CONTAINER (330mm × 215mm LANDSCAPE) ================= */}
       <div
         id="f4PaperSheet"
@@ -67,6 +77,7 @@ export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasPr
           <img
             src="/templates/kwitansi-blank-template.png"
             alt="Blanko Kwitansi Resmi"
+            crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none z-0"
             style={{
               WebkitPrintColorAdjust: "exact",
@@ -94,52 +105,52 @@ export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasPr
             <div className="w-[20.8%] h-full pointer-events-none" />
 
             {/* SISI KANAN (BADAN KWITANSI UTAMA ~79.2%) */}
-            <div className="w-[79.2%] h-full pt-[5.4cqw] pb-[2cqw] pr-[3.5cqw] pl-[5cqw] flex flex-col justify-between">
+            <div className="w-[79.2%] h-full pt-[5.0cqw] pb-[4.2cqw] pr-[4.8cqw] pl-[5.2cqw] flex flex-col justify-between">
               {/* Top 3 Formal Rows */}
-              <div className="space-y-[0.9cqw]">
+              <div className="space-y-[0.32cqw]">
                 {/* Row 1: Telah Diterima Dari */}
-                <div className="flex items-baseline text-[1.58cqw] leading-[1.35]">
-                  <span className="w-[14.8cqw] font-normal text-slate-800 shrink-0 whitespace-nowrap">
+                <div className="flex items-start text-[1.4cqw] leading-snug">
+                  <span className="w-[14.2cqw] font-normal text-slate-800 shrink-0 whitespace-nowrap pt-[0.05cqw]">
                     Telah Diterima Dari
                   </span>
-                  <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw]">:</span>
-                  <span className="font-bold text-slate-950 tracking-wide uppercase flex-1 leading-[1.35]">
+                  <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw] pt-[0.05cqw]">:</span>
+                  <span className="font-bold text-slate-950 tracking-wide uppercase flex-1 leading-snug">
                     {data.pemberi || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN"}
                   </span>
                 </div>
 
                 {/* Row 2: Uang Sebanyak */}
-                <div className="flex items-baseline text-[1.58cqw] leading-[1.35]">
-                  <span className="w-[14.8cqw] font-normal text-slate-800 shrink-0 whitespace-nowrap">
+                <div className="flex items-start text-[1.4cqw] leading-snug">
+                  <span className="w-[14.2cqw] font-normal text-slate-800 shrink-0 whitespace-nowrap pt-[0.05cqw]">
                     Uang Sebanyak
                   </span>
-                  <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw]">:</span>
-                  <span className="font-semibold text-slate-900 flex-1 leading-[1.35]">
+                  <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw] pt-[0.05cqw]">:</span>
+                  <span className="font-semibold text-slate-900 flex-1 leading-snug italic">
                     {data.terbilang || "Tiga Juta Rupiah"}
                   </span>
                 </div>
 
                 {/* Row 3: Guna Membayar */}
-                <div className="flex items-baseline text-[1.52cqw] leading-[1.35]">
-                  <span className="w-[14.8cqw] font-normal text-slate-800 shrink-0 whitespace-nowrap">
+                <div className="flex items-start text-[1.36cqw] leading-snug">
+                  <span className="w-[14.2cqw] font-normal text-slate-800 shrink-0 whitespace-nowrap pt-[0.05cqw]">
                     Guna Membayar
                   </span>
-                  <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw]">:</span>
-                  <span className="font-normal text-slate-900 flex-1 leading-[1.35] line-clamp-2">
+                  <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw] pt-[0.05cqw]">:</span>
+                  <span className="font-normal text-slate-900 flex-1 leading-snug break-words">
                     {data.uraian || "Belanja Sound Aktif sebanyak 1 unit x @ Rp. 3.000.000 = Rp. 3.000.000"}
                   </span>
                 </div>
               </div>
 
               {/* Middle Section: Cyan Parallelogram Nominal Badge & Tax Notice */}
-              <div className="my-[0.5cqw] flex items-center justify-between">
-                <div className="relative inline-block drop-shadow-[0_2px_4px_rgba(0,108,78,0.22)]">
-                  <div className="transform -skew-x-12 bg-gradient-to-r from-[#22d3ee] via-[#06b6d4] to-[#0891b2] px-[2.2cqw] py-[0.35cqw] rounded-[3px] border border-[#ecfeff]">
+              <div className="my-[0.2cqw] flex items-center justify-between">
+                <div className="relative inline-block drop-shadow-[0_2px_4px_rgba(0,108,78,0.2)]">
+                  <div className="transform -skew-x-12 bg-gradient-to-r from-[#22d3ee] via-[#06b6d4] to-[#0891b2] px-[1.8cqw] py-[0.18cqw] rounded-[3px] border border-[#ecfeff]">
                     <div className="transform skew-x-12 flex items-baseline gap-[0.4cqw] text-slate-950">
-                      <span className="text-[1.6cqw] font-black tracking-tight">
+                      <span className="text-[1.45cqw] font-black tracking-tight">
                         Rp.
                       </span>
-                      <span className="font-mono text-[2.05cqw] font-black tracking-tight">
+                      <span className="font-mono text-[1.8cqw] font-black tracking-tight">
                         {data.nominal || "3.000.000"},-
                       </span>
                     </div>
@@ -147,7 +158,7 @@ export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasPr
                 </div>
 
                 {data.totalPajak > 0 && (
-                  <div className="text-[0.92cqw] font-mono text-slate-800 bg-emerald-50/90 border border-emerald-300/80 px-[1.2cqw] py-[0.2cqw] rounded leading-tight text-right shadow-xs">
+                  <div className="text-[0.85cqw] font-mono text-slate-800 bg-emerald-50/90 border border-emerald-300/80 px-[1.2cqw] py-[0.18cqw] rounded leading-tight text-right shadow-xs">
                     <span className="font-bold text-emerald-900 block">
                       Pot. Pajak: Rp {data.totalPajak.toLocaleString("id-ID")}
                     </span>
@@ -161,67 +172,70 @@ export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasPr
               {/* Bottom Section: 3-Column Signatories */}
               <div className="grid grid-cols-3 gap-[1.2cqw] text-center items-end">
                 {/* Column 1: Setuju Dibayar (Ketua) */}
-                <div className="flex flex-col justify-between h-[9.2cqw]">
-                  <div className="text-[1.18cqw] text-slate-800 leading-[1.3]">
-                    <p>Setuju dibayar</p>
-                    <p className="font-normal">Ketua Pimpinan Ranting Fatayat NU</p>
-                    <p className="font-normal">Dawuhan Selatan</p>
+                <div className="flex flex-col justify-between h-[8.6cqw]">
+                  <div className="text-[0.98cqw] text-slate-800 leading-tight">
+                    <p className="font-semibold text-slate-900">Setuju dibayar</p>
+                    <p className="font-normal text-slate-700">Ketua Pimpinan Ranting Fatayat NU</p>
+                    <p className="font-normal text-slate-700">Dawuhan Selatan</p>
                   </div>
+                  {/* Ruang Tanda Tangan Lapang */}
+                  <div className="flex-1 min-h-[4.0cqw] flex items-center justify-center pointer-events-none" />
                   <div>
-                    <span className="text-[1.35cqw] font-bold text-slate-950 uppercase tracking-wider block truncate">
+                    <span className="text-[1.22cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-900 decoration-1 underline-offset-2">
                       {data.ketua || "HENI FUJIATI"}
                     </span>
-                    {/* <div className="w-[12cqw] h-[1.5px] bg-slate-800/80 mx-auto mt-[0.25cqw]"></div> */}
                   </div>
                 </div>
 
                 {/* Column 2: Lunas Dibayar (Bendahara) */}
-                <div className="flex flex-col justify-between h-[9.2cqw]">
-                  <div className="text-[1.18cqw] text-slate-800 leading-[1.3]">
-                    <p className="whitespace-nowrap">
+                <div className="flex flex-col justify-between h-[8.6cqw]">
+                  <div className="text-[0.98cqw] text-slate-800 leading-tight">
+                    <p className="whitespace-nowrap font-semibold text-slate-900">
                       Lunas dibayar Tgl :{" "}
-                      <span className="font-semibold">{formatDisplayDate(data.tanggal)}</span>
+                      <span className="font-bold">{formatDisplayDate(data.tanggal)}</span>
                     </p>
-                    <p className="font-normal">Bendahara</p>
+                    <p className="font-normal text-slate-700">Bendahara</p>
                   </div>
+                  {/* Ruang Tanda Tangan Lapang */}
+                  <div className="flex-1 min-h-[4.0cqw] flex items-center justify-center pointer-events-none" />
                   <div>
-                    <span className="text-[1.35cqw] font-bold text-slate-950 uppercase tracking-wider block truncate">
+                    <span className="text-[1.22cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-900 decoration-1 underline-offset-2">
                       {data.bendahara || "NUR ALIMAH"}
                     </span>
-                    {/* <div className="w-[12cqw] h-[1.5px] bg-slate-800/80 mx-auto mt-[0.25cqw]"></div> */}
                   </div>
                 </div>
 
                 {/* Column 3: Yang Menerima */}
-                <div className="flex flex-col justify-between h-[9.2cqw] relative">
-                  {/* Floating Materai Box if checked */}
+                <div className="flex flex-col justify-between h-[8.6cqw] relative">
+                  {/* Floating Materai Box if checked - positioned in signature area above recipient */}
                   {data.denganMaterai && (
                     <div
                       id="materaiBox"
-                      className="absolute -top-[0.8cqw] left-1/2 -translate-x-1/2 w-[6.5cqw] h-[3.6cqw] border border-dashed border-red-600 bg-red-100/70 text-red-900 rounded flex flex-col items-center justify-center pointer-events-none z-30 shadow-sm"
+                      className="absolute top-[2.4cqw] left-1/2 -translate-x-1/2 w-[5.6cqw] h-[3cqw] border border-dashed border-red-500/80 bg-red-50/60 text-red-800 rounded flex flex-col items-center justify-center pointer-events-none z-10 shadow-xs"
                     >
-                      <span className="font-mono text-[0.75cqw] font-black tracking-widest text-red-700">
+                      <span className="font-mono text-[0.65cqw] font-black tracking-widest text-red-600 leading-tight">
                         MATERAI
                       </span>
-                      <span className="font-mono text-[0.65cqw] font-bold text-red-600">
+                      <span className="font-mono text-[0.55cqw] font-bold text-red-500 leading-tight">
                         Rp 10.000
                       </span>
                     </div>
                   )}
 
-                  <div className="text-[1.18cqw] text-slate-800 leading-[1.3]">
-                    <p>Yang Menerima</p>
+                  <div className="text-[0.98cqw] text-slate-800 leading-tight">
+                    <p className="font-semibold text-slate-900">Yang Menerima</p>
                   </div>
+                  {/* Ruang Tanda Tangan Lapang */}
+                  <div className="flex-1 min-h-[4.0cqw] flex items-center justify-center pointer-events-none" />
                   <div>
                     {data.penerima ? (
                       <div>
-                        <span className="text-[1.35cqw] font-bold text-slate-950 uppercase tracking-wider block truncate">
+                        <span className="text-[1.22cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-900 decoration-1 underline-offset-2">
                           {data.penerima}
                         </span>
-                        {/* <div className="w-[12cqw] h-[1.5px] bg-slate-800/80 mx-auto mt-[0.25cqw]"></div> */}
                       </div>
                     ) : (
-                      <span className="text-[1.18cqw] font-medium text-slate-800 block truncate max-w-[15cqw] mx-auto border-b border-dotted border-slate-700 pb-[0.2cqw]">
+                      <span className="text-[1.1cqw] font-medium text-slate-800 block max-w-[15cqw] mx-auto border-b border-dotted border-slate-700 pb-[0.2cqw]">
                         .......................................
                       </span>
                     )}

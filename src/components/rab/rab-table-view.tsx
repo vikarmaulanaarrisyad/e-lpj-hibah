@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useTransition, Fragment } from "react";
 import Link from "next/link";
 import {
@@ -33,6 +31,7 @@ import {
   deleteRabDetailRowAction,
   resetRabToNphdDefaultsAction,
   deleteRabItemAction,
+  updateRabAllocationAction,
 } from "@/app/actions/rab.action";
 import {
   swalLoading,
@@ -65,6 +64,13 @@ export function RabTableView({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [editingRow, setEditingRow] = useState<RabDetailRow | null>(null);
+
+  // Modal State for Ubah Kelompok Kegiatan
+  const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<RabStatusItem | null>(null);
+  const [editGroupKode, setEditGroupKode] = useState("");
+  const [editGroupNama, setEditGroupNama] = useState("");
+  const [editGroupAnggaran, setEditGroupAnggaran] = useState<string>("");
 
   // Form Fields for Rincian Row
   const [uraian, setUraian] = useState("");
@@ -221,6 +227,117 @@ export function RabTableView({
         swalSuccess("Rincian Dihapus!", res.message);
       } else {
         swalError("Gagal Menghapus", res.message);
+      }
+    });
+  };
+
+  // Open Modal to Edit Kelompok Kegiatan
+  const openEditGroupModal = (group: RabStatusItem) => {
+    setEditingGroup(group);
+    setEditGroupKode(group.kode);
+    setEditGroupNama(group.nama);
+    setEditGroupAnggaran(String(group.anggaran));
+    setIsEditGroupModalOpen(true);
+  };
+
+  // Save Kelompok Kegiatan Changes
+  const handleSaveGroup = () => {
+    if (!editingGroup) return;
+    if (!editGroupKode.trim()) {
+      swalError("Validasi Gagal", "Kode rekening kelompok wajib diisi.");
+      return;
+    }
+    if (!editGroupNama.trim()) {
+      swalError("Validasi Gagal", "Nama kelompok kegiatan wajib diisi.");
+      return;
+    }
+
+    const num = parseFloat(editGroupAnggaran) || 0;
+    if (num < 0) {
+      swalError("Validasi Gagal", "Pagu anggaran tidak boleh bernilai negatif.");
+      return;
+    }
+
+    swalLoading("Menyimpan Perubahan...", "Memperbarui data kelompok kegiatan...");
+    startTransition(async () => {
+      const res = await updateRabAllocationAction({
+        id: editingGroup.id,
+        kode: editGroupKode.trim(),
+        nama: editGroupNama.trim(),
+        anggaran: num,
+      });
+
+      if (res.success && res.data) {
+        const updatedItems = summary.items.map((it) =>
+          it.id === editingGroup.id
+            ? {
+                ...it,
+                kode: res.data!.kode,
+                nama: res.data!.nama,
+                anggaran: res.data!.anggaran,
+              }
+            : it
+        );
+        const totalAnggaran = updatedItems.reduce((acc, curr) => acc + curr.anggaran, 0);
+        const totalRealisasi = updatedItems.reduce((acc, curr) => acc + curr.realisasi, 0);
+        const totalSisaPagu = totalAnggaran - totalRealisasi;
+        const persentaseSerapanTotal =
+          totalAnggaran > 0 ? Math.round((totalRealisasi / totalAnggaran) * 1000) / 10 : 0;
+
+        onSummaryUpdated({
+          ...summary,
+          totalAnggaran,
+          totalRealisasi,
+          totalSisaPagu,
+          persentaseSerapanTotal,
+          items: updatedItems,
+        });
+
+        setIsEditGroupModalOpen(false);
+        swalSuccess("Kelompok Diperbarui!", res.message);
+      } else {
+        swalError("Gagal Memperbarui Kelompok", res.message);
+      }
+    });
+  };
+
+  // Delete Kelompok Kegiatan (Whole Pos Rekening)
+  const handleDeleteGroup = async (group: RabStatusItem) => {
+    const rincianCount = group.rincian?.length || 0;
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Kelompok Kegiatan?",
+      text: `Apakah Anda yakin ingin menghapus kelompok kegiatan "${group.kode} - ${group.nama}"? ${
+        rincianCount > 0 ? `Seluruh ${rincianCount} rincian item di dalamnya akan ikut dihapus.` : ""
+      } Pastikan belum ada kwitansi transaksi belanja terkait pos ini.`,
+      confirmText: "Ya, Hapus Kelompok!",
+      cancelText: "Batal",
+    });
+
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus Kelompok Kegiatan...", "Sedang memproses penghapusan data pos rekening...");
+    startTransition(async () => {
+      const res = await deleteRabItemAction(group.id);
+      if (res.success) {
+        const updatedItems = summary.items.filter((it) => it.id !== group.id);
+        const totalAnggaran = updatedItems.reduce((acc, curr) => acc + curr.anggaran, 0);
+        const totalRealisasi = updatedItems.reduce((acc, curr) => acc + curr.realisasi, 0);
+        const totalSisaPagu = totalAnggaran - totalRealisasi;
+        const persentaseSerapanTotal =
+          totalAnggaran > 0 ? Math.round((totalRealisasi / totalAnggaran) * 1000) / 10 : 0;
+
+        onSummaryUpdated({
+          ...summary,
+          totalAnggaran,
+          totalRealisasi,
+          totalSisaPagu,
+          persentaseSerapanTotal,
+          items: updatedItems,
+        });
+
+        swalSuccess("Kelompok Kegiatan Dihapus!", res.message);
+      } else {
+        swalError("Gagal Menghapus Kelompok", res.message);
       }
     });
   };
@@ -425,15 +542,36 @@ export function RabTableView({
                       </td>
                       <td className="py-2.5 px-3 border-r border-slate-800 print:hidden"></td>
                       <td className="py-2.5 px-3 border-r border-slate-800 print:hidden"></td>
-                      <td className="py-2.5 px-3 print:hidden text-center">
-                        <button
-                          type="button"
-                          onClick={() => openAddRowModal(group.id)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>+ Tambah Rincian</span>
-                        </button>
+                      <td className="py-2.5 px-3 print:hidden text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openAddRowModal(group.id)}
+                            className="px-2 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
+                            title="Tambah Rincian Item Baru ke Kelompok Ini"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>+ Tambah Rincian</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => openEditGroupModal(group)}
+                            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                            title="Ubah Nama atau Kode Kelompok Kegiatan"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGroup(group)}
+                            className="p-1 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 transition-colors border border-slate-700 cursor-pointer"
+                            title="Hapus Kelompok Kegiatan Ini Beserta Rinciannya"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
 
@@ -566,6 +704,30 @@ export function RabTableView({
                         </tr>
                       );
                     })}
+
+                    {/* TAMPILAN JIKA BELUM ADA RINCIAN ITEM */}
+                    {rincianList.length === 0 && (
+                      <tr className="bg-slate-950/40 border-b border-slate-800/60 text-center">
+                        <td colSpan={11} className="py-4 px-4 text-slate-400 text-xs italic">
+                          <span>Belum ada rincian item belanja pada kelompok ini.</span>
+                          <button
+                            type="button"
+                            onClick={() => openAddRowModal(group.id)}
+                            className="ml-2 text-emerald-400 hover:text-emerald-300 font-semibold underline cursor-pointer"
+                          >
+                            + Tambah Rincian Sekarang
+                          </button>
+                          <span className="mx-2 text-slate-600">•</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGroup(group)}
+                            className="text-red-400 hover:text-red-300 font-semibold underline cursor-pointer"
+                          >
+                            Hapus Kelompok Ini
+                          </button>
+                        </td>
+                      </tr>
+                    )}
 
                     {/* BARIS SUBTOTAL KELOMPOK KEGIATAN (Contoh: Jumlah VI | 22.900.000) */}
                     <tr className="bg-slate-950 print:bg-slate-200 border-t-2 border-b-2 border-slate-700 print:border-black font-extrabold text-xs">
@@ -803,6 +965,119 @@ export function RabTableView({
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL UBAH KELOMPOK KEGIATAN ================= */}
+      {isEditGroupModalOpen && editingGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Ubah Kelompok Kegiatan RAB
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Perbarui nama pos rekening atau kode kelompok
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditGroupModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Kode Rekening / Nomor Urut <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: 1, 2, VI, 5.2.1"
+                  value={editGroupKode}
+                  onChange={(e) => setEditGroupKode(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-mono font-bold text-sm focus:outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Nama Kelompok Kegiatan <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: BELANJA ALAT HADROH"
+                  value={editGroupNama}
+                  onChange={(e) => setEditGroupNama(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Alokasi Pagu Anggaran (Rp)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-slate-400 font-mono text-sm font-semibold">
+                    Rp
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10000"
+                    placeholder="0"
+                    value={editGroupAnggaran}
+                    onChange={(e) => setEditGroupAnggaran(e.target.value)}
+                    disabled={(editingGroup.rincian?.length || 0) > 0}
+                    className={`w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-white font-mono text-sm font-bold focus:outline-none focus:border-emerald-600 ${
+                      (editingGroup.rincian?.length || 0) > 0 ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
+                  />
+                </div>
+                {(editingGroup.rincian?.length || 0) > 0 ? (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    ℹ️ Pagu kelompok ini dihitung otomatis dari akumulasi {editingGroup.rincian?.length} rincian item ({formatRupiah(editingGroup.anggaran)}).
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-emerald-400 font-mono mt-1">
+                    Preview: {formatRupiah(parseFloat(editGroupAnggaran) || 0)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleSaveGroup}
+                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md flex items-center justify-center gap-2 transition-all border border-emerald-500/40 disabled:opacity-50 cursor-pointer"
+              >
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-200" />
+                ) : (
+                  <Edit3 className="w-4 h-4" />
+                )}
+                <span>Simpan Perubahan Kelompok</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditGroupModalOpen(false)}
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Batal
