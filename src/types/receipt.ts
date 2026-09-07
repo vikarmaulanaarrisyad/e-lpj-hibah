@@ -74,4 +74,9 @@ export interface ReceiptFormData {
   totalPajak: number;
   nominalBersih: number;
   keteranganPajak?: string;
+
+  // Profil Lembaga dari Database
+  namaLembaga?: string | null;
+  subNama?: string | null;
+  jabatanKetua?: string | null;
 }

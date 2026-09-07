@@ -2,7 +2,7 @@ import { toPng } from "html-to-image";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import Swal, { swalClose, swalError, swalLoading } from "./swal";
-import type { ReceiptFormData } from "@/types";
+import type { ReceiptFormData, InstitutionProfile } from "@/types";
 
 export interface ExportKwitansiOptions {
   elementId?: string;
@@ -10,6 +10,7 @@ export interface ExportKwitansiOptions {
   penerima?: string;
   showCutGuides?: boolean;
   formData?: ReceiptFormData;
+  profile?: InstitutionProfile | null;
 }
 
 /**
@@ -176,6 +177,7 @@ export async function exportKwitansiToPdf(options: ExportKwitansiOptions = {}): 
 
         const docElement = React.createElement(KwitansiPdfDocument, {
           data: options.formData,
+          profile: options.profile,
           templateImageUrl,
           showCutGuides: options.showCutGuides,
         });

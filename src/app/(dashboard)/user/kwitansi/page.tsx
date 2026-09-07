@@ -44,6 +44,7 @@ export default async function KwitansiPage() {
         institution={institution}
         userName={userName}
         registrationNumber={profile?.noRegistrasi}
+        initialProfile={profile}
       />
 
       {/* ================= WORKSPACE BODY ================= */}
@@ -53,6 +54,7 @@ export default async function KwitansiPage() {
             initialInstitution={institution}
             initialUserName={userName}
             initialLeaderName={leaderName}
+            initialProfile={profile}
             savedReceipts={savedReceipts}
             initialRabSummary={initialRabSummary}
           />

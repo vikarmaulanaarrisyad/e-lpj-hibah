@@ -20,17 +20,20 @@ import {
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
+import type { InstitutionProfile } from "@/types";
 
 interface KwitansiHeaderProps {
   institution?: string | null;
   userName: string;
   registrationNumber?: string | null;
+  initialProfile?: InstitutionProfile | null;
 }
 
 export function KwitansiHeader({
   institution,
   userName,
   registrationNumber,
+  initialProfile,
 }: KwitansiHeaderProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -296,6 +299,7 @@ export function KwitansiHeader({
       <KopSuratModal
         isOpen={isKopModalOpen}
         onClose={() => setIsKopModalOpen(false)}
+        initialProfile={initialProfile}
       />
     </header>
   );

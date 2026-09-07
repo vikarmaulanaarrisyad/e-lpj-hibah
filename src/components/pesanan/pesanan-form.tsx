@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Clock,
   Sparkles,
+  Calendar,
+  Edit3,
 } from "lucide-react";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
 import {
@@ -429,11 +431,10 @@ export function PesananForm({
     });
   };
 
-  const handleDeletePesanan = async () => {
-    if (!formData.id) return;
+  const handleDeletePesananById = async (targetId: string, targetNomorSp: string) => {
     const isConfirmed = await swalConfirmDelete({
       title: "Hapus Surat Pesanan?",
-      text: `Apakah Anda yakin ingin menghapus Surat Pesanan "${formData.nomorSp}" secara permanen?`,
+      text: `Apakah Anda yakin ingin menghapus Surat Pesanan "${targetNomorSp}" secara permanen? Realisasi belanja terkait akan dibebaskan kembali.`,
       confirmText: "Ya, Hapus!",
       cancelText: "Batal",
     });
@@ -441,15 +442,31 @@ export function PesananForm({
 
     swalLoading("Menghapus...", "Sedang menghapus dokumen Surat Pesanan...");
     startTransition(async () => {
-      const res = await deletePurchaseOrderAction(formData.id!);
+      const res = await deletePurchaseOrderAction(targetId);
       if (res.success) {
-        setPesananList((prev) => prev.filter((p) => p.id !== formData.id));
-        handleCreateNew();
-        swalSuccess("Berhasil Dihapus!", res.message);
+        setPesananList((prev) => prev.filter((p) => p.id !== targetId));
+        if (formData.id === targetId) {
+          handleCreateNew();
+        }
+        swalSuccess("Berhasil Dihapus!", res.message || "Surat Pesanan berhasil dihapus.");
       } else {
-        swalError("Gagal Menghapus", res.message);
+        swalError("Gagal Menghapus", res.message || "Gagal menghapus Surat Pesanan.");
       }
     });
+  };
+
+  const handleDeletePesanan = async () => {
+    if (!formData.id) return;
+    await handleDeletePesananById(formData.id, formData.nomorSp);
+  };
+
+  const handleEditPesanan = (p: PurchaseOrder) => {
+    loadPesananIntoForm(p);
+    setMobileTab("form");
+    const el = document.getElementById("pesananInputForm");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const handleCreateNew = () => {
@@ -571,8 +588,41 @@ export function PesananForm({
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* ================= LEFT COLUMN: FORM SETTINGS (5 Cols) ================= */}
-          <div className={`xl:col-span-5 flex-col gap-6 ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}>
+          <div
+            id="pesananInputForm"
+            className={`xl:col-span-5 flex-col gap-6 scroll-mt-6 ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}
+          >
             <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-6 flex flex-col gap-5">
+              {/* Mode Edit vs Baru Banner */}
+              {formData.id ? (
+                <div className="p-3 bg-amber-950/40 border border-amber-600/50 rounded-xl flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-amber-300">Mode Edit Surat Pesanan</p>
+                      <p className="text-[11px] text-amber-200/80 font-mono">
+                        Sedang mengedit: <span className="font-bold">{formData.nomorSp}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <PlusCircle className="w-3 h-3" />
+                    <span>Batal / Buat Baru</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span className="text-xs text-slate-300 font-medium">Mode Pembuatan SP Baru</span>
+                  </div>
+                </div>
+              )}
+
               {/* Card Header & Database Picker */}
               <div className="flex flex-col gap-2 pb-4 border-b border-slate-800">
                 <div className="flex items-center justify-between">
@@ -593,12 +643,16 @@ export function PesananForm({
                 <select
                   value={formData.id || ""}
                   onChange={(e) => {
+                    if (!e.target.value) {
+                      handleCreateNew();
+                      return;
+                    }
                     const found = pesananList.find((p) => p.id === e.target.value);
                     if (found) loadPesananIntoForm(found);
                   }}
                   className="w-full text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                 >
-                  <option value="">-- Buat / Pilih Surat Pesanan --</option>
+                  <option value="">-- Buat Baru / Pilih Arsip Tersimpan --</option>
                   {pesananList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.nomorSp} • Rp {p.totalHarga.toLocaleString("id-ID")} • {p.pihak2Toko}
@@ -630,12 +684,35 @@ export function PesananForm({
                   className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- Pilih Kwitansi Belanja (Otomatis Isi Data) --</option>
-                  {initialReceipts.map((rc) => (
-                    <option key={rc.id} value={rc.id}>
-                      {rc.nomorBukti} - Rp {rc.nominal.toLocaleString("id-ID")} ({rc.uraian?.substring(0, 35)}...)
-                    </option>
-                  ))}
+                  {initialReceipts.map((rc) => {
+                    const linkedSP = pesananList.find(
+                      (p) => p.receiptId === rc.id && p.id !== formData.id
+                    );
+                    const isAlreadyLinked = Boolean(linkedSP);
+
+                    return (
+                      <option
+                        key={rc.id}
+                        value={rc.id}
+                        disabled={isAlreadyLinked}
+                        className={isAlreadyLinked ? "text-slate-500 bg-slate-950" : "text-white bg-slate-900"}
+                      >
+                        {rc.nomorBukti} - Rp {rc.nominal.toLocaleString("id-ID")} ({rc.uraian?.substring(0, 35)}...)
+                        {isAlreadyLinked ? ` ⚠️ (Sudah ada SP: ${linkedSP?.nomorSp})` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {formData.receiptId && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Terkait dengan Kwitansi (
+                      {initialReceipts.find((r) => r.id === formData.receiptId)?.nomorBukti || "Kwitansi"}
+                      )
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Section 1: Parameter Nomor & Tanggal */}
@@ -1018,7 +1095,7 @@ export function PesananForm({
                     ) : (
                       <Save className="w-4 h-4" />
                     )}
-                    <span>Simpan Surat Pesanan</span>
+                    <span>{formData.id ? "Simpan Perubahan SP" : "Simpan Surat Pesanan"}</span>
                   </button>
 
                   {formData.id && (
@@ -1114,6 +1191,162 @@ export function PesananForm({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ================= DAFTAR ARSIP SURAT PESANAN (TABEL REKAP & MANAJEMEN) ================= */}
+        <div className="w-full mt-10 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
+                <ShoppingBag className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>Daftar Arsip Surat Pesanan (SP)</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 text-xs font-mono font-semibold">
+                    {pesananList.length} Dokumen
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Kelola, edit rincian item/toko, cetak berkas, atau hapus surat pesanan belanja hibah.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCreateNew}
+              className="px-3.5 py-2 rounded-xl bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Buat Surat Pesanan Baru</span>
+            </button>
+          </div>
+
+          {pesananList.length === 0 ? (
+            <div className="py-12 text-center flex flex-col items-center justify-center text-slate-500">
+              <ShoppingBag className="w-12 h-12 text-slate-600 mb-3 stroke-[1.5]" />
+              <p className="text-sm font-semibold text-slate-300">Belum Ada Arsip Surat Pesanan</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Silakan isi formulir di atas dan klik &quot;Simpan Surat Pesanan&quot; untuk mengarsipkan dokumen pesanan resmi.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-950/60">
+                    <th className="py-3 px-4">No. SP & Tanggal</th>
+                    <th className="py-3 px-4">Paket Pekerjaan</th>
+                    <th className="py-3 px-4">Rekanan / Toko</th>
+                    <th className="py-3 px-4 text-right">Nilai Pesanan</th>
+                    <th className="py-3 px-4 text-center">Tautan Realisasi</th>
+                    <th className="py-3 px-4 text-center">Aksi Manajemen</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-xs">
+                  {pesananList.map((p) => {
+                    const isEditing = formData.id === p.id;
+                    const linkedRc = initialReceipts.find((r) => r.id === p.receiptId);
+
+                    return (
+                      <tr
+                        key={p.id}
+                        className={`transition-colors hover:bg-slate-800/40 ${
+                          isEditing ? "bg-amber-950/20 border-l-4 border-amber-500" : ""
+                        }`}
+                      >
+                        <td className="py-3 px-4">
+                          <div className="font-mono font-bold text-white flex items-center gap-1.5">
+                            <span>{p.nomorSp}</span>
+                            {isEditing && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/30 text-amber-300 rounded border border-amber-500/50">
+                                Aktif di Form
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3 text-slate-500" />
+                            <span>{p.tanggal ? formatDateIndo(p.tanggal) : "-"}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-slate-200 font-medium line-clamp-1">
+                            {p.namaPaket}
+                          </span>
+                          <span className="text-[11px] text-slate-400 block mt-0.5">
+                            Pihak Kesatu: {p.pihak1Nama}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-slate-200 font-medium block">
+                            {p.pihak2Toko}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Penerima: {p.pihak2Nama}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="font-mono font-bold text-emerald-400">
+                            Rp {p.totalHarga.toLocaleString("id-ID")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {linkedRc ? (
+                            <span
+                              title={`Terkait Kwitansi: ${linkedRc.nomorBukti}`}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 rounded-md text-[11px] font-medium"
+                            >
+                              <ReceiptIcon className="w-3 h-3" />
+                              <span>{linkedRc.nomorBukti}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 bg-slate-800 text-slate-400 rounded-md text-[11px]">
+                              Mandiri
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleEditPesanan(p)}
+                              className="p-1.5 rounded-lg bg-blue-950/60 hover:bg-blue-900/80 border border-blue-800/60 text-blue-300 hover:text-blue-100 text-xs font-medium transition-colors flex items-center gap-1"
+                              title="Edit Surat Pesanan Ini"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                loadPesananIntoForm(p);
+                                setTimeout(() => handlePrint(), 200);
+                              }}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs transition-colors flex items-center gap-1"
+                              title="Cetak Surat Pesanan Ini"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Cetak</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleDeletePesananById(p.id, p.nomorSp)}
+                              className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 hover:text-red-100 text-xs transition-colors flex items-center gap-1 disabled:opacity-50"
+                              title="Hapus Surat Pesanan Ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Hapus</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Floating Quick Action Pill for Mobile */}

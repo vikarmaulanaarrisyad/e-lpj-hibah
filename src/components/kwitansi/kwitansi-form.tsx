@@ -51,6 +51,7 @@ import type {
   ReceiptTemplateMode,
   RabSummary,
   RabStatusItem,
+  InstitutionProfile,
 } from "@/types";
 
 function toDateInputValue(val?: string | Date | null): string {
@@ -68,6 +69,7 @@ interface KwitansiFormProps {
   initialInstitution?: string;
   initialUserName?: string;
   initialLeaderName?: string;
+  initialProfile?: InstitutionProfile | null;
   savedReceipts?: Receipt[];
   initialRabSummary?: RabSummary;
 }
@@ -76,6 +78,7 @@ export function KwitansiForm({
   initialInstitution,
   initialUserName,
   initialLeaderName,
+  initialProfile,
   savedReceipts = [],
   initialRabSummary,
 }: KwitansiFormProps) {
@@ -96,9 +99,13 @@ export function KwitansiForm({
   const [showTaxCalculator, setShowTaxCalculator] = useState(true);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
 
-  const defaultChairman = initialLeaderName || "HENI FUJIATI";
-  const defaultTreasurer = initialUserName || "NUR ALIMAH";
-  const defaultInstitution = initialInstitution || "PR Fatayat NU Dawuhan Selatan";
+  const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
+
+  const defaultChairman = profile?.namaKetua || initialLeaderName || "HENI FUJIATI";
+  const defaultTreasurer = profile?.namaBendahara || initialUserName || "NUR ALIMAH";
+  const defaultInstitution = profile?.subNama
+    ? `${profile.namaLembaga} ${profile.subNama}`
+    : initialInstitution || "PR Fatayat NU Dawuhan Selatan";
 
   // Form State initialized from database if available
   const [formData, setFormData] = useState<ReceiptFormData>(() => {
@@ -159,6 +166,9 @@ export function KwitansiForm({
         totalPajak: first.totalPajak || taxCalc.totalPajak,
         nominalBersih: first.nominalBersih || taxCalc.nominalBersih,
         keteranganPajak: first.keteranganPajak || taxCalc.keteranganPajak,
+        namaLembaga: initialProfile?.namaLembaga,
+        subNama: initialProfile?.subNama,
+        jabatanKetua: initialProfile?.jabatanKetua,
       };
     }
 
@@ -193,6 +203,9 @@ export function KwitansiForm({
       totalPajak: 0,
       nominalBersih: 0,
       keteranganPajak: "",
+      namaLembaga: initialProfile?.namaLembaga,
+      subNama: initialProfile?.subNama,
+      jabatanKetua: initialProfile?.jabatanKetua,
     };
   });
 
@@ -465,6 +478,7 @@ export function KwitansiForm({
         penerima: formData.penerima,
         showCutGuides: showCutGuides,
         formData: formData,
+        profile: profile,
       });
     } finally {
       setIsExportingPdf(false);
@@ -1698,7 +1712,7 @@ export function KwitansiForm({
             </div>
 
             {/* Print-Ready Canvas */}
-            <KwitansiCanvas data={formData} showCutGuides={showCutGuides} />
+            <KwitansiCanvas data={formData} profile={profile} showCutGuides={showCutGuides} />
 
             {/* Quick Detail & Verification Checklist Card */}
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-sm no-print">

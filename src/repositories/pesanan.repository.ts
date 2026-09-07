@@ -141,6 +141,23 @@ export class PesananRepository {
   }
 
   /**
+   * Mengambil Surat Pesanan berdasarkan receiptId
+   */
+  async findByReceiptId(receiptId: string, userId: string): Promise<PurchaseOrder | null> {
+    try {
+      return await prisma.purchaseOrder.findFirst({
+        where: { receiptId, userId },
+        include: {
+          receipt: true,
+        },
+      });
+    } catch (error) {
+      console.error("[PesananRepository.findByReceiptId] Error:", error);
+      return null;
+    }
+  }
+
+  /**
    * Menghitung total dokumen Surat Pesanan milik pengguna
    */
   async countByUserId(userId: string): Promise<number> {

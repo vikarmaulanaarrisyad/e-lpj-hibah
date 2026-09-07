@@ -159,6 +159,17 @@ export class BastService {
         };
       }
 
+      // Validasi Anti-Duplikasi: 1 Kwitansi / Realisasi RAB = Maksimal 1 Berita Acara (BAST)
+      if (input.receiptId) {
+        const existingBast = await bastRepository.findByReceiptId(input.receiptId);
+        if (existingBast && existingBast.userId === userId && existingBast.id !== input.id) {
+          return {
+            success: false,
+            message: `Kwitansi belanja ini sudah ditautkan ke Berita Acara "${existingBast.nomorBast}". Satu realisasi RAB hanya dapat dibuatkan 1 kali Berita Acara.`,
+          };
+        }
+      }
+
       const saved = await bastRepository.createOrUpdate(userId, input);
 
       return {

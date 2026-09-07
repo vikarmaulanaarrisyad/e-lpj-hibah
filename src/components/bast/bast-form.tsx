@@ -25,6 +25,7 @@ import {
   Building2,
   Sparkles,
   ShoppingBag,
+  Edit3,
 } from "lucide-react";
 import { BastCanvas } from "./bast-canvas";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
@@ -407,11 +408,10 @@ export function BastForm({
     });
   };
 
-  const handleDeleteBast = async () => {
-    if (!formData.id) return;
+  const handleDeleteBastById = async (targetId: string, targetNomorBast: string) => {
     const isConfirmed = await swalConfirmDelete({
       title: "Hapus Dokumen BAST?",
-      text: `Apakah Anda yakin ingin menghapus Berita Acara "${formData.nomorBast}" secara permanen?`,
+      text: `Apakah Anda yakin ingin menghapus Berita Acara "${targetNomorBast}" secara permanen? Realisasi belanja terkait akan dibebaskan kembali.`,
       confirmText: "Ya, Hapus!",
       cancelText: "Batal",
     });
@@ -419,15 +419,31 @@ export function BastForm({
 
     swalLoading("Menghapus...", "Sedang menghapus dokumen BAST...");
     startTransition(async () => {
-      const res = await deleteBastAction(formData.id!);
+      const res = await deleteBastAction(targetId);
       if (res.success) {
-        setBastList((prev) => prev.filter((b) => b.id !== formData.id));
-        handleCreateNew();
+        setBastList((prev) => prev.filter((b) => b.id !== targetId));
+        if (formData.id === targetId) {
+          handleCreateNew();
+        }
         swalSuccess("Berhasil Dihapus!", res.message);
       } else {
         swalError("Gagal Menghapus", res.message);
       }
     });
+  };
+
+  const handleDeleteBast = async () => {
+    if (!formData.id) return;
+    await handleDeleteBastById(formData.id, formData.nomorBast);
+  };
+
+  const handleEditBast = (b: BastDocument) => {
+    loadBastIntoForm(b);
+    setMobileTab("form");
+    const el = document.getElementById("bastInputForm");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   // Create new blank BAST
@@ -589,9 +605,42 @@ export function BastForm({
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* ================= LEFT COLUMN: Generator & Administrasi BAST Form (5 Cols) ================= */}
-          <div className={`xl:col-span-5 flex-col gap-6 ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}>
+          <div
+            id="bastInputForm"
+            className={`xl:col-span-5 flex-col gap-6 scroll-mt-6 ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}
+          >
             {/* Panel Card: Form Input BAST */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-6 flex flex-col gap-6">
+              {/* Mode Edit vs Baru Banner */}
+              {formData.id ? (
+                <div className="p-3 bg-amber-950/40 border border-amber-600/50 rounded-xl flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-amber-300">Mode Edit Berita Acara (BAST)</p>
+                      <p className="text-[11px] text-amber-200/80 font-mono">
+                        Sedang mengedit: <span className="font-bold">{formData.nomorBast}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <PlusCircle className="w-3 h-3" />
+                    <span>Batal / Buat Baru</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span className="text-xs text-slate-300 font-medium">Mode Pembuatan BAST Baru</span>
+                  </div>
+                </div>
+              )}
+
               {/* Card Header */}
               <div className="flex flex-col gap-1.5 pb-4 border-b border-slate-800">
                 <div className="flex items-center justify-between">
@@ -626,7 +675,7 @@ export function BastForm({
                 </p>
               </div>
 
-              {/* Tautkan Kwitansi Picker */}
+              {/* Tautkan Kwitansi Picker with anti-duplicate validation */}
               <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
@@ -649,12 +698,33 @@ export function BastForm({
                   className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- Pilih Kwitansi Barang (Otomatis Isi Data) --</option>
-                  {initialReceipts.map((rc) => (
-                    <option key={rc.id} value={rc.id}>
-                      {rc.nomorBukti} - Rp {rc.nominal.toLocaleString("id-ID")} ({rc.uraian?.substring(0, 40)}...)
-                    </option>
-                  ))}
+                  {initialReceipts.map((rc) => {
+                    const linkedBast = bastList.find(
+                      (b) => b.receiptId === rc.id && b.id !== formData.id
+                    );
+                    const isAlreadyLinked = Boolean(linkedBast);
+
+                    return (
+                      <option
+                        key={rc.id}
+                        value={rc.id}
+                        disabled={isAlreadyLinked}
+                        className={isAlreadyLinked ? "text-slate-500 bg-slate-950" : "text-white bg-slate-900"}
+                      >
+                        {rc.nomorBukti} - Rp {rc.nominal.toLocaleString("id-ID")} ({rc.uraian?.substring(0, 35)}...)
+                        {isAlreadyLinked ? ` ⚠️ (Sudah ada BAST: ${linkedBast?.nomorBast})` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {formData.receiptId && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Terkait dengan Kwitansi ({initialReceipts.find((r) => r.id === formData.receiptId)?.nomorBukti || "Kwitansi"})
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Section 1: Nomor & Tanggal Berita Acara */}
@@ -1011,7 +1081,7 @@ export function BastForm({
                     ) : (
                       <Save className="w-4 h-4" />
                     )}
-                    <span>Simpan BAST</span>
+                    <span>{formData.id ? "Simpan Perubahan BAST" : "Simpan BAST"}</span>
                   </button>
 
                   {formData.id && (
@@ -1300,6 +1370,163 @@ export function BastForm({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ================= DAFTAR ARSIP BERITA ACARA (TABEL REKAP & MANAJEMEN) ================= */}
+        <div className="w-full mt-10 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
+                <FileCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>Daftar Arsip Berita Acara Serah Terima (BAST)</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 text-xs font-mono font-semibold">
+                    {bastList.length} Dokumen
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Kelola, edit berkas BAST, cetak dokumen fisik A4, atau hapus arsip berita acara.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCreateNew}
+              className="px-3.5 py-2 rounded-xl bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Buat BAST Baru</span>
+            </button>
+          </div>
+
+          {bastList.length === 0 ? (
+            <div className="py-12 text-center flex flex-col items-center justify-center text-slate-500">
+              <FileCheck className="w-12 h-12 text-slate-600 mb-3 stroke-[1.5]" />
+              <p className="text-sm font-semibold text-slate-300">Belum Ada Arsip Berita Acara</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Silakan isi formulir di atas dan klik &quot;Simpan BAST&quot; untuk mengarsipkan dokumen serah terima resmi.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-950/60">
+                    <th className="py-3 px-4">No. BAST & Hari/Tanggal</th>
+                    <th className="py-3 px-4">Nama Kegiatan / Pengadaan</th>
+                    <th className="py-3 px-4">Pihak Kedua (Toko)</th>
+                    <th className="py-3 px-4 text-center">Status Uji Fisik</th>
+                    <th className="py-3 px-4 text-center">Tautan Kwitansi</th>
+                    <th className="py-3 px-4 text-center">Aksi Manajemen</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-xs">
+                  {bastList.map((b) => {
+                    const isEditing = formData.id === b.id;
+                    const linkedRc = initialReceipts.find((r) => r.id === b.receiptId);
+
+                    return (
+                      <tr
+                        key={b.id}
+                        className={`transition-colors hover:bg-slate-800/40 ${
+                          isEditing ? "bg-amber-950/20 border-l-4 border-amber-500" : ""
+                        }`}
+                      >
+                        <td className="py-3 px-4">
+                          <div className="font-mono font-bold text-white flex items-center gap-1.5">
+                            <span>{b.nomorBast}</span>
+                            {isEditing && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/30 text-amber-300 rounded border border-amber-500/50">
+                                Aktif di Form
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3 text-slate-500" />
+                            <span>{b.hariTanggal || (b.tanggal ? toDateInputValue(b.tanggal) : "-")}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-slate-200 font-medium line-clamp-1">
+                            {b.namaKegiatan}
+                          </span>
+                          <span className="text-[11px] text-slate-400 block mt-0.5">
+                            Nomor SPK: {b.nomorSpk}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-slate-200 font-medium block">
+                            {b.pihak2Toko}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Penerima: {b.pihak2Nama}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700/60 text-emerald-300 text-[11px] font-medium">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            <span>{b.statusUji || "Lulus Uji"}</span>
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {linkedRc ? (
+                            <span
+                              title={`Terkait Kwitansi: ${linkedRc.nomorBukti}`}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 rounded-md text-[11px] font-medium"
+                            >
+                              <ReceiptIcon className="w-3 h-3" />
+                              <span>{linkedRc.nomorBukti}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 bg-slate-800 text-slate-400 rounded-md text-[11px]">
+                              Mandiri
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleEditBast(b)}
+                              className="p-1.5 rounded-lg bg-blue-950/60 hover:bg-blue-900/80 border border-blue-800/60 text-blue-300 hover:text-blue-100 text-xs font-medium transition-colors flex items-center gap-1"
+                              title="Edit BAST Ini"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                loadBastIntoForm(b);
+                                setTimeout(() => handlePrint(), 200);
+                              }}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs transition-colors flex items-center gap-1"
+                              title="Cetak BAST Ini"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Cetak</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleDeleteBastById(b.id, b.nomorBast)}
+                              className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 hover:text-red-100 text-xs transition-colors flex items-center gap-1 disabled:opacity-50"
+                              title="Hapus BAST Ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Hapus</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 

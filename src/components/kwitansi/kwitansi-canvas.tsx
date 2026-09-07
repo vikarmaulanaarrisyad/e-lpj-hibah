@@ -1,9 +1,11 @@
 "use client";
 
-import type { ReceiptFormData } from "@/types";
+import type { ReceiptFormData, InstitutionProfile } from "@/types";
+import { getSignatoryKetuaTitles } from "@/lib/utils/kwitansi-signatory";
 
 interface KwitansiCanvasProps {
   data: ReceiptFormData;
+  profile?: InstitutionProfile | null;
   showCutGuides?: boolean;
 }
 
@@ -24,7 +26,9 @@ function formatDisplayDate(dateStr?: string) {
   return dateStr;
 }
 
-export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasProps) {
+export function KwitansiCanvas({ data, profile, showCutGuides = false }: KwitansiCanvasProps) {
+  const ketuaTitles = getSignatoryKetuaTitles(profile, data);
+
   return (
     <div
       id="kwitansiPrintContainer"
@@ -175,8 +179,8 @@ export function KwitansiCanvas({ data, showCutGuides = false }: KwitansiCanvasPr
                 <div className="flex flex-col justify-between items-center text-center h-[7.8cqw]">
                   <div className="text-[0.98cqw] text-slate-800 leading-tight text-center w-full flex flex-col items-center">
                     <p className="font-semibold text-slate-900 text-center">Setuju dibayar</p>
-                    <p className="font-normal text-slate-700 text-center">Ketua Pimpinan Ranting Fatayat NU</p>
-                    <p className="font-normal text-slate-700 text-center">Dawuhan Selatan</p>
+                    <p className="font-normal text-slate-700 text-center">{ketuaTitles.line1}</p>
+                    <p className="font-normal text-slate-700 text-center">{ketuaTitles.line2}</p>
                   </div>
                   {/* Ruang Tanda Tangan Lapang */}
                   <div className="flex-1 min-h-[3.0cqw] flex items-center justify-center pointer-events-none" />

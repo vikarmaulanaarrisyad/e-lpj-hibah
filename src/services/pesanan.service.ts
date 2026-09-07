@@ -37,7 +37,18 @@ export class PesananService {
         terbilang: terbilangText,
       };
 
-      // 3. Persist to Repository
+      // 3. Validasi Anti-Duplikasi: 1 Kwitansi / Realisasi RAB = Maksimal 1 Surat Pesanan
+      if (input.receiptId) {
+        const existingLinkedPO = await pesananRepository.findByReceiptId(input.receiptId, userId);
+        if (existingLinkedPO && existingLinkedPO.id !== input.id) {
+          return {
+            success: false,
+            message: `Kwitansi belanja ini sudah ditautkan ke Surat Pesanan "${existingLinkedPO.nomorSp}". Satu realisasi RAB hanya dapat dibuatkan 1 kali Surat Pesanan.`,
+          };
+        }
+      }
+
+      // 4. Persist to Repository
       const result = await pesananRepository.createOrUpdate(userId, payload);
 
       return {

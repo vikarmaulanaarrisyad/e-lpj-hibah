@@ -1,6 +1,7 @@
 import React from "react";
 import * as ReactPdfAll from "@react-pdf/renderer";
-import type { ReceiptFormData } from "@/types";
+import type { ReceiptFormData, InstitutionProfile } from "@/types";
+import { getSignatoryKetuaTitles } from "@/lib/utils/kwitansi-signatory";
 
 // Handle both ES module default and named exports from @react-pdf/renderer in browser/webpack
 const ReactPDF = (ReactPdfAll as any).default || ReactPdfAll;
@@ -257,16 +258,19 @@ const styles = StyleSheet.create({
 
 export interface KwitansiPdfDocumentProps {
   data: ReceiptFormData;
+  profile?: InstitutionProfile | null;
   templateImageUrl?: string;
   showCutGuides?: boolean;
 }
 
 export function KwitansiPdfDocument({
   data,
+  profile,
   templateImageUrl,
   showCutGuides = false,
 }: KwitansiPdfDocumentProps) {
   const blankoSrc = templateImageUrl || "/templates/kwitansi-blank-template.png";
+  const ketuaTitles = getSignatoryKetuaTitles(profile, data);
 
   return (
     <Document title={`Kwitansi_${data.nomorBukti || "BKU"}_F4`} author="E-LPJ Hibah">
@@ -377,8 +381,8 @@ export function KwitansiPdfDocument({
                 <View style={styles.signatoryCol}>
                   <View style={styles.signatoryTitleContainer}>
                     <Text style={styles.signatoryTitleTop}>Setuju dibayar</Text>
-                    <Text style={styles.signatoryTitleSub}>Ketua Pimpinan Ranting Fatayat NU</Text>
-                    <Text style={styles.signatoryTitleSub}>Dawuhan Selatan</Text>
+                    <Text style={styles.signatoryTitleSub}>{ketuaTitles.line1}</Text>
+                    <Text style={styles.signatoryTitleSub}>{ketuaTitles.line2}</Text>
                   </View>
                   {/* Ruang Lapang untuk Tanda Tangan */}
                   <View style={styles.signatorySpace} />
