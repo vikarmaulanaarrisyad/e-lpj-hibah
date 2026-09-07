@@ -34,8 +34,11 @@ import {
   Trash2,
   RotateCw,
   Settings,
+  Store,
+  BookmarkPlus,
 } from "lucide-react";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
+import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib/utils/terbilang";
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
 import { getRomanMonth, syncNomorDokumenBulanTahun } from "@/lib/utils/pesanan-date";
@@ -46,6 +49,7 @@ import {
   deleteReceiptAction,
 } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
+import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalSuccessWithAction } from "@/lib/swal";
 import { exportKwitansiToPdf } from "@/lib/kwitansi-pdf";
 import { KwitansiCanvas } from "./kwitansi-canvas";
@@ -56,6 +60,7 @@ import type {
   RabSummary,
   RabStatusItem,
   InstitutionProfile,
+  Vendor,
 } from "@/types";
 
 function toDateInputValue(val?: string | Date | null): string {
@@ -107,6 +112,50 @@ export function KwitansiForm({
 
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+
+  // Load vendors list on mount
+  useEffect(() => {
+    startTransition(async () => {
+      const res = await getVendorsAction();
+      if (res.success && res.data) {
+        setVendors(res.data);
+      }
+    });
+  }, []);
+
+  const handleSelectVendor = (v: Vendor) => {
+    setFormData((prev) => ({
+      ...prev,
+      penerima: v.namaToko,
+    }));
+  };
+
+  const handleQuickSaveCurrentToko = async () => {
+    if (!formData.penerima?.trim()) {
+      swalError("Nama Penerima Kosong", "Isi nama toko/penerima terlebih dahulu sebelum menyimpan ke master data.");
+      return;
+    }
+
+    swalLoading("Menyimpan Toko...", "Menyimpan rekanan ke daftar langganan...");
+    const res = await quickSaveVendorAction({
+      namaToko: formData.penerima,
+      kategori: "Penyedia Pengadaan",
+    });
+
+    if (res.success && res.data) {
+      const saved = res.data;
+      setVendors((prev) => {
+        const exists = prev.some((x) => x.id === saved.id);
+        if (exists) return prev.map((x) => (x.id === saved.id ? saved : x));
+        return [saved, ...prev];
+      });
+      swalSuccess("Tersimpan!", `Toko "${saved.namaToko}" berhasil disimpan ke Master Data Toko.`);
+    } else {
+      swalError("Gagal", res.message || "Gagal menyimpan toko.");
+    }
+  };
 
   const defaultChairman = profile?.namaKetua || initialLeaderName || "HENI FUJIATI";
   const defaultTreasurer = profile?.namaBendahara || initialUserName || "NUR ALIMAH";
@@ -1617,9 +1666,68 @@ export function KwitansiForm({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">
-                    Penerima Uang / Toko Rekanan
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] text-slate-400">
+                      Penerima Uang / Toko Rekanan
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsVendorModalOpen(true)}
+                        className="px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Store className="w-3 h-3" />
+                        <span>Kelola Toko</span>
+                      </button>
+                      {formData.penerima && (
+                        <button
+                          type="button"
+                          onClick={handleQuickSaveCurrentToko}
+                          title="Simpan nama toko/penerima ini ke Master Data Toko Langganan"
+                          className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[10px] font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <BookmarkPlus className="w-3 h-3 text-amber-400" />
+                          <span>Simpan ke Master</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Dropdown Auto-Fill Toko Rekanan Langganan */}
+                  <div className="mb-2 bg-slate-900/90 border border-amber-500/30 p-2 rounded-lg flex flex-col gap-1 shadow-xs">
+                    <label className="text-[10px] text-amber-300 font-semibold flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>Pilih dari Master Toko:</span>
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-normal">
+                        Otomatis isi nama toko / penerima
+                      </span>
+                    </label>
+                    <select
+                      value={
+                        vendors.find(
+                          (v) =>
+                            v.namaToko.toLowerCase() === (formData.penerima || "").toLowerCase()
+                        )?.id || ""
+                      }
+                      onChange={(e) => {
+                        const selected = vendors.find((v) => v.id === e.target.value);
+                        if (selected) {
+                          handleSelectVendor(selected);
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-500 font-medium"
+                    >
+                      <option value="">-- Pilih Toko Langganan ({vendors.length} Toko) --</option>
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.namaToko} {v.namaPemilik ? `(Pemilik: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
@@ -1921,6 +2029,15 @@ export function KwitansiForm({
             setProfile(updated);
             handleGenerateNewNomorBukti();
           }}
+        />
+
+        {/* Modal Master Data Toko / Rekanan Langganan */}
+        <MasterTokoModal
+          isOpen={isVendorModalOpen}
+          onClose={() => setIsVendorModalOpen(false)}
+          onSelectVendor={handleSelectVendor}
+          onVendorsUpdated={setVendors}
+          initialVendors={vendors}
         />
       </div>
     </div>

@@ -30,6 +30,8 @@ import {
   Layers,
   ArrowLeft,
   Settings,
+  Store,
+  BookmarkPlus,
 } from "lucide-react";
 import { exportPesananToPdf } from "@/lib/pesanan-pdf";
 import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
@@ -48,8 +50,10 @@ import {
 } from "@/lib/utils/pesanan-date";
 import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
+import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
+import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { PesananCanvas } from "./pesanan-canvas";
 import { BastCanvas } from "../bast/bast-canvas";
 import type {
@@ -61,6 +65,7 @@ import type {
   BastDocument,
   BastFormData,
   BastItem,
+  Vendor,
 } from "@/types";
 
 interface PesananFormProps {
@@ -89,6 +94,8 @@ export function PesananForm({
   const [bastList, setBastList] = useState<BastDocument[]>(initialBastList);
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isTokoModalOpen, setIsTokoModalOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
   const [zoomScale, setZoomScale] = useState<number>(100);
@@ -96,6 +103,52 @@ export function PesananForm({
   const [previewMode, setPreviewMode] = useState<"sp" | "bast" | "bundel">("sp");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingBundle, setIsExportingBundle] = useState(false);
+
+  // Load vendors list on mount
+  useEffect(() => {
+    startTransition(async () => {
+      const res = await getVendorsAction();
+      if (res.success && res.data) {
+        setVendors(res.data);
+      }
+    });
+  }, []);
+
+  const handleSelectVendor = (v: Vendor) => {
+    setFormData((prev) => ({
+      ...prev,
+      pihak2Toko: v.namaToko,
+      pihak2Nama: v.namaPemilik || prev.pihak2Nama,
+      pihak2Alamat: v.alamat || prev.pihak2Alamat,
+    }));
+  };
+
+  const handleQuickSaveCurrentToko = async () => {
+    if (!formData.pihak2Toko?.trim()) {
+      swalError("Nama Toko Kosong", "Isi nama toko terlebih dahulu sebelum menyimpan ke master data.");
+      return;
+    }
+
+    swalLoading("Menyimpan Toko...", "Menyimpan rekanan ke daftar langganan...");
+    const res = await quickSaveVendorAction({
+      namaToko: formData.pihak2Toko,
+      namaPemilik: formData.pihak2Nama,
+      alamat: formData.pihak2Alamat,
+      kategori: "Penyedia Pengadaan",
+    });
+
+    if (res.success && res.data) {
+      const saved = res.data;
+      setVendors((prev) => {
+        const exists = prev.some((x) => x.id === saved.id);
+        if (exists) return prev.map((x) => (x.id === saved.id ? saved : x));
+        return [saved, ...prev];
+      });
+      swalSuccess("Tersimpan!", `Toko "${saved.namaToko}" berhasil disimpan ke Master Data Toko.`);
+    } else {
+      swalError("Gagal", res.message || "Gagal menyimpan toko.");
+    }
+  };
 
   const defaultChairman = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
   const defaultInstitution = profile?.subNama
@@ -1281,9 +1334,69 @@ export function PesananForm({
 
               {/* Section 2: Pihak Kedua (Penyedia Rekanan) */}
               <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-3">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-                  2. Pihak Kedua (Penyedia / Toko Rekanan)
-                </span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5 text-amber-400" />
+                    <span>2. Pihak Kedua (Penyedia / Toko Rekanan)</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsTokoModalOpen(true)}
+                      className="px-2.5 py-1 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-800/60 text-amber-300 text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Store className="w-3 h-3" />
+                      <span>Kelola Master Toko</span>
+                    </button>
+                    {formData.pihak2Toko && (
+                      <button
+                        type="button"
+                        onClick={handleQuickSaveCurrentToko}
+                        title="Simpan data toko yang sedang diketik ini ke Master Data Toko Langganan"
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <BookmarkPlus className="w-3 h-3 text-amber-400" />
+                        <span>Simpan ke Master</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Dropdown Auto-Fill Toko Rekanan Langganan */}
+                <div className="bg-slate-900/90 border border-amber-500/30 p-2.5 rounded-xl flex flex-col gap-1.5 shadow-xs">
+                  <label className="text-[11px] text-amber-300 font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Pilih dari Master Toko Langganan:</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      Otomatis mengisi nama toko, pemilik, &amp; alamat
+                    </span>
+                  </label>
+                  <select
+                    value={
+                      vendors.find(
+                        (v) =>
+                          v.namaToko.toLowerCase() === (formData.pihak2Toko || "").toLowerCase()
+                      )?.id || ""
+                    }
+                    onChange={(e) => {
+                      const selected = vendors.find((v) => v.id === e.target.value);
+                      if (selected) {
+                        handleSelectVendor(selected);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-500 font-medium"
+                  >
+                    <option value="">-- Pilih Toko Langganan ({vendors.length} Toko Tersimpan) --</option>
+                    {vendors.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.namaToko} {v.namaPemilik ? `(Pemilik: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-slate-300 font-medium block mb-1">
@@ -1295,6 +1408,7 @@ export function PesananForm({
                       onChange={(e) =>
                         setFormData({ ...formData, pihak2Toko: e.target.value })
                       }
+                      placeholder="Contoh: Toko Surya Mas"
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -1308,6 +1422,7 @@ export function PesananForm({
                       onChange={(e) =>
                         setFormData({ ...formData, pihak2Nama: e.target.value })
                       }
+                      placeholder="Contoh: Anshori"
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -1323,7 +1438,7 @@ export function PesananForm({
                     onChange={(e) =>
                       setFormData({ ...formData, pihak2Alamat: e.target.value })
                     }
-                    placeholder="Contoh: Jl. Raya Selatan No. 23 Tembok Luwung"
+                    placeholder="Contoh: Jl. Raya Talang No. 16, Kec. Talang – Kabupaten Tegal"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -2122,6 +2237,15 @@ export function PesananForm({
             pihak1Alamat: updated.alamat || prev.pihak1Alamat,
           }));
         }}
+      />
+
+      {/* Modal Master Data Toko / Rekanan Langganan */}
+      <MasterTokoModal
+        isOpen={isTokoModalOpen}
+        onClose={() => setIsTokoModalOpen(false)}
+        onSelectVendor={handleSelectVendor}
+        onVendorsUpdated={setVendors}
+        initialVendors={vendors}
       />
     </div>
   );

@@ -19,9 +19,11 @@ import {
   ShoppingBag,
   BookMarked,
   Send,
+  Store,
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
+import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import type { InstitutionProfile } from "@/types";
 
 interface KwitansiHeaderProps {
@@ -41,6 +43,7 @@ export function KwitansiHeader({
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
+  const [isTokoModalOpen, setIsTokoModalOpen] = useState(false);
 
   const navLinks = [
     {
@@ -183,6 +186,18 @@ export function KwitansiHeader({
             <span className="hidden xl:inline 2xl:hidden">Kop</span>
           </button>
 
+          {/* Toko Rekanan Master Button */}
+          <button
+            type="button"
+            onClick={() => setIsTokoModalOpen(true)}
+            className="px-2 2xl:px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-900 transition-all font-medium flex items-center gap-1.5 shrink-0 whitespace-nowrap"
+            title="Master Data Toko / Rekanan Langganan"
+          >
+            <Store className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="hidden 2xl:inline">Toko Rekanan</span>
+            <span className="hidden xl:inline 2xl:hidden">Toko</span>
+          </button>
+
           {/* Cetak Bundel Button */}
           <button
             type="button"
@@ -313,6 +328,22 @@ export function KwitansiHeader({
                 <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
+              {/* Button Master Data Toko / Rekanan */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsTokoModalOpen(true);
+                }}
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white hover:bg-slate-900 transition-all border border-slate-800 mt-1"
+              >
+                <div className="flex items-center gap-3">
+                  <Store className="w-4 h-4 text-amber-400" />
+                  <span>Master Data Toko / Rekanan Langganan</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+              </button>
+
               {/* Quick Print Button */}
               <button
                 type="button"
@@ -359,6 +390,12 @@ export function KwitansiHeader({
         onProfileUpdated={() => {
           router.refresh();
         }}
+      />
+
+      {/* Modal Master Data Toko / Rekanan Langganan */}
+      <MasterTokoModal
+        isOpen={isTokoModalOpen}
+        onClose={() => setIsTokoModalOpen(false)}
       />
     </header>
   );

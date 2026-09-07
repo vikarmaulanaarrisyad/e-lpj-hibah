@@ -31,6 +31,7 @@ model User {
   purchaseOrders     PurchaseOrder[]
   institutionProfile InstitutionProfile?
   activityDocumentations ActivityDocumentation[]
+  vendors            Vendor[]
 
   @@map("users")
 }
@@ -260,4 +261,21 @@ model ActivityDocumentation {
   @@index([userId])
   @@index([tanggalKegiatan])
   @@map("activity_documentations")
+}
+
+model Vendor {
+  id          String   @id @default(cuid())
+  namaToko    String   // Nama Toko / Badan Usaha (cth: "Toko Surya Mas")
+  namaPemilik String?  // Nama Pemilik / Rekanan (cth: "Anshori")
+  alamat      String?  // Alamat Toko Penyedia (cth: "Jl. Raya Talang Tegal")
+  noHp        String?  // Kontak Telepon / WA (cth: "085642719869")
+  kategori    String?  // Kategori (cth: "Elektronik & Sound", "Percetakan & ATK", "Konsumsi")
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("vendors")
 }
