@@ -21,6 +21,7 @@ import {
   FileCheck,
   ShoppingBag,
   BookMarked,
+  Send,
 } from "lucide-react";
 
 export default async function UserDashboardPage() {
@@ -208,8 +209,62 @@ export default async function UserDashboardPage() {
         </div>
 
         {/* Action Module Cards with Interactive Micro-Animations */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-          {/* Card 1: Kwitansi */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {/* Card 1: Sampul Cover LPJ */}
+          <Link
+            href="/user/cover"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-indigo-950/30 hover:to-indigo-900/30 border border-slate-800 hover:border-indigo-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-700/50 text-indigo-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
+                  <BookMarked className="w-6 h-6 text-indigo-400" />
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded bg-indigo-950 border border-indigo-700/60 text-indigo-300 font-semibold shadow-xs">
+                  Halaman ke-1
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors mt-4">
+                Sampul Cover LPJ
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Halaman sampul depan LPJ hibah berbingkai ornamen klasik resmi, logo instansi, &amp; siap jilid F4.
+              </p>
+            </div>
+            <div className="text-xs font-semibold text-indigo-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
+              <span>Buka Sampul Cover</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          {/* Card 2: Surat Pengantar LPJ */}
+          <Link
+            href="/user/surat-pengantar"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-emerald-950/40 hover:to-emerald-900/40 border border-slate-800 hover:border-emerald-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-emerald-950/70 border border-emerald-700/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
+                  <Send className="w-6 h-6 text-emerald-400" />
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700/60 text-emerald-300 font-semibold shadow-xs">
+                  Halaman ke-2
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors mt-4">
+                Surat Pengantar LPJ
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Surat pengantar resmi kepada Bupati Tegal c.q. Kesra, rincian bantuan hibah, &amp; TTE Ketua.
+              </p>
+            </div>
+            <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
+              <span>Buka Surat Pengantar</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          {/* Card 3: Generator Kwitansi */}
           <Link
             href="/user/kwitansi"
             className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-emerald-950/40 hover:to-emerald-900/40 border border-slate-800 hover:border-emerald-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
@@ -220,7 +275,7 @@ export default async function UserDashboardPage() {
                   <FileText className="w-6 h-6 text-[#047857]" />
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700/60 text-emerald-300 font-semibold shadow-xs">
-                  Generator
+                  {receiptsCount} Kwitansi
                 </span>
               </div>
               <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors mt-4">
@@ -236,7 +291,7 @@ export default async function UserDashboardPage() {
             </div>
           </Link>
 
-          {/* Card 2: Kontrol Pagu RAB */}
+          {/* Card 4: Kontrol Pagu RAB */}
           <Link
             href="/user/rab"
             className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-amber-950/30 hover:to-amber-900/30 border border-slate-800 hover:border-amber-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
@@ -263,7 +318,7 @@ export default async function UserDashboardPage() {
             </div>
           </Link>
 
-          {/* Card 3: Surat Pesanan (SP) */}
+          {/* Card 5: Surat Pesanan (SP) */}
           <Link
             href="/user/pesanan"
             className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-teal-950/40 hover:to-teal-900/40 border border-slate-800 hover:border-teal-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
@@ -290,7 +345,7 @@ export default async function UserDashboardPage() {
             </div>
           </Link>
 
-          {/* Card 4: Berita Acara Serah Terima (BAST) */}
+          {/* Card 6: Berita Acara Serah Terima (BAST) */}
           <Link
             href="/user/bast"
             className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-[#004532]/50 hover:to-[#006c4e]/50 border border-slate-800 hover:border-[#006c4e] rounded-2xl shadow-xl flex flex-col justify-between gap-4"
@@ -317,7 +372,7 @@ export default async function UserDashboardPage() {
             </div>
           </Link>
 
-          {/* Card 5: BKU & SPJ */}
+          {/* Card 7: BKU & SPJ */}
           <Link
             href="/user/bku"
             className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-cyan-950/30 hover:to-cyan-900/30 border border-slate-800 hover:border-cyan-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
@@ -340,33 +395,6 @@ export default async function UserDashboardPage() {
             </div>
             <div className="text-xs font-semibold text-cyan-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Buku Kas</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Card 6: Sampul Cover LPJ */}
-          <Link
-            href="/user/cover"
-            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-indigo-950/30 hover:to-indigo-900/30 border border-slate-800 hover:border-indigo-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-700/50 text-indigo-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
-                  <BookMarked className="w-6 h-6 text-indigo-400" />
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded bg-indigo-950 border border-indigo-700/60 text-indigo-300 font-semibold shadow-xs">
-                  Standar F4
-                </span>
-              </div>
-              <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors mt-4">
-                Sampul Cover LPJ
-              </h3>
-              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                Halaman sampul depan LPJ hibah berbingkai ornamen klasik resmi, logo instansi, &amp; siap jilid.
-              </p>
-            </div>
-            <div className="text-xs font-semibold text-indigo-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
-              <span>Buka Sampul Cover</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </Link>

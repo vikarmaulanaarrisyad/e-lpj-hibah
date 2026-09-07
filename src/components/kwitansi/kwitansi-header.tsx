@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ShoppingBag,
   BookMarked,
+  Send,
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
@@ -55,6 +56,13 @@ export function KwitansiHeader({
       href: "/user/cover",
       icon: BookMarked,
       active: pathname?.startsWith("/user/cover"),
+    },
+    {
+      label: "Surat Pengantar",
+      shortLabel: "Pengantar",
+      href: "/user/surat-pengantar",
+      icon: Send,
+      active: pathname?.startsWith("/user/surat-pengantar"),
     },
     {
       label: "Kontrol Pagu RAB",
