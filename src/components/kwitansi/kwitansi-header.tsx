@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ReceiptText,
   Building2,
@@ -36,6 +36,7 @@ export function KwitansiHeader({
   initialProfile,
 }: KwitansiHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
 
@@ -300,6 +301,9 @@ export function KwitansiHeader({
         isOpen={isKopModalOpen}
         onClose={() => setIsKopModalOpen(false)}
         initialProfile={initialProfile}
+        onProfileUpdated={() => {
+          router.refresh();
+        }}
       />
     </header>
   );
