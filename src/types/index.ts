@@ -9,3 +9,4 @@ export * from "./institution";
 export * from "./pesanan";
 export * from "./cover";
 export * from "./surat-pengantar";
+export * from "./dokumentasi";

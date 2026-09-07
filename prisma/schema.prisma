@@ -30,6 +30,7 @@ model User {
   bastDocuments      BastDocument[]
   purchaseOrders     PurchaseOrder[]
   institutionProfile InstitutionProfile?
+  activityDocumentations ActivityDocumentation[]
 
   @@map("users")
 }
@@ -232,4 +233,29 @@ model PurchaseOrder {
   @@index([userId])
   @@index([tanggal])
   @@map("purchase_orders")
+}
+
+model ActivityDocumentation {
+  id                    String    @id @default(cuid())
+  judulDokumentasi      String    @default("LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA")
+  subJudul              String    @default("PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026")
+  namaKegiatan          String
+  nomorReferensi        String?
+  tanggalKegiatan       DateTime
+  lokasiKegiatan        String
+  layout                String    @default("2-per-page")
+  photosJson            String    // JSON array of DokumentasiPhoto: [{ id, url, publicId?, caption, tanggal?, lokasi? }]
+  sertakanTandaTangan   Boolean   @default(true)
+  penandatangan1Jabatan String?
+  penandatangan1Nama    String?
+  penandatangan2Jabatan String?
+  penandatangan2Nama    String?
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([tanggalKegiatan])
+  @@map("activity_documentations")
 }
