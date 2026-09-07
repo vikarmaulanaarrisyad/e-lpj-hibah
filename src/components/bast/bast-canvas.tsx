@@ -263,8 +263,8 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
               <th className="p-1" style={{ borderRight: "1px solid #000" }}>
                 Jumlah & Spesifikasi
               </th>
-              <th className="p-1 font-semibold">
-                Baik / Tidak Baik
+              <th className="p-1 font-semibold text-black">
+                Baik / Lengkap
               </th>
             </tr>
           </thead>
@@ -284,9 +284,9 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
                   <td className="p-1.5 align-middle font-mono text-[11px]" style={{ borderRight: "1px solid #000", borderBottom: "1px solid #000" }}>
                     {item.realisasi}
                   </td>
-                  <td className="p-1.5 align-middle font-semibold" style={{ borderBottom: "1px solid #000" }}>
-                    <span className={item.kondisi === "Baik" ? "text-emerald-900" : "text-red-700"}>
-                      {item.kondisi}
+                  <td className="p-1.5 align-middle font-semibold text-black" style={{ borderBottom: "1px solid #000" }}>
+                    <span className="text-black">
+                      {item.kondisi || "Baik / Lengkap"}
                     </span>
                   </td>
                 </tr>
@@ -305,8 +305,8 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
                 <td className="p-2 align-middle font-mono" style={{ borderRight: "1px solid #000", borderBottom: "1px solid #000" }}>
                   1 unit
                 </td>
-                <td className="p-2 align-middle font-semibold" style={{ borderBottom: "1px solid #000" }}>
-                  Baik
+                <td className="p-2 align-middle font-semibold text-black" style={{ borderBottom: "1px solid #000" }}>
+                  Baik / Lengkap
                 </td>
               </tr>
             )}

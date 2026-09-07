@@ -1717,6 +1717,7 @@ export function BastForm({
                             }
                             className="w-full text-xs bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-emerald-300 font-semibold"
                           >
+                            <option value="Baik / Lengkap">Baik / Lengkap</option>
                             <option value="Baik">Baik</option>
                             <option value="Tidak Baik">Tidak Baik</option>
                           </select>
