@@ -96,6 +96,11 @@ body {
     margin: 0mm;
   }
 
+  @page rabF4 {
+    size: 330mm 215mm; /* Kertas F4 / Folio Landscape Dokumen RAB */
+    margin: 0mm;
+  }
+
   /* Sembunyikan seluruh UI luar (navbar, header, footer, form ledger, dsb) */
   header,
   nav,
@@ -274,7 +279,32 @@ body {
     color: #000000 !important;
   }
 
-  /* ================= RAB PRINT SPEC ================= */
+  /* ================= RAB PRINT SPEC (F4 LANDSCAPE 330mm x 215mm) ================= */
+  body:has(#rabPrintCanvas) {
+    width: 330mm !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body:has(#rabPrintCanvas) #rabPrintCanvas {
+    page: rabF4;
+    width: 330mm !important;
+    max-width: 330mm !important;
+    min-height: 215mm !important;
+    margin: 0 auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
   body:has(#rabPrintArea) {
     width: 100% !important;
     height: auto !important;

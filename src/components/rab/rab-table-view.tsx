@@ -17,6 +17,8 @@ import {
   X,
   Loader2,
   FolderPlus,
+  FileDown,
+  Eye,
 } from "lucide-react";
 import type {
   RabSummary,
@@ -24,7 +26,10 @@ import type {
   RabDetailRow,
   AddRabDetailRowInput,
   UpdateRabDetailRowInput,
+  InstitutionProfile,
 } from "@/types";
+import { exportRabToPdf } from "@/lib/rab-pdf";
+import { RabCanvas } from "./rab-canvas";
 import {
   addRabDetailRowAction,
   updateRabDetailRowAction,
@@ -166,6 +171,7 @@ interface RabTableViewProps {
   institutionName?: string;
   leaderName?: string;
   treasurerName?: string;
+  profile?: InstitutionProfile | null;
   onOpenAddGroupModal: () => void;
 }
 
@@ -175,9 +181,12 @@ export function RabTableView({
   institutionName = "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN",
   leaderName = "HENI FUJIATI",
   treasurerName = "NUR ALIMAH",
+  profile,
   onOpenAddGroupModal,
 }: RabTableViewProps) {
   const [isPending, startTransition] = useTransition();
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   // Modal State for Tambah/Edit Rincian Row
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -499,6 +508,23 @@ export function RabTableView({
     window.print();
   };
 
+  // Export PDF Action (Kertas F4 Landscape 330mm x 215mm)
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportRabToPdf({
+        elementId: "rabPrintCanvas",
+        summary,
+        profile,
+        institutionName,
+        leaderName,
+        treasurerName,
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div id="rabPrintArea" className="space-y-6">
       {/* ================= ACTIONS & TOOLBAR ================= */}
@@ -535,11 +561,37 @@ export function RabTableView({
 
           <button
             type="button"
-            onClick={handlePrint}
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold border border-emerald-500/50 shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            onClick={() => setIsPreviewModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Lihat Pratinjau Dokumen Cetak RAB Kertas F4 Landscape"
           >
-            <Printer className="w-4 h-4" />
-            <span>Cetak Dokumen RAB</span>
+            <Eye className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Preview Cetak F4</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={isExportingPdf}
+            onClick={handleExportPdf}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold border border-red-500/50 shadow-lg shadow-red-950/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            title="Unduh Dokumen Rencana Anggaran Biaya (RAB) format PDF Kertas F4 Landscape (330 mm × 215 mm)"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4" />
+            )}
+            <span>Export PDF (F4 Landscape)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Cetak langsung menggunakan dialog printer browser"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-400" />
+            <span>Cetak Langsung</span>
           </button>
         </div>
       </div>
@@ -1459,6 +1511,81 @@ export function RabTableView({
               >
                 Batal
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= HIDDEN OFF-SCREEN RAB CANVAS FOR HIGH-RES PDF EXPORT ================= */}
+      <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 z-[-100]">
+        <RabCanvas
+          summary={summary}
+          profile={profile}
+          institutionName={institutionName}
+          leaderName={leaderName}
+          treasurerName={treasurerName}
+        />
+      </div>
+
+      {/* ================= MODAL PREVIEW DOKUMEN CETAK RAB (F4 LANDSCAPE) ================= */}
+      {isPreviewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-[1340px] max-h-[96vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/80">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Pratinjau Dokumen RAB (F4 Landscape)
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-950/90 text-emerald-400 border border-emerald-700/50 text-[10px] font-mono font-semibold">
+                      330 mm × 215 mm
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Format resmi NPHD multi-koefisien dengan kop lembaga, rincian belanja, dan lembar tanda tangan
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isExportingPdf}
+                  onClick={handleExportPdf}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold border border-red-500/50 shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isExportingPdf ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileDown className="w-4 h-4" />
+                  )}
+                  <span>Unduh PDF Sekarang</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Tutup Pratinjau"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Canvas Viewer with Scroll */}
+            <div className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-950/90 flex justify-center items-start">
+              <div className="shadow-2xl rounded-sm">
+                <RabCanvas
+                  summary={summary}
+                  profile={profile}
+                  institutionName={institutionName}
+                  leaderName={leaderName}
+                  treasurerName={treasurerName}
+                />
+              </div>
             </div>
           </div>
         </div>

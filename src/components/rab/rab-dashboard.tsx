@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import type { RabSummary, RabStatusItem, Receipt } from "@/types";
+import type { RabSummary, RabStatusItem, Receipt, InstitutionProfile } from "@/types";
 import {
   Wallet,
   TrendingUp,
@@ -40,6 +40,8 @@ interface RabDashboardProps {
   institutionName?: string;
   userName?: string;
   leaderName?: string;
+  treasurerName?: string;
+  profile?: InstitutionProfile | null;
 }
 
 export function RabDashboard({
@@ -48,6 +50,8 @@ export function RabDashboard({
   institutionName = "PR Fatayat NU Dawuhan Selatan",
   userName = "NUR ALIMAH",
   leaderName = "HENI FUJIATI",
+  treasurerName,
+  profile,
 }: RabDashboardProps) {
   const [summary, setSummary] = useState<RabSummary>(initialSummary);
 
@@ -439,7 +443,8 @@ export function RabDashboard({
           onSummaryUpdated={(newSummary) => setSummary(newSummary)}
           institutionName={institutionName}
           leaderName={leaderName}
-          treasurerName={userName}
+          treasurerName={treasurerName || userName}
+          profile={profile}
           onOpenAddGroupModal={openAddModal}
         />
       ) : (
