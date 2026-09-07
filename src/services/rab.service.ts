@@ -22,12 +22,26 @@ export class RabService {
     if (!receiptCategory || !rabKode) return false;
     const cleanReceipt = receiptCategory.trim().toLowerCase();
     const cleanKode = rabKode.trim().toLowerCase();
+
+    // 1. Exact match
+    if (cleanReceipt === cleanKode) return true;
+
+    // 2. Exact match on first token before delimiter
+    const receiptToken = cleanReceipt.split(/[\s\-.:]+/)[0];
+    const kodeToken = cleanKode.split(/[\s\-.:]+/)[0];
+    if (receiptToken && kodeToken && receiptToken === kodeToken) return true;
+
+    // 3. Delimited prefix check
     return (
-      cleanReceipt === cleanKode ||
       cleanReceipt.startsWith(cleanKode + " ") ||
       cleanReceipt.startsWith(cleanKode + ".") ||
       cleanReceipt.startsWith(cleanKode + "-") ||
-      cleanReceipt.startsWith(cleanKode + " -")
+      cleanReceipt.startsWith(cleanKode + " -") ||
+      cleanReceipt.startsWith(cleanKode + ":") ||
+      cleanKode.startsWith(cleanReceipt + " ") ||
+      cleanKode.startsWith(cleanReceipt + "-") ||
+      cleanKode.startsWith(cleanReceipt + " -") ||
+      cleanKode.startsWith(cleanReceipt + ":")
     );
   }
 

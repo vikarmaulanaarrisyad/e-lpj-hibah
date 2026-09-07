@@ -710,11 +710,59 @@ export function KwitansiForm({
 
   // Real-time RAB Ceiling & Deficit Calculations
   const currentRabStatus = useMemo(() => {
-    if (!rabSummary || !rabSummary.items) return null;
-    const selectedKode = formData.kategoriRab?.split(" ")[0] || "5.2.1";
-    const foundItem = rabSummary.items.find(
-      (item) => item.kode === selectedKode || formData.kategoriRab?.startsWith(item.kode)
-    );
+    if (!rabSummary || !rabSummary.items || !formData.kategoriRab) return null;
+
+    const rawKategori = formData.kategoriRab.trim();
+    if (!rawKategori) return null;
+    const cleanKategori = rawKategori.toLowerCase();
+
+    // 1. Exact match on kode or nama or "kode - nama"
+    let foundItem = rabSummary.items.find((item) => {
+      const ik = item.kode.trim().toLowerCase();
+      const iname = item.nama.trim().toLowerCase();
+      return (
+        cleanKategori === ik ||
+        cleanKategori === iname ||
+        cleanKategori === `${ik} - ${iname}`
+      );
+    });
+
+    // 2. Exact match on first token before delimiter (e.g. "II" matching "II - SOUND AKTIF")
+    if (!foundItem) {
+      const firstToken = rawKategori.split(/[\s\-.:]+/)[0]?.toLowerCase();
+      if (firstToken) {
+        foundItem = rabSummary.items.find((item) => {
+          const ik = item.kode.trim().toLowerCase();
+          const itemToken = ik.split(/[\s\-.:]+/)[0];
+          return ik === firstToken || itemToken === firstToken;
+        });
+      }
+    }
+
+    // 3. Safe delimited prefix match (only with delimiters: space, dash, dot, colon)
+    if (!foundItem) {
+      foundItem = rabSummary.items.find((item) => {
+        const ik = item.kode.trim().toLowerCase();
+        return (
+          cleanKategori.startsWith(ik + " ") ||
+          cleanKategori.startsWith(ik + "-") ||
+          cleanKategori.startsWith(ik + " -") ||
+          cleanKategori.startsWith(ik + ".") ||
+          cleanKategori.startsWith(ik + ":") ||
+          ik.startsWith(cleanKategori + " ") ||
+          ik.startsWith(cleanKategori + "-") ||
+          ik.startsWith(cleanKategori + " -")
+        );
+      });
+    }
+
+    // 4. Fallback if user selected by item name contains
+    if (!foundItem) {
+      foundItem = rabSummary.items.find((item) => {
+        const iname = item.nama.trim().toLowerCase();
+        return cleanKategori.includes(iname) || iname.includes(cleanKategori);
+      });
+    }
 
     if (!foundItem) return null;
 
@@ -1144,9 +1192,7 @@ export function KwitansiForm({
                     <>
                       {/* Pastikan kategori yang dipilih saat ini tetap ada jika merupakan custom/query */}
                       {formData.kategoriRab &&
-                        !rabSummary.items.some(
-                          (it) => it.kode === formData.kategoriRab || `${it.kode} - ${it.nama}` === formData.kategoriRab
-                        ) && (
+                        !rabSummary.items.some((it) => it.kode === formData.kategoriRab) && (
                           <option value={formData.kategoriRab}>
                             {formData.kategoriRab}
                           </option>

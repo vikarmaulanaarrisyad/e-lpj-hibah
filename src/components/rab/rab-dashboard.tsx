@@ -247,7 +247,22 @@ export function RabDashboard({
   // Filter receipts based on selected RAB code
   const filteredReceipts = receipts.filter((r) => {
     if (selectedKode === "ALL") return true;
-    return r.kategoriRab?.startsWith(selectedKode);
+    if (!r.kategoriRab) return false;
+    const cleanCat = r.kategoriRab.trim().toLowerCase();
+    const cleanSel = selectedKode.trim().toLowerCase();
+
+    if (cleanCat === cleanSel) return true;
+    const tokenCat = cleanCat.split(/[\s\-.:]+/)[0];
+    const tokenSel = cleanSel.split(/[\s\-.:]+/)[0];
+    if (tokenCat && tokenSel && tokenCat === tokenSel) return true;
+
+    return (
+      cleanCat.startsWith(cleanSel + " ") ||
+      cleanCat.startsWith(cleanSel + "-") ||
+      cleanCat.startsWith(cleanSel + " -") ||
+      cleanCat.startsWith(cleanSel + ".") ||
+      cleanCat.startsWith(cleanSel + ":")
+    );
   });
 
   return (
