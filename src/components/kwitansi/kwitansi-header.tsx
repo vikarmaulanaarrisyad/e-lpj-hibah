@@ -17,6 +17,7 @@ import {
   Printer,
   ChevronRight,
   ShoppingBag,
+  BookMarked,
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
@@ -47,6 +48,13 @@ export function KwitansiHeader({
       href: "/user",
       icon: LayoutDashboard,
       active: pathname === "/user",
+    },
+    {
+      label: "Cover LPJ",
+      shortLabel: "Cover",
+      href: "/user/cover",
+      icon: BookMarked,
+      active: pathname?.startsWith("/user/cover"),
     },
     {
       label: "Kontrol Pagu RAB",

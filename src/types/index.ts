@@ -7,3 +7,4 @@ export * from "./rab";
 export * from "./bast";
 export * from "./institution";
 export * from "./pesanan";
+export * from "./cover";

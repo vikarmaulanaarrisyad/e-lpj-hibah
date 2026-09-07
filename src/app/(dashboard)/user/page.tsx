@@ -20,6 +20,7 @@ import {
   ArrowRight,
   FileCheck,
   ShoppingBag,
+  BookMarked,
 } from "lucide-react";
 
 export default async function UserDashboardPage() {
@@ -339,6 +340,33 @@ export default async function UserDashboardPage() {
             </div>
             <div className="text-xs font-semibold text-cyan-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Buku Kas</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          {/* Card 6: Sampul Cover LPJ */}
+          <Link
+            href="/user/cover"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-indigo-950/30 hover:to-indigo-900/30 border border-slate-800 hover:border-indigo-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-700/50 text-indigo-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
+                  <BookMarked className="w-6 h-6 text-indigo-400" />
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded bg-indigo-950 border border-indigo-700/60 text-indigo-300 font-semibold shadow-xs">
+                  Standar F4
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors mt-4">
+                Sampul Cover LPJ
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Halaman sampul depan LPJ hibah berbingkai ornamen klasik resmi, logo instansi, &amp; siap jilid.
+              </p>
+            </div>
+            <div className="text-xs font-semibold text-indigo-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
+              <span>Buka Sampul Cover</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </Link>
