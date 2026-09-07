@@ -19,6 +19,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 
 interface KwitansiHeaderProps {
   institution?: string | null;
@@ -33,6 +34,7 @@ export function KwitansiHeader({
 }: KwitansiHeaderProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isKopModalOpen, setIsKopModalOpen] = useState(false);
 
   const navLinks = [
     {
@@ -129,6 +131,15 @@ export function KwitansiHeader({
               {link.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => setIsKopModalOpen(true)}
+            className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-900 transition-all font-medium flex items-center gap-1.5"
+            title="Pengaturan Kop Surat, Logo Lembaga, dan Pejabat Penandatangan"
+          >
+            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>Kop Lembaga</span>
+          </button>
           <button
             type="button"
             onClick={() => window.print()}
@@ -228,6 +239,22 @@ export function KwitansiHeader({
               );
             })}
 
+            {/* Button Atur Kop Surat */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsKopModalOpen(true);
+              }}
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white hover:bg-slate-900 transition-all border border-slate-800 mt-1"
+            >
+              <div className="flex items-center gap-3">
+                <Building2 className="w-4 h-4 text-amber-400" />
+                <span>Atur Kop Surat & Logo</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+            </button>
+
             {/* Quick Print Button */}
             <button
               type="button"
@@ -264,6 +291,12 @@ export function KwitansiHeader({
           </div>
         </div>
       )}
+
+      {/* Modal Pengaturan Kop Surat & Identitas Lembaga Universal */}
+      <KopSuratModal
+        isOpen={isKopModalOpen}
+        onClose={() => setIsKopModalOpen(false)}
+      />
     </header>
   );
 }

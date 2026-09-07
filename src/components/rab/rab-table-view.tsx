@@ -503,6 +503,11 @@ export function RabTableView({
                                   SEBAGIAN
                                 </span>
                               )}
+                              {rowSisa < 0 && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-950 text-red-300 border border-red-800">
+                                  DEFISIT
+                                </span>
+                              )}
                             </div>
                           </td>
 
@@ -528,7 +533,7 @@ export function RabTableView({
                                 href={`/user/kwitansi?uraian=${encodeURIComponent(
                                   `${row.uraian} (${group.nama})`
                                 )}&nominal=${rowSisa > 0 ? rowSisa : row.total}&kategori=${encodeURIComponent(
-                                  `${group.kode} - ${group.nama}`
+                                  group.kode
                                 )}`}
                                 className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1 shadow-sm"
                                 title="Buat Kwitansi Belanja Otomatis untuk item ini"

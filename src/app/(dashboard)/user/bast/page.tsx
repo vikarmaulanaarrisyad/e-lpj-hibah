@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { bastService } from "@/services/bast.service";
@@ -44,16 +45,18 @@ export default async function BastPage() {
 
       {/* Main BAST Workspace */}
       <main className="w-full flex-1">
-        <BastForm
-          initialBastList={bastList}
-          initialReceipts={userReceipts}
-          initialProfile={profile}
-          userProfile={{
-            name: dbUser?.name || session.name,
-            leaderName: profile?.namaKetua || dbUser?.leaderName || session.leaderName,
-            institution: fullInstitution,
-          }}
-        />
+        <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat Berita Acara (BAST)...</div>}>
+          <BastForm
+            initialBastList={bastList}
+            initialReceipts={userReceipts}
+            initialProfile={profile}
+            userProfile={{
+              name: dbUser?.name || session.name,
+              leaderName: profile?.namaKetua || dbUser?.leaderName || session.leaderName,
+              institution: fullInstitution,
+            }}
+          />
+        </Suspense>
       </main>
 
       {/* Footer */}

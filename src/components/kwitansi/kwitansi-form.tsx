@@ -312,12 +312,12 @@ export function KwitansiForm({
 
       setFormData((prev) =>
         updateFormWithTax(prev, {
-          uraian: uraianParam ? decodeURIComponent(uraianParam) : prev.uraian,
+          uraian: uraianParam || prev.uraian,
           nominal: formatted,
           nominalValue: validNum,
           terbilang: terbilangText,
           denganMaterai: autoMaterai,
-          kategoriRab: kategoriParam ? decodeURIComponent(kategoriParam) : prev.kategoriRab,
+          kategoriRab: kategoriParam || prev.kategoriRab,
         })
       );
     }
@@ -756,10 +756,31 @@ export function KwitansiForm({
                   }
                   className="w-full text-xs font-semibold bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-600"
                 >
-                  <option value="5.2.1">5.2.1 - Belanja Peralatan & Perlengkapan (Pagu: Rp 10.000.000)</option>
-                  <option value="5.2.2">5.2.2 - Belanja Makanan & Minuman / Konsumsi (Pagu: Rp 5.000.000)</option>
-                  <option value="5.2.3">5.2.3 - Belanja Sewa Sarana & Prasarana (Pagu: Rp 7.000.000)</option>
-                  <option value="5.2.4">5.2.4 - Belanja Transportasi & Seragam (Pagu: Rp 3.000.000)</option>
+                  {rabSummary?.items && rabSummary.items.length > 0 ? (
+                    <>
+                      {/* Pastikan kategori yang dipilih saat ini tetap ada jika merupakan custom/query */}
+                      {formData.kategoriRab &&
+                        !rabSummary.items.some(
+                          (it) => it.kode === formData.kategoriRab || `${it.kode} - ${it.nama}` === formData.kategoriRab
+                        ) && (
+                          <option value={formData.kategoriRab}>
+                            {formData.kategoriRab}
+                          </option>
+                        )}
+                      {rabSummary.items.map((it) => (
+                        <option key={it.id} value={it.kode}>
+                          {it.kode} - {it.nama} (Pagu: Rp {Math.round(it.anggaran).toLocaleString("id-ID")})
+                        </option>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <option value="5.2.1">5.2.1 - Belanja Peralatan & Perlengkapan (Pagu: Rp 10.000.000)</option>
+                      <option value="5.2.2">5.2.2 - Belanja Makanan & Minuman / Konsumsi (Pagu: Rp 5.000.000)</option>
+                      <option value="5.2.3">5.2.3 - Belanja Sewa Sarana & Prasarana (Pagu: Rp 7.000.000)</option>
+                      <option value="5.2.4">5.2.4 - Belanja Transportasi & Seragam (Pagu: Rp 3.000.000)</option>
+                    </>
+                  )}
                 </select>
               </div>
 

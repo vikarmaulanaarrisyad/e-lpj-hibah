@@ -209,7 +209,7 @@ export function BkuTable({
                       <td className="py-3 px-3 text-center text-slate-400 font-mono print:text-black">
                         {entry.nomorUrut}
                       </td>
-                      <td className="py-3 px-3 text-slate-300 whitespace-nowrap print:text-black">
+                      <td className="py-3 px-3 text-slate-300 whitespace-nowrap print:text-black" suppressHydrationWarning>
                         {formatDate(entry.tanggal)}
                       </td>
                       <td className="py-3 px-3 font-mono font-medium text-slate-200 whitespace-nowrap print:text-black">
