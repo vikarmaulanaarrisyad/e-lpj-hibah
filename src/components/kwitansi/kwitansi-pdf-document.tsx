@@ -87,8 +87,8 @@ const styles = StyleSheet.create({
     width: "79.2%", // ~628 pt
     height: "100%",
     paddingTop: 36,   // ~4.6cqw
-    paddingBottom: 24, // ~3.0cqw
-    paddingLeft: 41,  // ~5.2cqw
+    paddingBottom: 35, // ~4.4cqw - keeps names cleanly above bottom border
+    paddingLeft: 40,  // ~5.0cqw
     paddingRight: 38, // ~4.8cqw
     flexDirection: "column",
     justifyContent: "space-between",
@@ -175,10 +175,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    height: 74,
+    height: 66,
+    width: "100%",
   },
   signatoryCol: {
-    width: "31%",
+    width: "32%",
     height: "100%",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -186,23 +187,30 @@ const styles = StyleSheet.create({
     textAlign: "center",
     position: "relative",
   },
+  signatoryTitleContainer: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
   signatoryTitleTop: {
     fontSize: 7.8,
     fontWeight: "bold",
     color: "#0f172a",
     textAlign: "center",
+    lineHeight: 1.25,
   },
   signatoryTitleSub: {
     fontSize: 7.2,
     color: "#334155",
     textAlign: "center",
+    lineHeight: 1.25,
   },
   signatorySpace: {
     flex: 1,
-    minHeight: 36,
+    minHeight: 24,
   },
   signatoryName: {
-    fontSize: 9.5,
+    fontSize: 9.6,
     fontWeight: "bold",
     color: "#020617",
     textTransform: "uppercase",
@@ -222,7 +230,7 @@ const styles = StyleSheet.create({
   },
   materaiBox: {
     position: "absolute",
-    top: 18,
+    top: 16,
     width: 44,
     height: 24,
     borderWidth: 0.8,
@@ -367,7 +375,7 @@ export function KwitansiPdfDocument({
               <View style={styles.signatoriesGrid}>
                 {/* Column 1: Setuju Dibayar (Ketua) */}
                 <View style={styles.signatoryCol}>
-                  <View>
+                  <View style={styles.signatoryTitleContainer}>
                     <Text style={styles.signatoryTitleTop}>Setuju dibayar</Text>
                     <Text style={styles.signatoryTitleSub}>Ketua Pimpinan Ranting Fatayat NU</Text>
                     <Text style={styles.signatoryTitleSub}>Dawuhan Selatan</Text>
@@ -379,9 +387,12 @@ export function KwitansiPdfDocument({
 
                 {/* Column 2: Lunas Dibayar (Bendahara) */}
                 <View style={styles.signatoryCol}>
-                  <View>
-                    <Text style={styles.signatoryTitleTop}>
-                      Lunas dibayar Tgl : {formatDisplayDate(data.tanggal)}
+                  <View style={styles.signatoryTitleContainer}>
+                    <Text style={styles.signatoryTitleSub}>
+                      Lunas dibayar Tgl :{" "}
+                      <Text style={{ fontWeight: "bold", color: "#0f172a" }}>
+                        {formatDisplayDate(data.tanggal)}
+                      </Text>
                     </Text>
                     <Text style={styles.signatoryTitleSub}>Bendahara</Text>
                   </View>
@@ -392,7 +403,7 @@ export function KwitansiPdfDocument({
 
                 {/* Column 3: Yang Menerima */}
                 <View style={styles.signatoryCol}>
-                  <View>
+                  <View style={styles.signatoryTitleContainer}>
                     <Text style={styles.signatoryTitleTop}>Yang Menerima</Text>
                   </View>
 
