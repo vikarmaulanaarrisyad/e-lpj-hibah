@@ -100,9 +100,18 @@ export function KwitansiForm({
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
   const [receiptsList, setReceiptsList] = useState<Receipt[]>(savedReceipts);
-  const [selectedReceiptNo, setSelectedReceiptNo] = useState<string>(
-    savedReceipts.length > 0 ? savedReceipts[0].nomorBukti : "NEW"
+
+  const isPrefillFromRab = Boolean(
+    searchParams.get("uraian") ||
+    searchParams.get("nominal") ||
+    searchParams.get("kategori") ||
+    searchParams.get("mode") === "new"
   );
+
+  const [selectedReceiptNo, setSelectedReceiptNo] = useState<string>(() => {
+    if (isPrefillFromRab) return "NEW";
+    return savedReceipts.length > 0 ? savedReceipts[0].nomorBukti : "NEW";
+  });
 
   // RAB Summary State for Live Budget Tracking
   const [rabSummary, setRabSummary] = useState<RabSummary | undefined>(initialRabSummary);
@@ -165,6 +174,67 @@ export function KwitansiForm({
 
   // Form State initialized from database if available
   const [formData, setFormData] = useState<ReceiptFormData>(() => {
+    if (isPrefillFromRab) {
+      const uraianParam = searchParams.get("uraian") || "";
+      const nominalParam = searchParams.get("nominal");
+      const kategoriParam = searchParams.get("kategori") || "5.2.1";
+      const num = nominalParam ? parseFloat(nominalParam) : 0;
+      const validNum = isNaN(num) ? 0 : num;
+      const formatted = formatRupiahNumber(validNum);
+      const terbilangText = angkaKeTerbilang(validNum);
+      const autoMaterai = validNum >= 5000000;
+
+      const taxCalc = calculateTaxBreakdown({
+        nominal: validNum,
+        isPpn: false,
+        isPpnIncluded: true,
+        ppnRate: 0.11,
+        isPph21: false,
+        pph21Rate: 0.05,
+        isPph22: false,
+        pph22Rate: 0.015,
+        isPph23: false,
+        pph23Rate: 0.02,
+      });
+
+      return {
+        id: undefined,
+        nomorBukti: initialNextNomorBukti || "01/A/PR.FNU/IX/2026",
+        tanggal: toDateInputValue(),
+        pemberi: defaultInstitution,
+        nominal: formatted,
+        nominalValue: validNum,
+        terbilang: terbilangText,
+        uraian: uraianParam,
+        ketua: defaultChairman,
+        bendahara: defaultTreasurer,
+        penerima: "",
+        denganMaterai: autoMaterai,
+        template: "bank",
+        kategoriRab: kategoriParam,
+        isPpn: false,
+        isPpnIncluded: true,
+        ppnRate: 0.11,
+        ppnNominal: taxCalc.ppnNominal,
+        isPph21: false,
+        pph21Rate: 0.05,
+        pph21Nominal: taxCalc.pph21Nominal,
+        isPph22: false,
+        pph22Rate: 0.015,
+        pph22Nominal: taxCalc.pph22Nominal,
+        isPph23: false,
+        pph23Rate: 0.02,
+        pph23Nominal: taxCalc.pph23Nominal,
+        dpp: taxCalc.dpp,
+        totalPajak: taxCalc.totalPajak,
+        nominalBersih: taxCalc.nominalBersih,
+        keteranganPajak: taxCalc.keteranganPajak,
+        namaLembaga: initialProfile?.namaLembaga,
+        subNama: initialProfile?.subNama,
+        jabatanKetua: initialProfile?.jabatanKetua,
+      };
+    }
+
     if (savedReceipts && savedReceipts.length > 0) {
       const first = savedReceipts[0];
       const initialNominal = first.nominal;
@@ -419,24 +489,45 @@ export function KwitansiForm({
     const uraianParam = searchParams.get("uraian");
     const nominalParam = searchParams.get("nominal");
     const kategoriParam = searchParams.get("kategori");
+    const modeParam = searchParams.get("mode");
 
-    if (uraianParam || nominalParam || kategoriParam) {
+    if (uraianParam || nominalParam || kategoriParam || modeParam === "new") {
       const num = nominalParam ? parseFloat(nominalParam) : 0;
       const validNum = isNaN(num) ? 0 : num;
       const formatted = formatRupiahNumber(validNum);
       const terbilangText = angkaKeTerbilang(validNum);
       const autoMaterai = validNum >= 5000000;
 
-      setFormData((prev) =>
-        updateFormWithTax(prev, {
-          uraian: uraianParam || prev.uraian,
-          nominal: formatted,
-          nominalValue: validNum,
-          terbilang: terbilangText,
-          denganMaterai: autoMaterai,
-          kategoriRab: kategoriParam || prev.kategoriRab,
-        })
-      );
+      // Pastikan mode terpilih adalah Mode Buat Kwitansi Baru (+)
+      setSelectedReceiptNo("NEW");
+
+      const activeDate = toDateInputValue();
+      getNextNomorBuktiAction(activeDate).then((res) => {
+        const nextNo = res.success && res.data ? res.data : initialNextNomorBukti || "01/A/PR.FNU/IX/2026";
+        setFormData((prev) =>
+          updateFormWithTax(
+            {
+              ...prev,
+              id: undefined, // Penting: kosongkan ID agar tidak menimpa kwitansi tersimpan
+              nomorBukti: nextNo,
+              tanggal: activeDate,
+              penerima: prev.id ? "" : prev.penerima,
+              pemberi: defaultInstitution,
+              ketua: defaultChairman,
+              bendahara: defaultTreasurer,
+              template: "bank",
+            },
+            {
+              uraian: uraianParam || prev.uraian,
+              nominal: formatted,
+              nominalValue: validNum,
+              terbilang: terbilangText,
+              denganMaterai: autoMaterai,
+              kategoriRab: kategoriParam || prev.kategoriRab,
+            }
+          )
+        );
+      });
     }
   }, [searchParams, receiptsList]);
 

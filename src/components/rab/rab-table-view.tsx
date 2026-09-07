@@ -918,7 +918,7 @@ export function RabTableView({
 
                                 return (
                                   <Link
-                                    href={`/user/kwitansi?uraian=${encodeURIComponent(
+                                    href={`/user/kwitansi?mode=new&uraian=${encodeURIComponent(
                                       defaultUraian
                                     )}&nominal=${defaultNominal}&kategori=${encodeURIComponent(
                                       group.kode
@@ -1425,7 +1425,7 @@ export function RabTableView({
                   <>
                     {/* OPSI 1: Realisasi Bertahap (Per Kegiatan) */}
                     <Link
-                      href={`/user/kwitansi?uraian=${encodeURIComponent(
+                      href={`/user/kwitansi?mode=new&uraian=${encodeURIComponent(
                         uraianBertahap
                       )}&nominal=${realizeModalData.costPerStage}&kategori=${encodeURIComponent(
                         realizeModalData.group.kode
@@ -1463,7 +1463,7 @@ export function RabTableView({
 
                     {/* OPSI 2: Realisasi Sekaligus (Seluruh Kegiatan Langsung) */}
                     <Link
-                      href={`/user/kwitansi?uraian=${encodeURIComponent(
+                      href={`/user/kwitansi?mode=new&uraian=${encodeURIComponent(
                         uraianSekaligus
                       )}&nominal=${realizeModalData.totalRemaining}&kategori=${encodeURIComponent(
                         realizeModalData.group.kode
