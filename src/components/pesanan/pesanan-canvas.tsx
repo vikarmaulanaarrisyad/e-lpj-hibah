@@ -162,19 +162,19 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         <div>
           <p className="font-semibold text-black mb-0.5">Yang bertanda tangan di bawah ini :</p>
           <div className="pl-4 grid grid-cols-[90px_12px_1fr] sm:grid-cols-[100px_12px_1fr] gap-y-0.5 text-[12px] sm:text-[12.5px]">
-            <span className="text-slate-700 font-medium">Nama</span>
+            <span className="text-black font-medium">Nama</span>
             <span>:</span>
             <span className="font-bold uppercase text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
 
-            <span className="text-slate-700 font-medium">Jabatan</span>
+            <span className="text-black font-medium">Jabatan</span>
             <span>:</span>
             <span className="font-semibold text-black">{data.pihak1Jabatan || "Ketua"}</span>
 
-            <span className="text-slate-700 font-medium">Alamat</span>
+            <span className="text-black font-medium">Alamat</span>
             <span>:</span>
             <span className="text-black">{data.pihak1Alamat || alamat}</span>
           </div>
-          <p className="text-slate-700 italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
+          <p className="text-black italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
             Selanjutnya disebut sebagai <strong>Pemesan</strong>
           </p>
         </div>
@@ -183,15 +183,15 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         <div>
           <p className="font-semibold text-black mb-0.5">Bersama ini memerintahkan :</p>
           <div className="pl-4 grid grid-cols-[190px_12px_1fr] sm:grid-cols-[200px_12px_1fr] gap-y-0.5 text-[12px] sm:text-[12.5px]">
-            <span className="text-slate-700 font-medium">Nama</span>
+            <span className="text-black font-medium">Nama</span>
             <span>:</span>
             <span className="font-bold uppercase text-black">{data.pihak2Toko || "ADHUFU"}</span>
 
-            <span className="text-slate-700 font-medium">Alamat</span>
+            <span className="text-black font-medium">Alamat</span>
             <span>:</span>
             <span className="text-black">{data.pihak2Alamat || "Jl. Sunan Amangkurat 1 Pesarean Kejeron"}</span>
 
-            <span className="text-slate-700 font-medium">Yang dalam hal ini diwakili oleh</span>
+            <span className="text-black font-medium">Yang dalam hal ini diwakili oleh</span>
             <span>:</span>
             <span className="font-bold text-black">{data.pihak2Nama || "ANSHORI"}</span>
           </div>
@@ -295,7 +295,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
               >
                 PPN
               </td>
-              <td className="p-1.5 sm:p-2 text-right font-mono text-slate-700">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-black">
                 {data.pajak > 0
                   ? `Rp ${data.pajak.toLocaleString("id-ID")}`
                   : "-"}
@@ -322,11 +322,11 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         <div className="mt-1.5 p-2 bg-slate-50 border border-slate-300 rounded text-[11.5px] sm:text-[12px] text-black space-y-0.5">
           <div>
             <strong>Terbilang : </strong>
-            <span className="italic font-semibold text-slate-900">
+            <span className="italic font-semibold text-black">
               {data.terbilang || "Lima Juta Delapan Ratus Ribu Rupiah"}
             </span>
           </div>
-          <p className="text-[10.5px] sm:text-[11px] text-slate-600 italic">
+          <p className="text-[10.5px] sm:text-[11px] text-black italic">
             {data.pajakKeterangan || "*harga sudah termasuk pajak"}
           </p>
         </div>
@@ -370,7 +370,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       {/* ================= TANDA TANGAN BILATERAL RESMI ================= */}
       <div className="pt-1 text-[12px] sm:text-[12.5px] text-black mt-1">
         <div className="flex justify-end mb-1 pr-[5rem]">
-          <p className="font-semibold text-slate-800">
+          <p className="font-semibold text-black">
             {namaTempat}, {formatDateIndo(data.tanggal || "2026-08-01")}
           </p>
         </div>
