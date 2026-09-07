@@ -82,45 +82,82 @@ export function formatKwitansiUraian(
     stageNumber?: number;
     totalStages?: number;
     mode?: "bertahap" | "sekaligus" | "single";
+    koefisien1Vol?: number;
+    koefisien1Satuan?: string;
+    koefisien2Vol?: number | null;
+    koefisien2Satuan?: string | null;
+    hargaSatuan?: number;
+    totalNominal?: number;
   }
 ): string {
-  // Bersihkan keterangan volume jika tertulis di uraian (misal: "Transport Peserta 3 kegiatan" -> "Transport Peserta")
+  // 1. Bersihkan keterangan volume yang menempel di uraian (misal: "Transport Peserta 3 kegiatan" -> "Transport Peserta")
   const cleanRow = (rowUraian || "")
     .replace(/\s*\(?\d+\s*kegiatan\)?$/i, "")
     .trim();
   const cleanGroup = (groupNama || "").trim();
 
-  // Bersihkan kode romawi/angka akun jika ada di depan nama kelompok, misal "VI. PELATIHAN MARS" atau "5.2.4 - PELATIHAN MARS" -> "PELATIHAN MARS"
+  // 2. Bersihkan seluruh kode akun / nomor urut di awal nama kelompok (misal: "5.2.1 - Belanja..." atau "VI. PELATIHAN MARS")
   const groupWithoutCode = cleanGroup
-    .replace(/^(?:[0-9IVXLCDM]+\s*[\.\-–:]\s*|[0-9\.\-]+\s*[-–:]\s*)/i, "")
+    .replace(/^(?:[0-9IVXLCDM]+(?:\.[0-9IVXLCDM]+)*\s*[\.\-–:]*\s*)/i, "")
     .trim();
 
-  // Jika nama kelompok diawali kata "Belanja ", misal "Belanja Pelatihan MARS", ambil nama kegiatannya
-  const matchBelanja = groupWithoutCode.match(/^belanja\s+(.+)$/i);
-  const rawActivity = matchBelanja && matchBelanja[1] ? matchBelanja[1].trim() : groupWithoutCode;
-
-  // Format nama kegiatan menjadi lebih rapi dan alami (contoh: "PELATIHAN MARS" -> "Pelatihan MARS")
+  // Ambil nama kegiatan murni
+  const matchBelanjaGroup = groupWithoutCode.match(/^belanja\s+(.+)$/i);
+  const rawActivity = matchBelanjaGroup && matchBelanjaGroup[1] ? matchBelanjaGroup[1].trim() : groupWithoutCode;
   const activityName = formatActivityTitle(rawActivity);
 
-  // Cek apakah uraian rincian sudah mengandung nama kelompok agar tidak dobel
+  // 3. Gabungkan nama kegiatan spesifik jika relevan (misal kelompok "Pelatihan MARS" digabung dengan "Transport Peserta")
+  // Jangan gabungkan jika nama kelompok adalah pos generik seperti "Pengadaan", "Sarana", "Belanja Barang", dsb.
   let combined = cleanRow;
+  const isGenericGroup = /^(?:pengadaan|sarana|barang|alat|peralatan|administrasi|operasional|kesekretariatan)/i.test(activityName);
+
   if (
     activityName &&
+    !isGenericGroup &&
     !cleanRow.toLowerCase().includes(activityName.toLowerCase())
   ) {
     combined = `${cleanRow} ${activityName}`;
   }
 
-  // Tambahkan suffix sesuai mode realisasi
+  // 4. Pastikan diawali dengan kata "Belanja "
+  let finalTitle = combined;
+  if (!/^belanja\b/i.test(finalTitle)) {
+    finalTitle = `Belanja ${finalTitle}`;
+  }
+
+  // 5. Tambahkan keterangan tahapan jika ada
   if (options?.mode === "bertahap" && options.stageNumber) {
-    return `${combined} - Kegiatan ${options.stageNumber}`;
+    finalTitle = `${finalTitle} - Kegiatan ${options.stageNumber}`;
+  } else if (options?.mode === "sekaligus" && options.totalStages && options.totalStages > 1) {
+    finalTitle = `${finalTitle} (${options.totalStages} Kegiatan)`;
   }
 
-  if (options?.mode === "sekaligus" && options.totalStages && options.totalStages > 1) {
-    return `${combined} (${options.totalStages} Kegiatan)`;
+  // 6. Susun Rincian Perhitungan Lengkap (Volume x Harga Satuan = Total)
+  const hrg = options?.hargaSatuan || 0;
+  const total = options?.totalNominal || (hrg > 0 && options?.koefisien1Vol ? options.koefisien1Vol * (options.koefisien2Vol || 1) * hrg : 0);
+
+  if (hrg > 0 && total > 0) {
+    let volumeText = "";
+
+    if (options?.mode === "bertahap" && options.koefisien2Vol && options.koefisien2Satuan) {
+      // Realisasi 1 tahap/kegiatan: volume yang direalisasikan adalah koefisien ke-2 (misal: 120 orang)
+      volumeText = `${options.koefisien2Vol} ${options.koefisien2Satuan}`;
+    } else if (options?.koefisien1Vol && options.koefisien1Satuan && options.koefisien2Vol && options.koefisien2Satuan) {
+      // Multi koefisien lengkap (misal: 3 kegiatan x 120 orang atau 2 hari x 50 kotak)
+      volumeText = `${options.koefisien1Vol} ${options.koefisien1Satuan} x ${options.koefisien2Vol} ${options.koefisien2Satuan}`;
+    } else if (options?.koefisien1Vol && options.koefisien1Satuan) {
+      // Single koefisien (misal: 1 paket, 10 buah, 85 kotak)
+      volumeText = `${options.koefisien1Vol} ${options.koefisien1Satuan}`;
+    }
+
+    if (volumeText) {
+      const hrgFormatted = "Rp. " + Math.round(hrg).toLocaleString("id-ID");
+      const totalFormatted = "Rp. " + Math.round(total).toLocaleString("id-ID");
+      return `${finalTitle} sebanyak ${volumeText} x @ ${hrgFormatted} = ${totalFormatted}`;
+    }
   }
 
-  return combined;
+  return finalTitle;
 }
 
 interface RabTableViewProps {
@@ -819,6 +856,12 @@ export function RabTableView({
                                 const defaultUraian = formatKwitansiUraian(row.uraian, group.nama, {
                                   stageNumber: row.koefisien1Vol > 1 ? stageNumber : undefined,
                                   mode: row.koefisien1Vol > 1 ? "bertahap" : "single",
+                                  koefisien1Vol: row.koefisien1Vol,
+                                  koefisien1Satuan: row.koefisien1Satuan,
+                                  koefisien2Vol: row.koefisien2Vol,
+                                  koefisien2Satuan: row.koefisien2Satuan,
+                                  hargaSatuan: row.hargaSatuan,
+                                  totalNominal: defaultNominal,
                                 });
 
                                 return (
@@ -1302,6 +1345,12 @@ export function RabTableView({
                   {
                     stageNumber: realizeModalData.stageNumber,
                     mode: "bertahap",
+                    koefisien1Vol: 1,
+                    koefisien1Satuan: realizeModalData.row.koefisien1Satuan,
+                    koefisien2Vol: realizeModalData.row.koefisien2Vol,
+                    koefisien2Satuan: realizeModalData.row.koefisien2Satuan,
+                    hargaSatuan: realizeModalData.row.hargaSatuan,
+                    totalNominal: realizeModalData.costPerStage,
                   }
                 );
 
@@ -1311,6 +1360,12 @@ export function RabTableView({
                   {
                     totalStages: realizeModalData.row.koefisien1Vol,
                     mode: "sekaligus",
+                    koefisien1Vol: realizeModalData.row.koefisien1Vol,
+                    koefisien1Satuan: realizeModalData.row.koefisien1Satuan,
+                    koefisien2Vol: realizeModalData.row.koefisien2Vol,
+                    koefisien2Satuan: realizeModalData.row.koefisien2Satuan,
+                    hargaSatuan: realizeModalData.row.hargaSatuan,
+                    totalNominal: realizeModalData.totalRemaining,
                   }
                 );
 
