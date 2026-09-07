@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import type { RabSummary, RabStatusItem, Receipt } from "@/types";
 import {
   Wallet,
@@ -50,6 +50,10 @@ export function RabDashboard({
   leaderName = "HENI FUJIATI",
 }: RabDashboardProps) {
   const [summary, setSummary] = useState<RabSummary>(initialSummary);
+
+  useEffect(() => {
+    setSummary(initialSummary);
+  }, [initialSummary]);
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedKode, setSelectedKode] = useState<string>("ALL");
   const [editingItem, setEditingItem] = useState<RabStatusItem | null>(null);

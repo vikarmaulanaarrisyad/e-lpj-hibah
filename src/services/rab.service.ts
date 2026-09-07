@@ -404,10 +404,13 @@ export class RabService {
       const persentaseSerapan =
         updated.anggaran > 0 ? (realisasi / updated.anggaran) * 100 : 0;
 
+      const summaryRes = await this.getRabStatus(userId);
+      const found = summaryRes.data?.items.find((i) => i.id === updated.id);
+
       return {
         success: true,
         message: `Pagu pos ${updated.kode} (${updated.nama}) berhasil diperbarui menjadi Rp ${updated.anggaran.toLocaleString("id-ID")}.`,
-        data: {
+        data: found || {
           id: updated.id,
           kode: updated.kode,
           nama: updated.nama,
@@ -418,6 +421,7 @@ export class RabService {
           status: sisaPagu < 0 ? "DEFICIT" : persentaseSerapan >= 80 ? "WARNING" : "SAFE",
           keterangan: updated.keterangan,
           jumlahTransaksi: matchingReceipts.length,
+          rincian: [],
         },
       };
     } catch (error) {
@@ -459,24 +463,14 @@ export class RabService {
         };
       }
 
-      // Inisialisasi rincian pertama sebagai JSON array agar valid dan siap edit/hapus
-      const initialRow: RabDetailRow = {
-        id: `row-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        no: 1,
-        uraian: input.nama.trim(),
-        koefisien1Vol: 1,
-        koefisien1Satuan: "Paket",
-        koefisien2Vol: null,
-        koefisien2Satuan: null,
-        hargaSatuan: input.anggaran,
-        total: input.anggaran,
-      };
+      // Inisialisasi rincian sebagai array kosong [] agar tidak membuat baris dummy yang menduplikasi saat penambahan rincian pertama
+      const keterangan = input.keterangan?.trim() ? input.keterangan.trim() : JSON.stringify([]);
 
       return await this.updateRabAllocation(userId, {
         ...input,
         kode: cleanKode,
         nama: input.nama.trim(),
-        keterangan: JSON.stringify([initialRow]),
+        keterangan,
       });
     } catch (error) {
       console.error("[RabService] Failed to create RAB item:", error);
@@ -561,23 +555,6 @@ export class RabService {
         }
       }
 
-      // Jika data legacy dan target memiliki anggaran > 0, pertahankan item awal sebagai baris 1
-      if (isLegacy && existingRows.length === 0 && target.anggaran > 0) {
-        existingRows = [
-          {
-            id: `row-${target.id}-1`,
-            no: 1,
-            uraian: target.nama,
-            koefisien1Vol: 1,
-            koefisien1Satuan: "Paket",
-            koefisien2Vol: null,
-            koefisien2Satuan: null,
-            hargaSatuan: target.anggaran,
-            total: target.anggaran,
-          },
-        ];
-      }
-
       const vol1 = Number(input.koefisien1Vol) || 1;
       const vol2 = input.koefisien2Vol != null && !isNaN(Number(input.koefisien2Vol)) ? Number(input.koefisien2Vol) : null;
       const hrg = Number(input.hargaSatuan) || 0;
@@ -585,7 +562,7 @@ export class RabService {
 
       const newRow: RabDetailRow = {
         id: `row-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        no: existingRows.length + 1,
+        no: 1,
         uraian: input.uraian.trim(),
         koefisien1Vol: vol1,
         koefisien1Satuan: input.koefisien1Satuan.trim() || "Paket",
@@ -595,7 +572,22 @@ export class RabService {
         total,
       };
 
-      const updatedRows = [...existingRows, newRow];
+      // Deteksi jika existingRows hanya berisi 1 baris placeholder bawaan yang dibuat otomatis saat kelompok dibuat
+      const isSinglePlaceholder =
+        existingRows.length === 1 &&
+        (
+          existingRows[0].uraian.trim().toLowerCase() === target.nama.trim().toLowerCase() ||
+          existingRows[0].id.startsWith(`row-${target.id}`) ||
+          existingRows[0].id === `${target.id}-1` ||
+          (existingRows[0].id.startsWith("row-") && existingRows[0].total === target.anggaran)
+        ) &&
+        (existingRows[0].koefisien1Satuan?.toLowerCase() === "paket" || existingRows[0].koefisien1Satuan?.toLowerCase() === "kegiatan") &&
+        existingRows[0].koefisien1Vol === 1 &&
+        !existingRows[0].koefisien2Vol;
+
+      const updatedRows = isSinglePlaceholder
+        ? [{ ...newRow, no: 1 }]
+        : [...existingRows, { ...newRow, no: existingRows.length + 1 }];
       const newTotalAnggaran = updatedRows.reduce((acc, curr) => acc + curr.total, 0);
 
       await rabRepository.updateItem(rabItemId, {

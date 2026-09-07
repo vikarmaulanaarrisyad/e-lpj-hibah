@@ -679,7 +679,7 @@ export function RabTableView({
                             title="Tambah Rincian Item Baru ke Kelompok Ini"
                           >
                             <Plus className="w-3 h-3" />
-                            <span>+ Tambah Rincian</span>
+                            <span>Tambah Rincian</span>
                           </button>
 
                           <button
