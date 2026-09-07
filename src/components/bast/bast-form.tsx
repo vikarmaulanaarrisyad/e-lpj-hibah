@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -28,9 +28,16 @@ import {
   Edit3,
   FileDown,
   Loader2,
+  Layers,
+  ExternalLink,
+  Link as LinkIcon,
+  ArrowRight,
+  FolderSync,
 } from "lucide-react";
 import { exportBastToPdf } from "@/lib/bast-pdf";
 import { BastCanvas } from "./bast-canvas";
+import { PesananCanvas } from "@/components/pesanan/pesanan-canvas";
+import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { saveBastAction, deleteBastAction } from "@/app/actions/bast.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
@@ -42,6 +49,9 @@ import type {
   CreateBastInput,
   Receipt,
   InstitutionProfile,
+  PurchaseOrder,
+  PesananFormData,
+  PesananItem,
 } from "@/types";
 
 function toDateInputValue(val?: string | Date | null): string {
@@ -57,6 +67,7 @@ function toDateInputValue(val?: string | Date | null): string {
 
 interface BastFormProps {
   initialBastList?: BastDocument[];
+  initialPesananList?: PurchaseOrder[];
   initialReceipts?: Receipt[];
   initialProfile?: InstitutionProfile | null;
   userProfile?: {
@@ -68,6 +79,7 @@ interface BastFormProps {
 
 export function BastForm({
   initialBastList = [],
+  initialPesananList = [],
   initialReceipts = [],
   initialProfile,
   userProfile,
@@ -76,13 +88,16 @@ export function BastForm({
   const [isPending, startTransition] = useTransition();
 
   const [bastList, setBastList] = useState<BastDocument[]>(initialBastList);
+  const [pesananList, setPesananList] = useState<PurchaseOrder[]>(initialPesananList);
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
   const [zoomScale, setZoomScale] = useState<number>(100);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
+  const [previewMode, setPreviewMode] = useState<"bast" | "sp" | "bundel">("bast");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingBundle, setIsExportingBundle] = useState(false);
 
   const defaultChairman = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
   const defaultInstitution = profile?.subNama
@@ -122,7 +137,7 @@ export function BastForm({
           {
             id: "1",
             no: 1,
-            jenisBarang: "Sound Aktif Portable 15 Inch + 2 Wireless Microphone & Stand",
+            jenisBarang: "Sound Aktif Portable Professional 15 Inch",
             pesanan: "1 unit",
             realisasi: "1 unit",
             kondisi: "Baik",
@@ -170,8 +185,146 @@ export function BastForm({
     };
   });
 
-  // Handle URL query parameters for ?receiptNo=... or ?no=...
+  // Sinkronisasi data dari Surat Pesanan (SP) terpilih ke dalam Berita Acara (BAST)
+  const syncFromPesanan = (po: PurchaseOrder) => {
+    let parsedItems: PesananItem[] = [];
+    try {
+      parsedItems = JSON.parse(po.itemsJson) || [];
+    } catch {
+      parsedItems = [];
+    }
+
+    const tglIso = po.tanggal ? new Date(po.tanggal).toISOString().split("T")[0] : todayStr;
+    const mappedItems: BastItem[] = parsedItems.map((it, idx) => ({
+      id: String(idx + 1),
+      no: idx + 1,
+      jenisBarang: it.jenisBarang,
+      spesifikasi: it.spesifikasi || "Standar spesifikasi barang sesuai proposal NPHD",
+      pesanan: `${it.jumlah} ${it.satuan || "unit"}`,
+      realisasi: `${it.jumlah} ${it.satuan || "unit"}`,
+      kondisi: "Baik",
+    }));
+
+    setFormData((prev) => ({
+      ...prev,
+      nomorSpk: po.nomorSp,
+      tanggalSpk: tglIso,
+      namaKegiatan: po.namaPaket || prev.namaKegiatan,
+      pihak1Nama: po.pihak1Nama || prev.pihak1Nama,
+      pihak1Jabatan: po.pihak1Jabatan || prev.pihak1Jabatan,
+      pihak2Nama: po.pihak2Nama || prev.pihak2Nama,
+      pihak2Toko: po.pihak2Toko || prev.pihak2Toko,
+      receiptId: po.receiptId || prev.receiptId,
+      items: mappedItems.length > 0 ? mappedItems : prev.items,
+    }));
+  };
+
+  // Data pendamping Surat Pesanan untuk Pratinjau Bundel 2 Halaman
+  const companionPesananData: PesananFormData = useMemo(() => {
+    const matchedPo = pesananList.find((p) => p.nomorSp === formData.nomorSpk);
+    if (matchedPo) {
+      let parsedItems: PesananItem[] = [];
+      try {
+        parsedItems = JSON.parse(matchedPo.itemsJson) || [];
+      } catch {
+        parsedItems = [];
+      }
+      return {
+        id: matchedPo.id,
+        nomorSp: matchedPo.nomorSp,
+        tanggal: matchedPo.tanggal ? new Date(matchedPo.tanggal).toISOString().split("T")[0] : formData.tanggalSpk,
+        namaPaket: matchedPo.namaPaket,
+        pihak1Nama: matchedPo.pihak1Nama,
+        pihak1Jabatan: matchedPo.pihak1Jabatan,
+        pihak1Alamat: matchedPo.pihak1Alamat || undefined,
+        pihak2Toko: matchedPo.pihak2Toko,
+        pihak2Nama: matchedPo.pihak2Nama,
+        pihak2Alamat: matchedPo.pihak2Alamat || undefined,
+        items: parsedItems.length > 0 ? parsedItems : formData.items.map((it, idx) => ({
+          id: String(idx + 1),
+          no: idx + 1,
+          jenisBarang: it.jenisBarang,
+          spesifikasi: it.spesifikasi || "",
+          jumlah: 1,
+          satuan: it.pesanan?.replace(/^\d+\s*/, "") || "unit",
+          hargaSatuan: 0,
+          totalHarga: 0,
+        })),
+        subtotal: matchedPo.subtotal,
+        pajak: matchedPo.pajak,
+        pajakKeterangan: matchedPo.pajakKeterangan || "- (Sudah Termasuk)",
+        totalHarga: matchedPo.totalHarga,
+        terbilang: matchedPo.terbilang,
+        batasWaktu: matchedPo.batasWaktu || formData.tanggal,
+        waktuPenyelesaian: matchedPo.waktuPenyelesaian || "1 (satu) hari kalender",
+        alamatPengiriman: matchedPo.alamatPengiriman || "Tempat / Lokasi Penerimaan",
+        alamatPemeriksaan: matchedPo.alamatPemeriksaan || `Sekretariat ${defaultInstitution}`,
+        dendaKeterlambatan: matchedPo.dendaKeterlambatan || "Denda 1/500 dari nilai pesanan per hari keterlambatan.",
+        receiptId: matchedPo.receiptId || formData.receiptId,
+      };
+    }
+
+    return {
+      nomorSp: formData.nomorSpk || "01/SP/2026",
+      tanggal: formData.tanggalSpk || todayStr,
+      namaPaket: formData.namaKegiatan,
+      pihak1Nama: formData.pihak1Nama,
+      pihak1Jabatan: formData.pihak1Jabatan,
+      pihak2Toko: formData.pihak2Toko,
+      pihak2Nama: formData.pihak2Nama,
+      items: formData.items.map((it, idx) => {
+        const matchQty = it.pesanan?.match(/^(\d+)/);
+        const qty = matchQty ? parseInt(matchQty[1], 10) : 1;
+        const satuan = it.pesanan?.replace(/^\d+\s*/, "") || "unit";
+        return {
+          id: String(idx + 1),
+          no: idx + 1,
+          jenisBarang: it.jenisBarang,
+          spesifikasi: it.spesifikasi || "",
+          jumlah: qty,
+          satuan: satuan,
+          hargaSatuan: 0,
+          totalHarga: 0,
+        };
+      }),
+      subtotal: 0,
+      pajak: 0,
+      totalHarga: 0,
+      terbilang: "-",
+      batasWaktu: formData.tanggal || todayStr,
+      waktuPenyelesaian: "1 (satu) hari kalender",
+      alamatPengiriman: "Tempat / Lokasi Rekanan Toko",
+      alamatPemeriksaan: `Sekretariat ${defaultInstitution}`,
+      dendaKeterlambatan: "Denda 1/500 per hari keterlambatan.",
+      receiptId: formData.receiptId,
+    };
+  }, [pesananList, formData, defaultInstitution, todayStr]);
+
+  // Ekspor Dokumen Bundel Pengadaan (SP + BAST) 2 Halaman PDF
+  const handleExportBundlePdf = async () => {
+    const spEl = document.getElementById("pesananPrintArea");
+    const bastEl = document.getElementById("bastPrintArea");
+    if (!spEl || !bastEl) {
+      swalError("Dokumen Belum Siap", "Format dokumen Surat Pesanan dan Berita Acara belum siap untuk disatukan.");
+      return;
+    }
+    setIsExportingBundle(true);
+    try {
+      await exportBundelPengadaanPdf({
+        pesananElement: spEl,
+        bastElement: bastEl,
+        nomorSp: formData.nomorSpk,
+        nomorBast: formData.nomorBast,
+      });
+    } finally {
+      setIsExportingBundle(false);
+    }
+  };
+
+  // Handle URL query parameters for ?spNo=..., ?spId=..., ?receiptNo=... or ?no=...
   useEffect(() => {
+    const spNoParam = searchParams.get("spNo");
+    const spIdParam = searchParams.get("spId");
     const receiptNoParam = searchParams.get("receiptNo");
     const noParam = searchParams.get("no");
 
@@ -179,6 +332,14 @@ export function BastForm({
       const match = bastList.find((b) => b.nomorBast === noParam);
       if (match) {
         loadBastIntoForm(match);
+        return;
+      }
+    }
+
+    if ((spNoParam || spIdParam) && pesananList.length > 0) {
+      const matchSp = pesananList.find((p) => p.nomorSp === spNoParam || p.id === spIdParam);
+      if (matchSp) {
+        syncFromPesanan(matchSp);
         return;
       }
     }
@@ -208,7 +369,7 @@ export function BastForm({
         }));
       }
     }
-  }, [searchParams, bastList, initialReceipts]);
+  }, [searchParams, bastList, pesananList, initialReceipts]);
 
   // Handler to load selected BAST
   const loadBastIntoForm = (b: BastDocument) => {
@@ -638,6 +799,48 @@ export function BastForm({
           </button>
         </div>
 
+        {/* ================= ALUR DOKUMEN PENGADAAN TERPADU ================= */}
+        <div className="mb-6 w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                1 Realisasi Pembelian Pengadaan Nyambung:
+              </span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
+                (Surat Pesanan &amp; Berita Acara Terhubung)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <Link
+                href={`/user/pesanan?no=${encodeURIComponent(formData.nomorSpk || "")}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors font-medium border border-slate-700/60 shadow-xs"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
+                <span>1. Surat Pesanan (SP)</span>
+              </Link>
+
+              <span className="text-slate-600 font-bold">➔</span>
+
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950 border border-emerald-600/80 text-emerald-300 font-bold shadow-xs">
+                <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>2. Berita Acara (BAST)</span>
+              </div>
+
+              <span className="text-slate-600 font-bold">➔</span>
+
+              <Link
+                href="/user/kwitansi"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors font-medium border border-slate-700/60 shadow-xs"
+              >
+                <ReceiptIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <span>3. Kwitansi Belanja</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* ================= LEFT COLUMN: Generator & Administrasi BAST Form (5 Cols) ================= */}
           <div
@@ -673,6 +876,15 @@ export function BastForm({
                     <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                     <span className="text-xs text-slate-300 font-medium">Mode Pembuatan BAST Baru</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 transition-colors flex items-center gap-1"
+                    title="Mulai form baru BAST"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Buat Baru</span>
+                  </button>
                 </div>
               )}
 
@@ -706,7 +918,7 @@ export function BastForm({
                   )}
                 </div>
                 <p className="text-xs text-slate-400">
-                  Formulir Berita Acara Serah Terima Hasil Pengadaan Sarana & Prasarana Hibah Fatayat NU Dawuhan Selatan.
+                  Formulir bukti penerimaan dan pemeriksaan spesifikasi fisik barang hasil pengadaan hibah.
                 </p>
               </div>
 
@@ -765,7 +977,7 @@ export function BastForm({
               {/* Section 1: Nomor & Tanggal Berita Acara */}
               <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-4">
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                  1. Identitas & Tanggal BAST
+                  1. Waktu & Nomor Berita Acara
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
@@ -809,6 +1021,64 @@ export function BastForm({
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                   2. Rujukan Surat Pesanan (SPK)
                 </span>
+
+                {/* Selector Rujukan SP untuk Sinkronisasi Otomatis 1 Realisasi Pembelian */}
+                <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Hubungkan dengan Surat Pesanan (SP)</span>
+                    </label>
+                    <span className="text-[10px] text-emerald-400 font-medium font-mono">
+                      1 Pembelian Nyambung
+                    </span>
+                  </div>
+                  <select
+                    value={
+                      pesananList.find((p) => p.nomorSp === formData.nomorSpk)?.id || ""
+                    }
+                    onChange={(e) => {
+                      const selected = pesananList.find((p) => p.id === e.target.value);
+                      if (selected) {
+                        syncFromPesanan(selected);
+                        swalSuccess(
+                          "Data Tersinkronisasi!",
+                          `Berita Acara telah dihubungkan dengan Surat Pesanan "${selected.nomorSp}". Rincian barang, rekanan, dan tanggal telah disinkronkan.`
+                        );
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  >
+                    <option value="">-- Pilih dari Surat Pesanan yang Ada ({pesananList.length}) --</option>
+                    {pesananList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nomorSp} • {p.namaPaket} • {p.pihak2Toko} (Rp {p.totalHarga.toLocaleString("id-ID")})
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Connection Status Banner */}
+                  {pesananList.some((p) => p.nomorSp === formData.nomorSpk) ? (
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1.5 rounded-lg">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        Terhubung dengan SP: <strong>{formData.nomorSpk}</strong>
+                      </span>
+                      <Link
+                        href={`/user/pesanan?no=${encodeURIComponent(formData.nomorSpk)}`}
+                        className="text-emerald-400 hover:text-emerald-200 underline font-semibold flex items-center gap-0.5"
+                      >
+                        <span>Lihat SP</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 italic">
+                      Pilih Surat Pesanan di atas untuk mengisi nomor SP, tanggal, toko rekanan, dan rincian barang secara otomatis.
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-slate-300 font-medium">
@@ -1141,7 +1411,22 @@ export function BastForm({
                   </Link>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleExportBundlePdf}
+                    disabled={isExportingBundle}
+                    className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 border border-emerald-400/40 disabled:opacity-50 cursor-pointer"
+                    title="Unduh Surat Pesanan (Hal. 1) dan Berita Acara (Hal. 2) dalam satu file PDF F4 siap jilid"
+                  >
+                    {isExportingBundle ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Layers className="w-4 h-4 text-emerald-200" />
+                    )}
+                    <span>Unduh Bundel (SP + BAST) PDF</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={handleExportPdf}
@@ -1154,7 +1439,7 @@ export function BastForm({
                     ) : (
                       <FileDown className="w-4 h-4" />
                     )}
-                    <span>Ekspor PDF (F4)</span>
+                    <span>Ekspor BAST (F4)</span>
                   </button>
 
                   <button
@@ -1197,19 +1482,51 @@ export function BastForm({
 
           {/* ================= RIGHT COLUMN: Exact A4 Physical Printed Document Preview (7 Cols) ================= */}
           <div className={`xl:col-span-7 flex-col gap-4 items-center w-full ${mobileTab === "form" ? "hidden xl:flex" : "flex"}`}>
-            {/* Live Document Control Header Bar */}
+            {/* Live Document Control Header Bar with View Switcher */}
             <div className="w-full max-w-[780px] bg-slate-900 border border-slate-800 rounded-xl px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span className="text-xs text-slate-200 font-semibold line-clamp-1">
-                  Pratinjau Cetak Lembar Asli BAST (Format F4 Portrait • Margin Jilid 28mm)
-                </span>
+              {/* Tab Selector Dokumen: BAST / SP / Bundel */}
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("bast")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    previewMode === "bast"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Berita Acara (BAST)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("sp")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    previewMode === "sp"
+                      ? "bg-teal-600 text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Surat Pesanan (SP)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("bundel")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    previewMode === "bundel"
+                      ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Bundel 2 Halaman</span>
+                </button>
               </div>
+
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => setZoomScale((prev) => Math.max(60, prev - 10))}
-                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors"
+                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
                   title="Perkecil"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
@@ -1220,52 +1537,117 @@ export function BastForm({
                 <button
                   type="button"
                   onClick={() => setZoomScale((prev) => Math.min(130, prev + 10))}
-                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors"
+                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
                   title="Perbesar"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
-                  onClick={handleExportPdf}
-                  disabled={isExportingPdf}
-                  className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors border border-emerald-500/40 disabled:opacity-50"
-                  title="Ekspor PDF F4 Portrait"
+                  onClick={handleExportBundlePdf}
+                  disabled={isExportingBundle}
+                  className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all border border-emerald-400/40 disabled:opacity-50 cursor-pointer"
+                  title="Unduh Bundel 2 Halaman (SP + BAST)"
                 >
-                  {isExportingPdf ? (
+                  {isExportingBundle ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <FileDown className="w-3.5 h-3.5" />
+                    <Layers className="w-3.5 h-3.5" />
                   )}
-                  <span className="hidden sm:inline">Ekspor PDF (F4)</span>
-                  <span className="sm:hidden">PDF</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="px-2.5 sm:px-3 py-1.5 bg-[#006c4e] hover:bg-[#004532] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Cetak Sekarang</span>
-                  <span className="sm:hidden">Cetak</span>
+                  <span className="hidden sm:inline">Unduh Bundel (F4)</span>
+                  <span className="sm:hidden">Bundel</span>
                 </button>
               </div>
             </div>
 
-            {/* Canvas Container with dynamic zoom and horizontal scroll protection */}
-            <div className="w-full overflow-x-auto pb-6 flex justify-start sm:justify-center">
+            {/* Canvas Container with dynamic zoom and multi-mode view */}
+            <div className="w-full overflow-x-auto pb-6 flex flex-col items-center">
               <div
-                className="transition-transform origin-top shrink-0"
+                className="transition-transform origin-top shrink-0 flex flex-col items-center gap-6"
                 style={{
                   transform: `scale(${zoomScale / 100})`,
                   transformOrigin: "top center",
                 }}
               >
-                <BastCanvas
-                  data={formData}
-                  profile={profile}
-                  institutionName={userProfile?.institution || undefined}
-                />
+                {/* MODE 1: HANYA BAST */}
+                {previewMode === "bast" && (
+                  <>
+                    <BastCanvas
+                      data={formData}
+                      profile={profile}
+                      institutionName={userProfile?.institution || undefined}
+                    />
+                    {/* Companion off-screen element for PDF bundle capture */}
+                    <div style={{ position: "absolute", left: "-9999px", top: 0 }} aria-hidden="true">
+                      <PesananCanvas
+                        data={companionPesananData}
+                        profile={profile}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* MODE 2: HANYA SURAT PESANAN */}
+                {previewMode === "sp" && (
+                  <>
+                    <div className="w-full max-w-[780px] text-center py-2 text-xs text-teal-300 font-semibold bg-slate-900 border border-teal-800/60 rounded-xl">
+                      Surat Pesanan Terkait: <strong>{formData.nomorSpk}</strong> (Rujukan Berita Acara)
+                    </div>
+                    <PesananCanvas
+                      data={companionPesananData}
+                      profile={profile}
+                    />
+                    {/* Companion off-screen element for PDF bundle capture */}
+                    <div style={{ position: "absolute", left: "-9999px", top: 0 }} aria-hidden="true">
+                      <BastCanvas
+                        data={formData}
+                        profile={profile}
+                        institutionName={userProfile?.institution || undefined}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* MODE 3: BUNDEL 2 HALAMAN (SP + BAST BERURUTAN) */}
+                {previewMode === "bundel" && (
+                  <>
+                    <div className="w-full max-w-[780px] bg-slate-900 border border-teal-800/80 rounded-xl p-2.5 text-center flex items-center justify-between text-xs text-teal-300 font-semibold shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-teal-950 border border-teal-700 text-[10px] font-bold">
+                          HALAMAN 1
+                        </span>
+                        <span>Surat Pesanan Pengadaan (SP)</span>
+                      </div>
+                      <span className="text-[11px] text-slate-400">Ukuran F4 Portrait • Margin Jilid 28mm</span>
+                    </div>
+
+                    <PesananCanvas
+                      data={companionPesananData}
+                      profile={profile}
+                    />
+
+                    {/* Pemisah Antar-Halaman */}
+                    <div className="no-print w-full max-w-[780px] my-2 py-2 px-4 rounded-xl bg-slate-900 border border-dashed border-slate-700 text-center text-xs text-slate-400 font-mono flex items-center justify-center gap-2 select-none">
+                      <span>✂ BATAS HALAMAN 1 (SURAT PESANAN) &amp; HALAMAN 2 (BERITA ACARA)</span>
+                    </div>
+
+                    <div className="w-full max-w-[780px] bg-slate-900 border border-emerald-800/80 rounded-xl p-2.5 text-center flex items-center justify-between text-xs text-emerald-300 font-semibold shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-[10px] font-bold">
+                          HALAMAN 2
+                        </span>
+                        <span>Berita Acara Serah Terima (BAST)</span>
+                      </div>
+                      <span className="text-[11px] text-slate-400">Ukuran F4 Portrait • Margin Jilid 28mm</span>
+                    </div>
+
+                    <BastCanvas
+                      data={formData}
+                      profile={profile}
+                      institutionName={userProfile?.institution || undefined}
+                    />
+                  </>
+                )}
               </div>
             </div>
           </div>

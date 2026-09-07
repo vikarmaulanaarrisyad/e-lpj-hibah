@@ -8,6 +8,8 @@ import { userRepository } from "@/repositories/user.repository";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { PesananForm } from "@/components/pesanan/pesanan-form";
 
+import { bastService } from "@/services/bast.service";
+
 export const metadata = {
   title: "Surat Pesanan (SP) Pengadaan Barang | E-LPJ Hibah",
   description: "Formulir & Pratinjau Cetak Surat Pesanan (Purchase Order) Pengadaan Barang Hibah BPKAD & Bakesbangpol",
@@ -20,16 +22,18 @@ export default async function PesananPage() {
     redirect("/login");
   }
 
-  // Fetch DB user profile, institution profile, purchase orders, and receipts
-  const [dbUser, profileRes, pesananRes, userReceipts] = await Promise.all([
+  // Fetch DB user profile, institution profile, purchase orders, receipts, and BAST list
+  const [dbUser, profileRes, pesananRes, userReceipts, bastRes] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     pesananService.getPurchaseOrders(session.sub),
     receiptRepository.findManyByUserId(session.sub),
+    bastService.getBastList(session.sub),
   ]);
 
   const profile = profileRes.data || null;
   const pesananList = pesananRes.data || [];
+  const bastList = bastRes.data || [];
   const fullInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
     : dbUser?.institution || session.institution;
@@ -48,6 +52,7 @@ export default async function PesananPage() {
         <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat Surat Pesanan...</div>}>
           <PesananForm
             initialPesananList={pesananList}
+            initialBastList={bastList}
             initialReceipts={userReceipts}
             initialProfile={profile}
             userProfile={{
