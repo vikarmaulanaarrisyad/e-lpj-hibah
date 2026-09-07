@@ -45,6 +45,7 @@ export default async function PesananPage() {
         userName={dbUser?.name || session.name}
         institution={fullInstitution}
         registrationNumber={profile?.noRegistrasi}
+        initialProfile={profile}
       />
 
       {/* Main Surat Pesanan Workspace */}

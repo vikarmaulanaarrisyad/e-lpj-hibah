@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { authService } from "@/services/auth.service";
 import { userRepository } from "@/repositories/user.repository";
 import { bkuService } from "@/services/bku.service";
+import { institutionService } from "@/services/institution.service";
 import { redirect } from "next/navigation";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { BkuClientView } from "@/components/bku/bku-client-view";
@@ -19,14 +20,20 @@ export default async function BkuPage() {
     redirect("/login");
   }
 
-  // Preload user profile from database
-  const user = await userRepository.findById(session.sub);
-  const institution = user?.institution || session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
-  const userName = user?.name || session.name || "NUR ALIMAH";
-  const leaderName = user?.leaderName || "HENI FUJIATI";
+  // Preload user profile, ledger entries, and institution profile concurrently
+  const [user, ledgerRes, profileRes] = await Promise.all([
+    userRepository.findById(session.sub),
+    bkuService.getBkuLedger(session.sub),
+    institutionService.getProfile(session.sub),
+  ]);
 
-  // Preload initial ledger entries & summary directly on the server
-  const ledgerRes = await bkuService.getBkuLedger(session.sub);
+  const profile = profileRes.data || null;
+  const institution = profile?.subNama
+    ? `${profile.namaLembaga} ${profile.subNama}`
+    : user?.institution || session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
+  const userName = user?.name || session.name || "NUR ALIMAH";
+  const leaderName = profile?.namaKetua || user?.leaderName || "HENI FUJIATI";
+
   const entries = ledgerRes.data?.entries || [];
   const summary = ledgerRes.data?.summary || {
     totalPenerimaan: 0,
@@ -49,6 +56,8 @@ export default async function BkuPage() {
       <KwitansiHeader
         institution={institution}
         userName={userName}
+        registrationNumber={profile?.noRegistrasi}
+        initialProfile={profile}
       />
 
       {/* ================= WORKSPACE BODY ================= */}

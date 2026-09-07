@@ -29,6 +29,7 @@ import {
   Loader2,
   Layers,
   ArrowLeft,
+  Settings,
 } from "lucide-react";
 import { exportPesananToPdf } from "@/lib/pesanan-pdf";
 import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
@@ -39,8 +40,12 @@ import {
   calculateDurasiDanDeskripsi,
   addDaysToDate,
   syncNomorSpBulanTahun,
+  syncNomorDokumenBulanTahun,
+  buildFormattedDocumentNumber,
+  deconstructDocumentNumber,
 } from "@/lib/utils/pesanan-date";
 import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
+import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { PesananCanvas } from "./pesanan-canvas";
@@ -188,11 +193,92 @@ export function PesananForm({
     return 3;
   });
 
+  // Parameter Otomatisasi Format Penomoran SP (Contoh: /A/PR.FNU/)
+  const initDecompSp = deconstructDocumentNumber(formData.nomorSp);
+  const [formatPatternSp, setFormatPatternSp] = useState<string>(() => {
+    if (profile?.formatNomorSp) return profile.formatNomorSp;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sp_format_pattern");
+      if (saved) return saved;
+    }
+    return initDecompSp.formatPattern || "/A/PR.FNU/";
+  });
+  const [nomorUrutSp, setNomorUrutSp] = useState<string>(initDecompSp.nomorUrut || "02");
+  const [isManualNomorSp, setIsManualNomorSp] = useState<boolean>(false);
+  const [isSavingPattern, startSavePattern] = useTransition();
+
+  // Sinkronisasi bila profile lembaga dari database berubah
+  useEffect(() => {
+    if (profile?.formatNomorSp && profile.formatNomorSp !== formatPatternSp) {
+      setFormatPatternSp(profile.formatNomorSp);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sp_format_pattern", profile.formatNomorSp);
+      }
+      if (!isManualNomorSp) {
+        const nextNomor = buildFormattedDocumentNumber(nomorUrutSp, profile.formatNomorSp, formData.tanggal);
+        setFormData((prev) => ({ ...prev, nomorSp: nextNomor }));
+      }
+    }
+  }, [profile?.formatNomorSp]);
+
+  // Handler simpan format pola ke Database Akun
+  const handleSavePatternToDatabase = () => {
+    startSavePattern(async () => {
+      swalLoading("Menyimpan ke Database...", "Memperbarui format penomoran akun Anda...");
+      const res = await saveInstitutionProfileAction({
+        namaLembaga: profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU",
+        subNama: profile?.subNama || "DAWUHAN SELATAN",
+        instansiInduk: profile?.instansiInduk || "KECAMATAN TALANG KABUPATEN TEGAL",
+        alamat: profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06 Talang – Tegal 52193",
+        email: profile?.email || "prfnudawuhanselatan@gmail.com",
+        noHp: profile?.noHp || "085642719869",
+        noRegistrasi: profile?.noRegistrasi || "HBH-2026-NU-0428",
+        namaKetua: profile?.namaKetua || "HENI FUJIATI",
+        jabatanKetua: profile?.jabatanKetua || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
+        namaBendahara: profile?.namaBendahara || "NUR ALIMAH",
+        formatNomorSp: formatPatternSp,
+      });
+
+      if (res.success && res.data) {
+        setProfile(res.data);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("sp_format_pattern", formatPatternSp);
+        }
+        swalSuccess("Format Tersimpan!", "Pola penomoran akun berhasil disimpan ke database dan akan otomatis digunakan di setiap pembuatan surat.");
+      } else {
+        swalError("Gagal Menyimpan", res.message || "Gagal menyimpan format ke database.");
+      }
+    });
+  };
+
+  // Handler perubahan Format Kode Instansi (misal: /A/PR.FNU/)
+  const handleFormatPatternChange = (newPattern: string) => {
+    setFormatPatternSp(newPattern);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sp_format_pattern", newPattern);
+    }
+    if (!isManualNomorSp) {
+      const nextNomor = buildFormattedDocumentNumber(nomorUrutSp, newPattern, formData.tanggal);
+      setFormData((prev) => ({ ...prev, nomorSp: nextNomor }));
+    }
+  };
+
+  // Handler perubahan Nomor Urut Dokumen (misal: 01, 02)
+  const handleNomorUrutChange = (newUrut: string) => {
+    setNomorUrutSp(newUrut);
+    if (!isManualNomorSp) {
+      const nextNomor = buildFormattedDocumentNumber(newUrut, formatPatternSp, formData.tanggal);
+      setFormData((prev) => ({ ...prev, nomorSp: nextNomor }));
+    }
+  };
+
   // Handler perubahan Tanggal Surat Pesanan (Otomatis menyesuaikan batas waktu, waktu penyelesaian & nomor SP)
   const handleTanggalSpChange = (dateVal: string) => {
     const nextBatasWaktu = addDaysToDate(dateVal, durasiHari);
     const { deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(dateVal, nextBatasWaktu);
-    const syncedNomorSp = syncNomorSpBulanTahun(formData.nomorSp, dateVal);
+    const syncedNomorSp = isManualNomorSp
+      ? syncNomorDokumenBulanTahun(formData.nomorSp, dateVal)
+      : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, dateVal);
 
     setFormData((prev) => ({
       ...prev,
@@ -345,6 +431,12 @@ export function PesananForm({
       dendaKeterlambatan: p.dendaKeterlambatan || "",
       receiptId: p.receiptId,
     });
+
+    // Sinkronisasi komponen penomoran otomatis
+    const decomp = deconstructDocumentNumber(p.nomorSp);
+    setNomorUrutSp(decomp.nomorUrut);
+    setFormatPatternSp(decomp.formatPattern);
+
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
   };
@@ -616,9 +708,13 @@ export function PesananForm({
   };
 
   const handleCreateNew = () => {
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const nextUrut = String(pesananList.length + 1).padStart(2, "0");
+    setNomorUrutSp(nextUrut);
+    const nextNomor = buildFormattedDocumentNumber(nextUrut, formatPatternSp, todayStr);
+    setIsManualNomorSp(false);
+
     setFormData({
-      nomorSp: `0${pesananList.length + 1}/SP/SPK-FTY/VII/2026`,
+      nomorSp: nextNomor,
       tanggal: todayStr,
       namaPaket: "Pengadaan Sarana Sound Aktif & Alat Hadroh",
       pihak1Nama: defaultChairman,
@@ -993,39 +1089,143 @@ export function PesananForm({
               )}
 
               {/* Section 1: Parameter Nomor & Tanggal */}
-              <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-3">
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                  1. Nomor & Tanggal Surat Pesanan
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-slate-300 font-medium block mb-1">
-                      Nomor Surat Pesanan (SP)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.nomorSp}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nomorSp: e.target.value })
-                      }
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-300 font-medium block mb-1">
-                      Tanggal Surat Pesanan
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.tanggal}
-                      onChange={(e) => handleTanggalSpChange(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
-                    />
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-emerald-400 font-medium">
-                      <Sparkles className="w-3 h-3 shrink-0" />
-                      <span>Titimangsa TTD: Dawuhan, {formatDateIndo(formData.tanggal)}</span>
+              <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>1. Nomor & Tanggal Surat Pesanan</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualNomorSp(!isManualNomorSp)}
+                    className="text-[11px] text-slate-400 hover:text-emerald-300 transition-colors flex items-center gap-1"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{isManualNomorSp ? "Beralih ke Mode Otomatis" : "Edit Teks Manual Bebas"}</span>
+                  </button>
+                </div>
+
+                {!isManualNomorSp ? (
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                    {/* No. Urut */}
+                    <div className="md:col-span-2">
+                      <label className="text-[11px] text-slate-300 font-medium block mb-1">
+                        No. Urut
+                      </label>
+                      <input
+                        type="text"
+                        value={nomorUrutSp}
+                        onChange={(e) => handleNomorUrutChange(e.target.value)}
+                        placeholder="02"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white text-center font-bold focus:outline-none focus:border-emerald-500"
+                        title="Nomor urut surat (contoh: 01, 02, 03)"
+                      />
+                    </div>
+
+                    {/* Format Penomoran Instansi */}
+                    <div className="md:col-span-5">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] text-slate-300 font-medium">
+                          Format Penomoran
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsKopModalOpen(true)}
+                          className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition-colors"
+                          title="Buka pengaturan kop surat & format penomoran akun"
+                        >
+                          <Settings className="w-3 h-3" />
+                          <span>Atur Format Akun</span>
+                        </button>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={formatPatternSp}
+                          onChange={(e) => handleFormatPatternChange(e.target.value)}
+                          placeholder="/A/PR.FNU/"
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-amber-300 font-bold focus:outline-none focus:border-emerald-500"
+                          title="Format penomoran instansi (contoh: /A/PR.FNU/)"
+                        />
+                        {formatPatternSp !== profile?.formatNomorSp && (
+                          <button
+                            type="button"
+                            onClick={handleSavePatternToDatabase}
+                            disabled={isSavingPattern}
+                            className="mt-1.5 px-2 py-1 rounded bg-amber-950/80 hover:bg-amber-900/90 border border-amber-700/60 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition-all"
+                            title="Simpan pola ini ke database akun Anda sebagai default"
+                          >
+                            <Save className="w-2.5 h-2.5" />
+                            <span>Simpan Format ke Akun Database</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tanggal Surat Pesanan */}
+                    <div className="md:col-span-5">
+                      <label className="text-[11px] text-slate-300 font-medium block mb-1">
+                        Tanggal Surat Pesanan
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.tanggal}
+                        onChange={(e) => handleTanggalSpChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
+                      />
+                    </div>
+
+                    {/* Banner Hasil Penomoran Otomatis */}
+                    <div className="md:col-span-12 bg-slate-900/90 border border-emerald-700/40 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Nomor SP Otomatis:</span>
+                        <span className="font-mono text-xs sm:text-sm font-bold text-emerald-300 tracking-wide">
+                          {formData.nomorSp}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                        <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold">
+                          Bulan: {deconstructDocumentNumber(formData.nomorSp).romanMonth}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold">
+                          Tahun: {deconstructDocumentNumber(formData.nomorSp).year}
+                        </span>
+                        <span className="text-slate-500 hidden sm:inline">(Otomatis dari tanggal)</span>
+                      </div>
                     </div>
                   </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-300 font-medium block mb-1">
+                        Nomor Surat Pesanan (SP) - Edit Manual Bebas
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.nomorSp}
+                        onChange={(e) =>
+                          setFormData({ ...formData, nomorSp: e.target.value })
+                        }
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-300 font-medium block mb-1">
+                        Tanggal Surat Pesanan
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.tanggal}
+                        onChange={(e) => handleTanggalSpChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
+                  <Sparkles className="w-3 h-3 shrink-0" />
+                  <span>Titimangsa TTD: Dawuhan, {formatDateIndo(formData.tanggal)}</span>
                 </div>
 
                 <div>
@@ -1847,6 +2047,23 @@ export function PesananForm({
         initialProfile={profile}
         onProfileUpdated={(updated) => {
           setProfile(updated);
+          if (updated.formatNomorSp) {
+            setFormatPatternSp(updated.formatNomorSp);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("sp_format_pattern", updated.formatNomorSp);
+            }
+            if (!isManualNomorSp) {
+              const nextNomor = buildFormattedDocumentNumber(nomorUrutSp, updated.formatNomorSp, formData.tanggal);
+              setFormData((prev) => ({
+                ...prev,
+                nomorSp: nextNomor,
+                pihak1Nama: updated.namaKetua || prev.pihak1Nama,
+                pihak1Jabatan: updated.jabatanKetua || prev.pihak1Jabatan,
+                pihak1Alamat: updated.alamat || prev.pihak1Alamat,
+              }));
+              return;
+            }
+          }
           setFormData((prev) => ({
             ...prev,
             pihak1Nama: updated.namaKetua || prev.pihak1Nama,

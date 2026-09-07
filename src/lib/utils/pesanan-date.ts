@@ -153,10 +153,119 @@ export function calculateDurasiDanDeskripsi(
 }
 
 /**
- * Menyesuaikan nomor SP secara otomatis jika mengandung pola bulan romawi & tahun:
- * Contoh: "02/A/PR.FNU/VIII/2026" jika tanggalnya diubah ke Juli 2026 -> "02/A/PR.FNU/VII/2026"
+ * Membangun nomor surat / dokumen resmi (SP / BAST) secara otomatis:
+ * Menggabungkan: [Nomor Urut] + [Format Kode Instansi] + [Bulan Romawi dari Tanggal] + [Tahun dari Tanggal]
+ * Contoh:
+ *   buildFormattedDocumentNumber("02", "/A/PR.FNU/", "2026-08-01") -> "02/A/PR.FNU/VIII/2026"
+ *   buildFormattedDocumentNumber("01", "A/PR.FNU", "2026-09-15")   -> "01/A/PR.FNU/IX/2026"
  */
-export function syncNomorSpBulanTahun(currentNomor: string, dateStr: string): string {
+export function buildFormattedDocumentNumber(
+  nomorUrut: string | number,
+  formatPattern: string,
+  dateStr: string | Date
+): string {
+  try {
+    let romanMonth = "I";
+    let year = "2026";
+
+    if (typeof dateStr === "string") {
+      const cleanDate = dateStr.split("T")[0].trim();
+      const parts = cleanDate.split("-").map(Number);
+      if (parts.length === 3 && !parts.some(isNaN)) {
+        romanMonth = getRomanMonth(parts[1] - 1);
+        year = String(parts[0]);
+      } else {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          romanMonth = getRomanMonth(d.getMonth());
+          year = String(d.getFullYear());
+        }
+      }
+    } else if (dateStr instanceof Date && !isNaN(dateStr.getTime())) {
+      romanMonth = getRomanMonth(dateStr.getMonth());
+      year = String(dateStr.getFullYear());
+    }
+
+    // Bersihkan formatPattern dari slash di awal dan akhir
+    const cleanPattern = (formatPattern || "A/PR.FNU")
+      .trim()
+      .replace(/^\/+|\/+$/g, "");
+
+    // Format nomor urut (contoh: 1 -> "01", 2 -> "02", atau tetap jika sudah 2 digit/lebih)
+    let paddedUrut = String(nomorUrut ?? "01").trim();
+    if (/^\d+$/.test(paddedUrut) && paddedUrut.length === 1) {
+      paddedUrut = paddedUrut.padStart(2, "0");
+    } else if (!paddedUrut) {
+      paddedUrut = "01";
+    }
+
+    return `${paddedUrut}/${cleanPattern}/${romanMonth}/${year}`;
+  } catch {
+    return String(nomorUrut || "01");
+  }
+}
+
+/**
+ * Memecah nomor surat yang sudah ada menjadi komponen:
+ * [nomorUrut, formatPattern, romanMonth, year]
+ * Contoh: "02/A/PR.FNU/VIII/2026" -> { nomorUrut: "02", formatPattern: "/A/PR.FNU/", romanMonth: "VIII", year: "2026" }
+ */
+export function deconstructDocumentNumber(fullNomor: string): {
+  nomorUrut: string;
+  formatPattern: string;
+  romanMonth: string;
+  year: string;
+} {
+  try {
+    const raw = (fullNomor || "").trim();
+    const parts = raw.split("/").filter((p) => p.length > 0);
+
+    if (parts.length >= 4) {
+      const nomorUrut = parts[0];
+      const year = parts[parts.length - 1];
+      const romanMonth = parts[parts.length - 2];
+      const middleTokens = parts.slice(1, parts.length - 2);
+      const formatPattern = `/${middleTokens.join("/")}/`;
+
+      return {
+        nomorUrut,
+        formatPattern,
+        romanMonth,
+        year,
+      };
+    }
+
+    if (parts.length === 3) {
+      return {
+        nomorUrut: parts[0] || "01",
+        formatPattern: `/${parts[1]}/`,
+        romanMonth: "VIII",
+        year: parts[2] || "2026",
+      };
+    }
+
+    return {
+      nomorUrut: parts[0] || "01",
+      formatPattern: "/A/PR.FNU/",
+      romanMonth: "VIII",
+      year: "2026",
+    };
+  } catch {
+    return {
+      nomorUrut: "01",
+      formatPattern: "/A/PR.FNU/",
+      romanMonth: "VIII",
+      year: "2026",
+    };
+  }
+}
+
+/**
+ * Menyesuaikan nomor dokumen surat / pesanan / berita acara secara otomatis
+ * ketika tanggal dokumen berubah:
+ * Contoh: "02/A/PR.FNU/VIII/2026" jika tanggalnya diubah ke September 2026 -> "02/A/PR.FNU/IX/2026"
+ */
+export function syncNomorDokumenBulanTahun(currentNomor: string, dateStr: string): string {
   try {
     const clean = (dateStr || "").split("T")[0].trim();
     const partsDate = clean.split("-").map(Number);
@@ -184,3 +293,6 @@ export function syncNomorSpBulanTahun(currentNomor: string, dateStr: string): st
     return currentNomor;
   }
 }
+
+// Backward compatibility alias
+export const syncNomorSpBulanTahun = syncNomorDokumenBulanTahun;

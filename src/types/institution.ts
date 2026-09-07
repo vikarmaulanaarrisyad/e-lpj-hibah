@@ -13,6 +13,9 @@ export interface InstitutionProfile {
   namaKetua: string | null;
   jabatanKetua: string | null;
   namaBendahara: string | null;
+  formatNomorSp?: string | null;
+  formatNomorBast?: string | null;
+  formatNomorKwitansi?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +32,9 @@ export interface UpdateInstitutionProfileInput {
   namaKetua?: string | null;
   jabatanKetua?: string | null;
   namaBendahara?: string | null;
+  formatNomorSp?: string | null;
+  formatNomorBast?: string | null;
+  formatNomorKwitansi?: string | null;
 }
 
 export interface KopSuratData {
@@ -43,4 +49,7 @@ export interface KopSuratData {
   namaKetua?: string | null;
   jabatanKetua?: string | null;
   namaBendahara?: string | null;
+  formatNomorSp?: string | null;
+  formatNomorBast?: string | null;
+  formatNomorKwitansi?: string | null;
 }

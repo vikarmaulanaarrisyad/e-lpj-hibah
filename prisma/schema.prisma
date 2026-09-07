@@ -177,6 +177,11 @@ model InstitutionProfile {
   jabatanKetua  String?  @default("Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan")
   namaBendahara String?  @default("NUR ALIMAH")
 
+  // Format Penomoran Dokumen Otomatis per Akun / Lembaga
+  formatNomorSp       String?  @default("/A/PR.FNU/")
+  formatNomorBast     String?  @default("/A/PR.FNU/")
+  formatNomorKwitansi String?  @default("BKU-HB")
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

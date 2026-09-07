@@ -33,6 +33,9 @@ export class InstitutionService {
           namaKetua: user?.leaderName || "HENI FUJIATI",
           jabatanKetua: "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
           namaBendahara: user?.name || "NUR ALIMAH",
+          formatNomorSp: "/A/PR.FNU/",
+          formatNomorBast: "/A/PR.FNU/",
+          formatNomorKwitansi: "BKU-HB",
         });
       }
 
@@ -100,6 +103,9 @@ export class InstitutionService {
         namaKetua: input.namaKetua?.trim(),
         jabatanKetua: input.jabatanKetua?.trim(),
         namaBendahara: input.namaBendahara?.trim(),
+        formatNomorSp: input.formatNomorSp !== undefined ? input.formatNomorSp?.trim() : undefined,
+        formatNomorBast: input.formatNomorBast !== undefined ? input.formatNomorBast?.trim() : undefined,
+        formatNomorKwitansi: input.formatNomorKwitansi !== undefined ? input.formatNomorKwitansi?.trim() : undefined,
       });
 
       // 3. Sinkronkan nama lembaga dan ketua ke user

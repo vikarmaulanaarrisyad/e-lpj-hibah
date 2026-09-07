@@ -3,6 +3,7 @@ import { authService } from "@/services/auth.service";
 import { userRepository } from "@/repositories/user.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { rabService } from "@/services/rab.service";
+import { institutionService } from "@/services/institution.service";
 import { redirect } from "next/navigation";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { RabDashboard } from "@/components/rab/rab-dashboard";
@@ -19,14 +20,18 @@ export default async function UserRabPage() {
     redirect("/login");
   }
 
-  // Preload user profile, RAB status, and receipts from database
-  const [user, rabRes, receipts] = await Promise.all([
+  // Preload user profile, RAB status, receipts, and institution profile from database
+  const [user, rabRes, receipts, profileRes] = await Promise.all([
     userRepository.findById(session.sub),
     rabService.getRabStatus(session.sub),
     receiptRepository.findManyByUserId(session.sub),
+    institutionService.getProfile(session.sub),
   ]);
 
-  const institution = user?.institution || session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
+  const profile = profileRes.data || null;
+  const institution = profile?.subNama
+    ? `${profile.namaLembaga} ${profile.subNama}`
+    : user?.institution || session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
   const userName = user?.name || session.name || "NUR ALIMAH";
 
   const summary = rabRes.data || {
@@ -44,6 +49,8 @@ export default async function UserRabPage() {
       <KwitansiHeader
         institution={institution}
         userName={userName}
+        registrationNumber={profile?.noRegistrasi}
+        initialProfile={profile}
       />
 
       {/* ================= WORKSPACE BODY ================= */}

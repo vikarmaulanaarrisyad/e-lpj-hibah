@@ -8,6 +8,7 @@ import { bkuService } from "@/services/bku.service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { KopSuratButton } from "@/components/kop-surat/kop-surat-button";
 import {
   Building2,
   UploadCloud,
@@ -51,32 +52,35 @@ export default async function UserDashboardPage() {
   const formatRupiah = (val: number) => "Rp " + Math.round(val).toLocaleString("id-ID");
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-100 p-6 lg:p-10">
+    <div className="min-h-screen bg-[#0F172A] text-slate-100 p-4 sm:p-6 lg:p-10">
       {/* Top Navbar */}
       <header className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
             <Building2 className="w-6 h-6 text-[#D97706]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              E-LPJ Hibah
+            <h1 className="text-lg sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
+              <span>E-LPJ Hibah</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-950 border border-amber-700/60 text-amber-300">
                 Penerima Hibah
               </span>
             </h1>
             <p className="text-xs text-slate-400">
-              Portal Pertanggungjawaban Keuangan & Pengawasan Pagu Anggaran
+              Portal Pertanggungjawaban Keuangan &amp; Pengawasan Pagu Anggaran
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 self-stretch sm:self-auto justify-between">
+        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end flex-wrap">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-slate-200">{session.name}</p>
             <p className="text-xs text-slate-400">{session.email}</p>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <KopSuratButton initialProfile={profile} />
+            <LogoutButton />
+          </div>
         </div>
       </header>
 
@@ -122,6 +126,15 @@ export default async function UserDashboardPage() {
                 <span className="font-mono text-emerald-400 font-semibold">
                   {profile?.logoUrl ? "Cloudinary Aktif" : "Default Vector"}
                 </span>
+              </div>
+              <div className="bg-slate-950/60 px-3.5 py-2 rounded-lg border border-slate-800 flex items-center gap-2">
+                <div>
+                  <span className="text-slate-500">Format No:</span>{" "}
+                  <span className="font-mono text-emerald-300 font-semibold">
+                    {profile?.formatNomorSp || "/A/PR.FNU/"}
+                  </span>
+                </div>
+                <KopSuratButton initialProfile={profile} variant="badge" />
               </div>
             </div>
           </div>

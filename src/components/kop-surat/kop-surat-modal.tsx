@@ -17,9 +17,11 @@ import {
   Sparkles,
   Trash2,
   Cloud,
+  Hash,
 } from "lucide-react";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
+import { buildFormattedDocumentNumber } from "@/lib/utils/pesanan-date";
 import type { InstitutionProfile } from "@/types";
 
 interface KopSuratModalProps {
@@ -51,6 +53,9 @@ export function KopSuratModal({
     jabatanKetua: initialProfile?.jabatanKetua || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
     namaBendahara: initialProfile?.namaBendahara || "NUR ALIMAH",
     logoBase64OrUrl: initialProfile?.logoUrl || "",
+    formatNomorSp: initialProfile?.formatNomorSp || "/A/PR.FNU/",
+    formatNomorBast: initialProfile?.formatNomorBast || "/A/PR.FNU/",
+    formatNomorKwitansi: initialProfile?.formatNomorKwitansi || "BKU-HB",
   });
 
   const [logoPreview, setLogoPreview] = useState<string>(initialProfile?.logoUrl || "");
@@ -74,6 +79,9 @@ export function KopSuratModal({
         jabatanKetua: initialProfile.jabatanKetua || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
         namaBendahara: initialProfile.namaBendahara || "NUR ALIMAH",
         logoBase64OrUrl: initialProfile.logoUrl || "",
+        formatNomorSp: initialProfile.formatNomorSp || "/A/PR.FNU/",
+        formatNomorBast: initialProfile.formatNomorBast || "/A/PR.FNU/",
+        formatNomorKwitansi: initialProfile.formatNomorKwitansi || "BKU-HB",
       });
       setLogoPreview(initialProfile.logoUrl || "");
     }
@@ -478,6 +486,83 @@ export function KopSuratModal({
                     className="w-full text-xs font-bold uppercase bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* ================= FORMAT PENOMORAN DOKUMEN OTOMATIS ================= */}
+            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30 border border-emerald-900/50 p-4 sm:p-5 rounded-xl flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <Hash className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                      Format Penomoran Surat Otomatis
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700/60 text-emerald-300">
+                        Database Akun
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Disimpan ke database akun Anda. Bulan Romawi & Tahun akan otomatis mengikuti tanggal pembuatan dokumen.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Format Surat Pesanan (SP) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-200 font-semibold flex items-center justify-between">
+                    <span>Format Kode Surat Pesanan (SP)</span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-normal">Contoh: /A/PR.FNU/</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.formatNomorSp || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, formatNomorSp: e.target.value })
+                    }
+                    placeholder="/A/PR.FNU/"
+                    className="w-full text-xs font-mono font-semibold bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 focus:outline-none focus:border-emerald-500"
+                  />
+                  <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
+                    <span className="text-slate-400">Hasil Pratinjau SP:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {buildFormattedDocumentNumber("01", formData.formatNomorSp || "/A/PR.FNU/", new Date())}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Format Berita Acara (BAST) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-200 font-semibold flex items-center justify-between">
+                    <span>Format Kode Berita Acara (BAST)</span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-normal">Contoh: /A/PR.FNU/</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.formatNomorBast || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, formatNomorBast: e.target.value })
+                    }
+                    placeholder="/A/PR.FNU/"
+                    className="w-full text-xs font-mono font-semibold bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 focus:outline-none focus:border-emerald-500"
+                  />
+                  <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
+                    <span className="text-slate-400">Hasil Pratinjau BAST:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {buildFormattedDocumentNumber("01", formData.formatNomorBast || "/A/PR.FNU/", new Date())}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-400 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80 flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">💡 Info:</span>
+                <span>
+                  Rumus otomatis: <code className="text-emerald-300 font-mono">[No. Urut] + [Format Anda] + [Bulan Romawi] + [Tahun]</code>. Ketika tanggal surat Anda ubah ke bulan lain, penomoran surat otomatis diperbarui sesuai tanggal tersebut.
+                </span>
               </div>
             </div>
 

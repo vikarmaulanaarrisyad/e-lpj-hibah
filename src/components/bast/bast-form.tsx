@@ -33,6 +33,7 @@ import {
   Link as LinkIcon,
   ArrowRight,
   FolderSync,
+  Settings,
 } from "lucide-react";
 import { exportBastToPdf } from "@/lib/bast-pdf";
 import { BastCanvas } from "./bast-canvas";
@@ -40,8 +41,14 @@ import { PesananCanvas } from "@/components/pesanan/pesanan-canvas";
 import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { saveBastAction, deleteBastAction } from "@/app/actions/bast.action";
+import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { formatTanggalTerbilang } from "@/services/bast.service";
+import {
+  buildFormattedDocumentNumber,
+  deconstructDocumentNumber,
+  syncNomorDokumenBulanTahun,
+} from "@/lib/utils/pesanan-date";
 import type {
   BastDocument,
   BastFormData,
@@ -412,20 +419,109 @@ export function BastForm({
       linkedReceiptNominal: 3000000,
       linkedReceiptNomor: undefined,
     });
+
+    // Sinkronisasi komponen nomor urut dan format penomoran BAST
+    const decomp = deconstructDocumentNumber(b.nomorBast);
+    setNomorUrutBast(decomp.nomorUrut);
+    setFormatPatternBast(decomp.formatPattern);
+
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
   };
 
-  // Handle Date change with auto-terbilang
+  // Parameter Otomatisasi Format Penomoran BAST (Contoh: /A/PR.FNU/ atau /BAST-HB/FTY/)
+  const initBastDecomp = deconstructDocumentNumber(formData.nomorBast);
+  const [formatPatternBast, setFormatPatternBast] = useState<string>(() => {
+    if (profile?.formatNomorBast) return profile.formatNomorBast;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("bast_format_pattern");
+      if (saved) return saved;
+    }
+    return initBastDecomp.formatPattern || "/A/PR.FNU/";
+  });
+  const [nomorUrutBast, setNomorUrutBast] = useState<string>(initBastDecomp.nomorUrut || "01");
+  const [isManualNomorBast, setIsManualNomorBast] = useState<boolean>(false);
+  const [isSavingPattern, startSavePattern] = useTransition();
+
+  // Sinkronisasi bila profile lembaga dari database berubah
+  useEffect(() => {
+    if (profile?.formatNomorBast && profile.formatNomorBast !== formatPatternBast) {
+      setFormatPatternBast(profile.formatNomorBast);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("bast_format_pattern", profile.formatNomorBast);
+      }
+      if (!isManualNomorBast) {
+        const nextNomor = buildFormattedDocumentNumber(nomorUrutBast, profile.formatNomorBast, formData.tanggal);
+        setFormData((prev) => ({ ...prev, nomorBast: nextNomor }));
+      }
+    }
+  }, [profile?.formatNomorBast]);
+
+  // Handler simpan format pola ke Database Akun
+  const handleSavePatternToDatabase = () => {
+    startSavePattern(async () => {
+      swalLoading("Menyimpan ke Database...", "Memperbarui format penomoran BAST akun Anda...");
+      const res = await saveInstitutionProfileAction({
+        namaLembaga: profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU",
+        subNama: profile?.subNama || "DAWUHAN SELATAN",
+        instansiInduk: profile?.instansiInduk || "KECAMATAN TALANG KABUPATEN TEGAL",
+        alamat: profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06 Talang – Tegal 52193",
+        email: profile?.email || "prfnudawuhanselatan@gmail.com",
+        noHp: profile?.noHp || "085642719869",
+        noRegistrasi: profile?.noRegistrasi || "HBH-2026-NU-0428",
+        namaKetua: profile?.namaKetua || "HENI FUJIATI",
+        jabatanKetua: profile?.jabatanKetua || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
+        namaBendahara: profile?.namaBendahara || "NUR ALIMAH",
+        formatNomorBast: formatPatternBast,
+      });
+
+      if (res.success && res.data) {
+        setProfile(res.data);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("bast_format_pattern", formatPatternBast);
+        }
+        swalSuccess("Format Tersimpan!", "Pola penomoran Berita Acara (BAST) berhasil disimpan ke database akun Anda.");
+      } else {
+        swalError("Gagal Menyimpan", res.message || "Gagal menyimpan format ke database.");
+      }
+    });
+  };
+
+  // Handler perubahan Format Kode Instansi BAST (misal: /A/PR.FNU/)
+  const handleFormatPatternChange = (newPattern: string) => {
+    setFormatPatternBast(newPattern);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("bast_format_pattern", newPattern);
+    }
+    if (!isManualNomorBast) {
+      const nextNomor = buildFormattedDocumentNumber(nomorUrutBast, newPattern, formData.tanggal);
+      setFormData((prev) => ({ ...prev, nomorBast: nextNomor }));
+    }
+  };
+
+  // Handler perubahan Nomor Urut Dokumen BAST (misal: 01, 02)
+  const handleNomorUrutChange = (newUrut: string) => {
+    setNomorUrutBast(newUrut);
+    if (!isManualNomorBast) {
+      const nextNomor = buildFormattedDocumentNumber(newUrut, formatPatternBast, formData.tanggal);
+      setFormData((prev) => ({ ...prev, nomorBast: nextNomor }));
+    }
+  };
+
+  // Handle Date change with auto-terbilang & nomor BAST sync
   const handleDateChange = (dateVal: string) => {
     const d = new Date(dateVal);
     const { hariTanggal, terbilangResmi } = formatTanggalTerbilang(isNaN(d.getTime()) ? new Date() : d);
+    const syncedNomorBast = isManualNomorBast
+      ? syncNomorDokumenBulanTahun(formData.nomorBast, dateVal)
+      : buildFormattedDocumentNumber(nomorUrutBast, formatPatternBast, dateVal);
 
     setFormData((prev) => ({
       ...prev,
       tanggal: dateVal,
       hariTanggal,
       tanggalTerbilang: terbilangResmi,
+      nomorBast: syncedNomorBast,
     }));
   };
 
@@ -630,7 +726,10 @@ export function BastForm({
   // Create new blank BAST
   const handleCreateNew = () => {
     const nextIdx = bastList.length + 1;
-    const nextNo = `0${nextIdx + 13}/BAST-HB/FTY/VII/2026`;
+    const nextUrut = String(nextIdx).padStart(2, "0");
+    setNomorUrutBast(nextUrut);
+    const nextNo = buildFormattedDocumentNumber(nextUrut, formatPatternBast, todayStr);
+    setIsManualNomorBast(false);
     const { hariTanggal, terbilangResmi } = formatTanggalTerbilang(new Date());
 
     setFormData({
@@ -975,38 +1074,141 @@ export function BastForm({
               </div>
 
               {/* Section 1: Nomor & Tanggal Berita Acara */}
-              <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-4">
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                  1. Waktu & Nomor Berita Acara
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-slate-300 font-medium">
-                      Nomor Register BAST
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.nomorBast}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nomorBast: e.target.value })
-                      }
-                      className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-slate-300 font-medium">
-                      Tanggal Pelaksanaan BAST
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.tanggal}
-                      onChange={(e) => handleDateChange(e.target.value)}
-                      className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
-                    />
-                  </div>
+              <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>1. Waktu & Nomor Berita Acara (BAST)</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualNomorBast(!isManualNomorBast)}
+                    className="text-[11px] text-slate-400 hover:text-emerald-300 transition-colors flex items-center gap-1"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{isManualNomorBast ? "Beralih ke Mode Otomatis" : "Edit Teks Manual Bebas"}</span>
+                  </button>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                {!isManualNomorBast ? (
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                    {/* No. Urut */}
+                    <div className="md:col-span-2">
+                      <label className="text-[11px] text-slate-300 font-medium block mb-1">
+                        No. Urut
+                      </label>
+                      <input
+                        type="text"
+                        value={nomorUrutBast}
+                        onChange={(e) => handleNomorUrutChange(e.target.value)}
+                        placeholder="01"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white text-center font-bold focus:outline-none focus:border-emerald-500"
+                        title="Nomor urut berita acara (contoh: 01, 02, 014)"
+                      />
+                    </div>
+
+                    {/* Format Penomoran Instansi */}
+                    <div className="md:col-span-5">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] text-slate-300 font-medium">
+                          Format Penomoran
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsKopModalOpen(true)}
+                          className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition-colors"
+                          title="Buka pengaturan kop surat & format penomoran akun"
+                        >
+                          <Settings className="w-3 h-3" />
+                          <span>Atur Format Akun</span>
+                        </button>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={formatPatternBast}
+                          onChange={(e) => handleFormatPatternChange(e.target.value)}
+                          placeholder="/A/PR.FNU/"
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-amber-300 font-bold focus:outline-none focus:border-emerald-500"
+                          title="Format penomoran instansi (contoh: /A/PR.FNU/)"
+                        />
+                        {formatPatternBast !== profile?.formatNomorBast && (
+                          <button
+                            type="button"
+                            onClick={handleSavePatternToDatabase}
+                            disabled={isSavingPattern}
+                            className="mt-1.5 px-2 py-1 rounded bg-amber-950/80 hover:bg-amber-900/90 border border-amber-700/60 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition-all"
+                            title="Simpan pola ini ke database akun Anda sebagai default"
+                          >
+                            <Save className="w-2.5 h-2.5" />
+                            <span>Simpan Format ke Akun Database</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tanggal Pelaksanaan BAST */}
+                    <div className="md:col-span-5">
+                      <label className="text-[11px] text-slate-300 font-medium block mb-1">
+                        Tanggal Pelaksanaan BAST
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.tanggal}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
+                      />
+                    </div>
+
+                    {/* Banner Hasil Penomoran Otomatis */}
+                    <div className="md:col-span-12 bg-slate-900/90 border border-emerald-700/40 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Nomor BAST Otomatis:</span>
+                        <span className="font-mono text-xs sm:text-sm font-bold text-emerald-300 tracking-wide">
+                          {formData.nomorBast}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                        <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold">
+                          Bulan: {deconstructDocumentNumber(formData.nomorBast).romanMonth}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold">
+                          Tahun: {deconstructDocumentNumber(formData.nomorBast).year}
+                        </span>
+                        <span className="text-slate-500 hidden sm:inline">(Otomatis dari tanggal)</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-slate-300 font-medium">
+                        Nomor Register BAST - Edit Manual Bebas
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.nomorBast}
+                        onChange={(e) =>
+                          setFormData({ ...formData, nomorBast: e.target.value })
+                        }
+                        className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-slate-300 font-medium">
+                        Tanggal Pelaksanaan BAST
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.tanggal}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5 mt-1">
                   <label className="text-xs text-slate-300 font-medium">
                     Pernyataan Tanggal Tertulis (Terbilang Resmi BAST)
                   </label>
@@ -1998,6 +2200,22 @@ export function BastForm({
         initialProfile={profile}
         onProfileUpdated={(updated) => {
           setProfile(updated);
+          if (updated.formatNomorBast) {
+            setFormatPatternBast(updated.formatNomorBast);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("bast_format_pattern", updated.formatNomorBast);
+            }
+            if (!isManualNomorBast) {
+              const nextNomor = buildFormattedDocumentNumber(nomorUrutBast, updated.formatNomorBast, formData.tanggal);
+              setFormData((prev) => ({
+                ...prev,
+                nomorBast: nextNomor,
+                pihak1Nama: updated.namaKetua || prev.pihak1Nama,
+                pihak1Jabatan: updated.jabatanKetua || prev.pihak1Jabatan,
+              }));
+              return;
+            }
+          }
           if (updated.namaKetua) {
             setFormData((prev) => ({
               ...prev,

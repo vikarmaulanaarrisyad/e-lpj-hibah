@@ -45,6 +45,7 @@ export default async function BastPage() {
         userName={dbUser?.name || session.name}
         institution={fullInstitution}
         registrationNumber={profile?.noRegistrasi}
+        initialProfile={profile}
       />
 
       {/* Main BAST Workspace */}
