@@ -125,7 +125,7 @@ export class ReceiptService {
     userId: string
   ): Promise<ServiceResponse<Receipt | null>> {
     try {
-      const receipt = await receiptRepository.findByNomorBukti(nomorBukti);
+      const receipt = await receiptRepository.findByNomorBukti(nomorBukti, userId);
       if (!receipt || receipt.userId !== userId) {
         return {
           success: false,

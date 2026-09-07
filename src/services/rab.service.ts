@@ -108,6 +108,7 @@ export class RabService {
             if (!r.uraian) return false;
             const rLow = r.uraian.toLowerCase();
             const uLow = row.uraian.toLowerCase();
+            if (rincian.length === 1) return true;
             return rLow.includes(uLow) || uLow.includes(rLow);
           });
           const rowRealisasi = rowReceipts.reduce((sum, r) => sum + r.nominal, 0);
@@ -117,11 +118,74 @@ export class RabService {
           else if (rowRealisasi >= row.total) statusSerapan = "LUNAS";
           else if (rowRealisasi > 0) statusSerapan = "SEBAGIAN";
 
+          // Tracking Volume Realisasi & Sisa Volume Bertahap (Multi-Kegiatan & Multi-Orang)
+          const k1Vol = row.koefisien1Vol || 1;
+          const k1Sat = row.koefisien1Satuan || "Kegiatan";
+          const k2Vol = row.koefisien2Vol != null && row.koefisien2Vol > 0 ? row.koefisien2Vol : null;
+          const k2Sat = row.koefisien2Satuan || "";
+          const hrg = row.hargaSatuan || 0;
+
+          let volReal1 = 0;
+          let volReal2 = 0;
+          let volSisa1 = k1Vol;
+          let volSisa2 = k2Vol ? k1Vol * k2Vol : 0;
+          let volumeRealisasiKeterangan = "";
+          let volumeSisaKeterangan = "";
+
+          if (k2Vol && hrg > 0) {
+            // Kasus Koefisien Ganda: contoh 3 Kegiatan x 120 Orang x Rp 25.000 = Rp 9.000.000
+            const costPerK1 = k2Vol * hrg; // Biaya per 1 kegiatan (120 x 25.000 = Rp 3.000.000)
+            const totalVol2 = k1Vol * k2Vol; // Total orang akumulatif (3 x 120 = 360 Orang)
+
+            volReal2 = Math.min(totalVol2, Math.floor(rowRealisasi / hrg));
+            volReal1 = costPerK1 > 0 ? Math.min(k1Vol, Math.floor(rowRealisasi / costPerK1)) : 0;
+            volSisa1 = Math.max(0, k1Vol - volReal1);
+            volSisa2 = Math.max(0, totalVol2 - volReal2);
+
+            if (statusSerapan === "LUNAS") {
+              volumeRealisasiKeterangan = `${k1Vol} ${k1Sat} (${totalVol2} ${k2Sat})`;
+              volumeSisaKeterangan = `Selesai`;
+            } else if (statusSerapan === "SEBAGIAN") {
+              volumeRealisasiKeterangan = `${volReal1} ${k1Sat} (${volReal2} ${k2Sat})`;
+              volumeSisaKeterangan = `${volSisa1} ${k1Sat} lagi (${volSisa2} ${k2Sat})`;
+            } else if (statusSerapan === "DEFISIT") {
+              volumeRealisasiKeterangan = `Melebihi ${k1Vol} ${k1Sat}`;
+              volumeSisaKeterangan = `Defisit`;
+            } else {
+              volumeRealisasiKeterangan = `0 ${k1Sat}`;
+              volumeSisaKeterangan = `${k1Vol} ${k1Sat} (${totalVol2} ${k2Sat})`;
+            }
+          } else if (hrg > 0) {
+            // Kasus Koefisien Tunggal: contoh 10 Paket x Rp 100.000
+            volReal1 = Math.min(k1Vol, Math.floor(rowRealisasi / hrg));
+            volSisa1 = Math.max(0, k1Vol - volReal1);
+
+            if (statusSerapan === "LUNAS") {
+              volumeRealisasiKeterangan = `${k1Vol} ${k1Sat}`;
+              volumeSisaKeterangan = `Selesai`;
+            } else if (statusSerapan === "SEBAGIAN") {
+              volumeRealisasiKeterangan = `${volReal1} ${k1Sat}`;
+              volumeSisaKeterangan = `${volSisa1} ${k1Sat} lagi`;
+            } else if (statusSerapan === "DEFISIT") {
+              volumeRealisasiKeterangan = `Melebihi ${k1Vol} ${k1Sat}`;
+              volumeSisaKeterangan = `Defisit`;
+            } else {
+              volumeRealisasiKeterangan = `0 ${k1Sat}`;
+              volumeSisaKeterangan = `${k1Vol} ${k1Sat}`;
+            }
+          }
+
           return {
             ...row,
             realisasi: rowRealisasi,
             sisa: rowSisa,
             statusSerapan,
+            volumeRealisasi1: volReal1,
+            volumeRealisasi2: volReal2,
+            volumeSisa1: volSisa1,
+            volumeSisa2: volSisa2,
+            volumeRealisasiKeterangan,
+            volumeSisaKeterangan,
           };
         });
 

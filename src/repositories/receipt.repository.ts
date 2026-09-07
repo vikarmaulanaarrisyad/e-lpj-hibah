@@ -42,38 +42,52 @@ export class ReceiptRepository {
    */
   async create(data: CreateReceiptRepoData): Promise<Receipt> {
     try {
-      return await prisma.receipt.upsert({
-        where: { nomorBukti: data.nomorBukti },
-        update: {
-          tanggal: data.tanggal,
-          pemberi: data.pemberi,
-          nominal: data.nominal,
-          terbilang: data.terbilang,
-          uraian: data.uraian,
-          ketua: data.ketua,
-          bendahara: data.bendahara,
-          penerima: data.penerima,
-          denganMaterai: data.denganMaterai,
-          template: data.template,
-          kategoriRab: data.kategoriRab ?? null,
-          isPpn: data.isPpn ?? false,
-          ppnRate: data.ppnRate ?? 0.11,
-          ppnNominal: data.ppnNominal ?? 0,
-          isPph21: data.isPph21 ?? false,
-          pph21Rate: data.pph21Rate ?? 0.05,
-          pph21Nominal: data.pph21Nominal ?? 0,
-          isPph22: data.isPph22 ?? false,
-          pph22Rate: data.pph22Rate ?? 0.015,
-          pph22Nominal: data.pph22Nominal ?? 0,
-          isPph23: data.isPph23 ?? false,
-          pph23Rate: data.pph23Rate ?? 0.02,
-          pph23Nominal: data.pph23Nominal ?? 0,
-          dpp: data.dpp ?? data.nominal,
-          totalPajak: data.totalPajak ?? 0,
-          nominalBersih: data.nominalBersih ?? data.nominal,
-          keteranganPajak: data.keteranganPajak ?? null,
+      // Find existing receipt strictly for this specific user
+      const existing = await prisma.receipt.findFirst({
+        where: {
+          nomorBukti: data.nomorBukti,
+          userId: data.userId,
         },
-        create: {
+      });
+
+      if (existing) {
+        return (await prisma.receipt.update({
+          where: { id: existing.id },
+          data: {
+            tanggal: data.tanggal,
+            pemberi: data.pemberi,
+            nominal: data.nominal,
+            terbilang: data.terbilang,
+            uraian: data.uraian,
+            ketua: data.ketua,
+            bendahara: data.bendahara,
+            penerima: data.penerima,
+            denganMaterai: data.denganMaterai,
+            template: data.template,
+            kategoriRab: data.kategoriRab ?? null,
+            isPpn: data.isPpn ?? false,
+            ppnRate: data.ppnRate ?? 0.11,
+            ppnNominal: data.ppnNominal ?? 0,
+            isPph21: data.isPph21 ?? false,
+            pph21Rate: data.pph21Rate ?? 0.05,
+            pph21Nominal: data.pph21Nominal ?? 0,
+            isPph22: data.isPph22 ?? false,
+            pph22Rate: data.pph22Rate ?? 0.015,
+            pph22Nominal: data.pph22Nominal ?? 0,
+            isPph23: data.isPph23 ?? false,
+            pph23Rate: data.pph23Rate ?? 0.02,
+            pph23Nominal: data.pph23Nominal ?? 0,
+            dpp: data.dpp ?? data.nominal,
+            totalPajak: data.totalPajak ?? 0,
+            nominalBersih: data.nominalBersih ?? data.nominal,
+            keteranganPajak: data.keteranganPajak ?? null,
+            userId: data.userId,
+          },
+        })) as Receipt;
+      }
+
+      return (await prisma.receipt.create({
+        data: {
           nomorBukti: data.nomorBukti,
           tanggal: data.tanggal,
           pemberi: data.pemberi,
@@ -104,7 +118,7 @@ export class ReceiptRepository {
           keteranganPajak: data.keteranganPajak ?? null,
           userId: data.userId,
         },
-      });
+      })) as Receipt;
     } catch (error) {
       console.error("[ReceiptRepository] Error in create:", error);
       throw error;
@@ -112,13 +126,16 @@ export class ReceiptRepository {
   }
 
   /**
-   * Find a receipt by its unique nomorBukti.
+   * Find a receipt by its nomorBukti, optionally scoped to a user.
    */
-  async findByNomorBukti(nomorBukti: string): Promise<Receipt | null> {
+  async findByNomorBukti(nomorBukti: string, userId?: string): Promise<Receipt | null> {
     try {
-      return await prisma.receipt.findUnique({
-        where: { nomorBukti },
-      });
+      return (await prisma.receipt.findFirst({
+        where: {
+          nomorBukti,
+          ...(userId ? { userId } : {}),
+        },
+      })) as Receipt | null;
     } catch (error) {
       console.error("[ReceiptRepository] Error in findByNomorBukti:", error);
       throw error;

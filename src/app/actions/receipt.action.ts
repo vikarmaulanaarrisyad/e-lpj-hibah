@@ -32,7 +32,14 @@ export async function saveReceiptAction(
     }
 
     // 3. Call Service Layer
-    return await receiptService.saveReceipt(validationResult.data, session.sub);
+    const res = await receiptService.saveReceipt(validationResult.data, session.sub);
+    if (res.success) {
+      revalidatePath("/user/bku");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/rab");
+      revalidatePath("/user");
+    }
+    return res;
   } catch (error) {
     console.error("[saveReceiptAction] Unexpected error:", error);
     return {

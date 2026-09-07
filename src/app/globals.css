@@ -47,6 +47,16 @@ body {
     margin: 0mm;
   }
 
+  @page pesananF4 {
+    size: 215mm 330mm; /* Kertas F4 / Folio Portrait Surat Pesanan */
+    margin: 0mm;
+  }
+
+  @page bastF4 {
+    size: 215mm 330mm; /* Kertas F4 / Folio Portrait Berita Acara (BAST) */
+    margin: 0mm;
+  }
+
   /* Sembunyikan seluruh UI luar (navbar, header, footer, form ledger, dsb) */
   header,
   nav,
@@ -133,12 +143,12 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* ================= SURAT PESANAN & BAST PRINT SPEC (PORTRAIT) ================= */
+  /* ================= SURAT PESANAN & BAST PRINT SPEC (F4 PORTRAIT + MARGIN JILID) ================= */
   body:has(#pesananPrintArea),
   body:has(#bastPrintArea) {
-    width: 100% !important;
+    width: 215mm !important;
     height: auto !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
@@ -147,17 +157,38 @@ body {
     print-color-adjust: exact !important;
   }
 
-  body:has(#pesananPrintArea) #pesananPrintArea,
-  body:has(#bastPrintArea) #bastPrintArea {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: auto !important;
+  body:has(#pesananPrintArea) #pesananPrintArea {
+    page: pesananF4;
+    width: 215mm !important;
+    max-width: 215mm !important;
+    min-height: 330mm !important;
     margin: 0 auto !important;
-    padding: 0 !important;
+    padding-top: 18mm !important;
+    padding-bottom: 18mm !important;
+    padding-left: 28mm !important; /* Margin kiri 28mm khusus penjilidan dokumen */
+    padding-right: 15mm !important;
     border: none !important;
     box-shadow: none !important;
     page-break-inside: auto !important;
     break-inside: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  body:has(#bastPrintArea) #bastPrintArea {
+    page: bastF4;
+    width: 215mm !important;
+    max-width: 215mm !important;
+    min-height: 330mm !important;
+    margin: 0 auto !important;
+    padding-top: 18mm !important;
+    padding-bottom: 18mm !important;
+    padding-left: 28mm !important; /* Margin kiri 28mm khusus penjilidan dokumen */
+    padding-right: 15mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    box-sizing: border-box !important;
   }
 
   /* ================= BUKU KAS UMUM (BKU) PRINT SPEC ================= */

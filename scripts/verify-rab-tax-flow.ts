@@ -118,8 +118,8 @@ async function main() {
   if (!saveRes.success) throw new Error(saveRes.message);
 
   // Verify in DB
-  const savedInDb = await prisma.receipt.findUnique({
-    where: { nomorBukti: testNomorBukti },
+  const savedInDb = await prisma.receipt.findFirst({
+    where: { nomorBukti: testNomorBukti, userId: user.id },
   });
 
   console.log("  Database Verification:");

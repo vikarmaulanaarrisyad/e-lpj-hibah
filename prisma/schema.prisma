@@ -36,7 +36,7 @@ model User {
 
 model Receipt {
   id              String          @id @default(cuid())
-  nomorBukti      String          @unique // Contoh: BKU-HB/014/VIII/2026
+  nomorBukti      String          // Contoh: BKU-HB/014/VIII/2026
   tanggal         DateTime
   pemberi         String          // Entitas Pemberi (contoh: PR Fatayat NU Dawuhan Selatan)
   nominal         Float           // Nominal angka (misal: 3000000)
@@ -75,6 +75,7 @@ model Receipt {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  @@unique([userId, nomorBukti])
   @@index([userId])
   @@index([tanggal])
   @@map("receipts")

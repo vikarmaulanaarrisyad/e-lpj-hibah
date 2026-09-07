@@ -41,6 +41,88 @@ import {
   swalConfirm,
 } from "@/lib/swal";
 
+/**
+ * Helper untuk menyusun teks uraian kwitansi secara otomatis dari Rincian Item dan Kelompok Kegiatan.
+ * Contoh:
+ * - rowUraian: "Transport Peserta dan Panitia"
+ * - groupNama: "PELATIHAN MARS"
+ * -> Bertahap : "Transport Peserta dan Panitia Pelatihan MARS - Kegiatan 1"
+ * -> Sekaligus: "Transport Peserta dan Panitia Pelatihan MARS (3 Kegiatan)"
+ * -> Single   : "Transport Peserta dan Panitia Pelatihan MARS"
+ */
+function formatActivityTitle(raw: string): string {
+  if (!raw) return "";
+
+  // Preserved acronyms / uppercase terms common in LPJ
+  const acronyms = new Set([
+    "MARS", "NU", "LPJ", "ATK", "LCD", "SP", "BAST", "NPHD", "BKU", "RAB",
+    "KTP", "NPWP", "PPH", "PPN", "FATAYAT", "IPNU", "IPPNU", "PAC", "PC", "PW", "PR"
+  ]);
+
+  return raw
+    .split(/\s+/)
+    .map((word) => {
+      const cleanWord = word.trim();
+      const upper = cleanWord.toUpperCase();
+      if (acronyms.has(upper)) return upper;
+
+      // Jika huruf kapital semua seperti "PELATIHAN", jadikan Title Case ("Pelatihan")
+      if (cleanWord === upper && cleanWord.length > 1) {
+        return cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase();
+      }
+      return cleanWord;
+    })
+    .join(" ");
+}
+
+export function formatKwitansiUraian(
+  rowUraian: string,
+  groupNama: string,
+  options?: {
+    stageNumber?: number;
+    totalStages?: number;
+    mode?: "bertahap" | "sekaligus" | "single";
+  }
+): string {
+  // Bersihkan keterangan volume jika tertulis di uraian (misal: "Transport Peserta 3 kegiatan" -> "Transport Peserta")
+  const cleanRow = (rowUraian || "")
+    .replace(/\s*\(?\d+\s*kegiatan\)?$/i, "")
+    .trim();
+  const cleanGroup = (groupNama || "").trim();
+
+  // Bersihkan kode romawi/angka akun jika ada di depan nama kelompok, misal "VI. PELATIHAN MARS" atau "5.2.4 - PELATIHAN MARS" -> "PELATIHAN MARS"
+  const groupWithoutCode = cleanGroup
+    .replace(/^(?:[0-9IVXLCDM]+\s*[\.\-–:]\s*|[0-9\.\-]+\s*[-–:]\s*)/i, "")
+    .trim();
+
+  // Jika nama kelompok diawali kata "Belanja ", misal "Belanja Pelatihan MARS", ambil nama kegiatannya
+  const matchBelanja = groupWithoutCode.match(/^belanja\s+(.+)$/i);
+  const rawActivity = matchBelanja && matchBelanja[1] ? matchBelanja[1].trim() : groupWithoutCode;
+
+  // Format nama kegiatan menjadi lebih rapi dan alami (contoh: "PELATIHAN MARS" -> "Pelatihan MARS")
+  const activityName = formatActivityTitle(rawActivity);
+
+  // Cek apakah uraian rincian sudah mengandung nama kelompok agar tidak dobel
+  let combined = cleanRow;
+  if (
+    activityName &&
+    !cleanRow.toLowerCase().includes(activityName.toLowerCase())
+  ) {
+    combined = `${cleanRow} ${activityName}`;
+  }
+
+  // Tambahkan suffix sesuai mode realisasi
+  if (options?.mode === "bertahap" && options.stageNumber) {
+    return `${combined} - Kegiatan ${options.stageNumber}`;
+  }
+
+  if (options?.mode === "sekaligus" && options.totalStages && options.totalStages > 1) {
+    return `${combined} (${options.totalStages} Kegiatan)`;
+  }
+
+  return combined;
+}
+
 interface RabTableViewProps {
   summary: RabSummary;
   onSummaryUpdated: (newSummary: RabSummary) => void;
@@ -71,6 +153,15 @@ export function RabTableView({
   const [editGroupKode, setEditGroupKode] = useState("");
   const [editGroupNama, setEditGroupNama] = useState("");
   const [editGroupAnggaran, setEditGroupAnggaran] = useState<string>("");
+
+  // Modal State for Realisasi Bertahap vs Sekaligus (2 Opsi)
+  const [realizeModalData, setRealizeModalData] = useState<{
+    group: RabStatusItem;
+    row: RabDetailRow;
+    stageNumber: number;
+    costPerStage: number;
+    totalRemaining: number;
+  } | null>(null);
 
   // Form Fields for Rincian Row
   const [uraian, setUraian] = useState("");
@@ -595,6 +686,32 @@ export function RabTableView({
                           {/* Uraian Kegiatan / Penggunaan */}
                           <td className="py-2.5 px-4 text-slate-200 print:text-black border-r border-slate-800 print:border-black">
                             <span className="font-medium text-xs">{row.uraian}</span>
+
+                            {/* Tracking Volume Fisik (Multi-Kegiatan & Multi-Orang) */}
+                            {isRowSebagian && (
+                              <div className="mt-1 flex items-center gap-1.5 flex-wrap print:hidden">
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 font-mono">
+                                  Terlaksana: {row.volumeRealisasiKeterangan || `${row.volumeRealisasi1} ${row.koefisien1Satuan}`}
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-700/60 text-amber-300 font-mono font-bold">
+                                  Tersisa: {row.volumeSisaKeterangan || `${row.volumeSisa1} lagi`}
+                                </span>
+                              </div>
+                            )}
+                            {isRowLunas && (
+                              <div className="mt-1 flex items-center gap-1.5 flex-wrap print:hidden">
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-mono">
+                                  ✓ Selesai: {row.volumeRealisasiKeterangan || `${row.koefisien1Vol} ${row.koefisien1Satuan}`}
+                                </span>
+                              </div>
+                            )}
+                            {!isRowLunas && !isRowSebagian && Boolean(row.koefisien2Vol) && (
+                              <div className="mt-0.5 print:hidden">
+                                <span className="text-[9.5px] text-slate-400 font-mono">
+                                  Target: {row.koefisien1Vol} {row.koefisien1Satuan} ({row.koefisien2Vol} {row.koefisien2Satuan}/kegiatan)
+                                </span>
+                              </div>
+                            )}
                           </td>
 
                           {/* Koefisien I Volume */}
@@ -666,19 +783,59 @@ export function RabTableView({
                           {/* Tombol Realisasikan & Actions (Screen only) */}
                           <td className="py-2 px-2 print:hidden text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1.5">
-                              {/* 1-Click Realisasikan ke Kwitansi Belanja */}
-                              <Link
-                                href={`/user/kwitansi?uraian=${encodeURIComponent(
-                                  `${row.uraian} (${group.nama})`
-                                )}&nominal=${rowSisa > 0 ? rowSisa : row.total}&kategori=${encodeURIComponent(
-                                  group.kode
-                                )}`}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1 shadow-sm"
-                                title="Buat Kwitansi Belanja Otomatis untuk item ini"
-                              >
-                                <ReceiptIcon className="w-3 h-3" />
-                                <span>Realisasikan</span>
-                              </Link>
+                              {/* 1-Click Realisasikan ke Kwitansi Belanja dengan Sugesti Nominal Cerdas */}
+                              {(() => {
+                                const costPerStage =
+                                  row.koefisien2Vol && row.hargaSatuan
+                                    ? row.koefisien2Vol * row.hargaSatuan
+                                    : 0;
+                                const stageNumber = (row.volumeRealisasi1 || 0) + 1;
+                                const isMultiStage =
+                                  row.koefisien1Vol > 1 && costPerStage > 0 && rowSisa > costPerStage;
+
+                                if (isMultiStage) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRealizeModalData({
+                                          group,
+                                          row,
+                                          stageNumber,
+                                          costPerStage,
+                                          totalRemaining: rowSisa > 0 ? rowSisa : row.total,
+                                        });
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1 shadow-sm cursor-pointer"
+                                      title="Pilih Opsi Realisasi (Bertahap per Kegiatan atau Sekaligus)"
+                                    >
+                                      <ReceiptIcon className="w-3 h-3" />
+                                      <span>Realisasikan ▾</span>
+                                    </button>
+                                  );
+                                }
+
+                                const defaultNominal = rowSisa > 0 ? rowSisa : row.total;
+                                const defaultUraian = formatKwitansiUraian(row.uraian, group.nama, {
+                                  stageNumber: row.koefisien1Vol > 1 ? stageNumber : undefined,
+                                  mode: row.koefisien1Vol > 1 ? "bertahap" : "single",
+                                });
+
+                                return (
+                                  <Link
+                                    href={`/user/kwitansi?uraian=${encodeURIComponent(
+                                      defaultUraian
+                                    )}&nominal=${defaultNominal}&kategori=${encodeURIComponent(
+                                      group.kode
+                                    )}`}
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1 shadow-sm"
+                                    title="Buat Kwitansi Belanja Otomatis untuk item ini"
+                                  >
+                                    <ReceiptIcon className="w-3 h-3" />
+                                    <span>Realisasikan</span>
+                                  </Link>
+                                );
+                              })()}
 
                               {/* Edit Row Button */}
                               <button
@@ -1079,6 +1236,171 @@ export function RabTableView({
                 type="button"
                 onClick={() => setIsEditGroupModalOpen(false)}
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL PILIH REALISASI (2 OPSI: BERTAHAP VS SEKALIGUS) ================= */}
+      {realizeModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-scaleIn">
+            <div className="flex items-center justify-between p-5 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                  <ReceiptIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Pilih Metode Realisasi Kwitansi
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Pos Rekening: {realizeModalData.group.kode} - {realizeModalData.group.nama}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRealizeModalData(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Item Anggaran RAB:
+                </span>
+                <p className="text-xs font-bold text-white">
+                  {realizeModalData.row.uraian}
+                </p>
+                <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                  <span>
+                    Volume: {realizeModalData.row.koefisien1Vol} {realizeModalData.row.koefisien1Satuan}
+                    {realizeModalData.row.koefisien2Vol ? ` × ${realizeModalData.row.koefisien2Vol} ${realizeModalData.row.koefisien2Satuan}` : ""}
+                    {" "}@ Rp {formatNum(realizeModalData.row.hargaSatuan)}
+                  </span>
+                  <span className="text-emerald-400 font-bold">
+                    Sisa Pagu: Rp {formatNum(realizeModalData.totalRemaining)}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300 font-medium">
+                Pilih salah satu cara pembuatan kwitansi belanja:
+              </p>
+
+              {(() => {
+                const uraianBertahap = formatKwitansiUraian(
+                  realizeModalData.row.uraian,
+                  realizeModalData.group.nama,
+                  {
+                    stageNumber: realizeModalData.stageNumber,
+                    mode: "bertahap",
+                  }
+                );
+
+                const uraianSekaligus = formatKwitansiUraian(
+                  realizeModalData.row.uraian,
+                  realizeModalData.group.nama,
+                  {
+                    totalStages: realizeModalData.row.koefisien1Vol,
+                    mode: "sekaligus",
+                  }
+                );
+
+                return (
+                  <>
+                    {/* OPSI 1: Realisasi Bertahap (Per Kegiatan) */}
+                    <Link
+                      href={`/user/kwitansi?uraian=${encodeURIComponent(
+                        uraianBertahap
+                      )}&nominal=${realizeModalData.costPerStage}&kategori=${encodeURIComponent(
+                        realizeModalData.group.kode
+                      )}`}
+                      onClick={() => setRealizeModalData(null)}
+                      className="block p-4 rounded-xl bg-slate-950 border border-emerald-800/50 hover:border-emerald-500 hover:bg-emerald-950/30 transition-all group shadow-sm cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold border border-emerald-800/60">
+                              OPSI 1: BERTAHAP
+                            </span>
+                            <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                              Realisasi Per Kegiatan (Ke-{realizeModalData.stageNumber})
+                            </h4>
+                          </div>
+                          <p className="text-xs font-semibold text-emerald-300 mt-1.5 font-mono">
+                            &ldquo;{uraianBertahap}&rdquo;
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            Mencairkan 1 kegiatan ({realizeModalData.row.koefisien2Vol || 1} {realizeModalData.row.koefisien2Satuan || "orang"}). Sisa setelah ini: {Math.max(0, realizeModalData.row.koefisien1Vol - realizeModalData.stageNumber)} kegiatan lagi.
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <span className="font-mono text-sm font-bold text-emerald-400 block">
+                            Rp {formatNum(realizeModalData.costPerStage)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                            1 Kegiatan
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* OPSI 2: Realisasi Sekaligus (Seluruh Kegiatan Langsung) */}
+                    <Link
+                      href={`/user/kwitansi?uraian=${encodeURIComponent(
+                        uraianSekaligus
+                      )}&nominal=${realizeModalData.totalRemaining}&kategori=${encodeURIComponent(
+                        realizeModalData.group.kode
+                      )}`}
+                      onClick={() => setRealizeModalData(null)}
+                      className="block p-4 rounded-xl bg-slate-950 border border-cyan-800/50 hover:border-cyan-500 hover:bg-cyan-950/30 transition-all group shadow-sm cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 text-[10px] font-bold border border-cyan-800/60">
+                              OPSI 2: SEKALIGUS
+                            </span>
+                            <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                              Realisasi Langsung Semua ({realizeModalData.row.koefisien1Vol} {realizeModalData.row.koefisien1Satuan})
+                            </h4>
+                          </div>
+                          <p className="text-xs font-semibold text-cyan-300 mt-1.5 font-mono">
+                            &ldquo;{uraianSekaligus}&rdquo;
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            Mencairkan seluruh {realizeModalData.row.koefisien1Vol} kegiatan sekaligus dalam 1 lembar kwitansi. Status setelah ini: LUNAS PENUH.
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <span className="font-mono text-sm font-bold text-cyan-400 block">
+                            Rp {formatNum(realizeModalData.totalRemaining)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                            Total Semua
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRealizeModalData(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Batal
               </button>

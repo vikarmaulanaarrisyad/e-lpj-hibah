@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   FileText,
   FileCheck,
@@ -42,7 +42,7 @@ import {
   deleteReceiptAction,
 } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
-import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalSuccessWithAction } from "@/lib/swal";
 import { exportKwitansiToPdf } from "@/lib/kwitansi-pdf";
 import { KwitansiCanvas } from "./kwitansi-canvas";
 import type {
@@ -58,14 +58,13 @@ function toDateInputValue(val?: string | Date | null): string {
   if (!val) return new Date().toISOString().split("T")[0];
   if (val instanceof Date) return val.toISOString().split("T")[0];
   if (typeof val === "string") {
-    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.substring(0, 10);
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
+    if (val.includes("T")) return val.split("T")[0];
+    return val;
   }
   return new Date().toISOString().split("T")[0];
 }
 
-interface KwitansiFormProps {
+export interface KwitansiFormProps {
   initialInstitution?: string;
   initialUserName?: string;
   initialLeaderName?: string;
@@ -82,6 +81,7 @@ export function KwitansiForm({
   savedReceipts = [],
   initialRabSummary,
 }: KwitansiFormProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [showCutGuides, setShowCutGuides] = useState(false);
@@ -560,6 +560,18 @@ export function KwitansiForm({
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
 
+    const effectiveNominal =
+      formData.nominalValue > 0
+        ? formData.nominalValue
+        : parseRupiahToNumber(formData.nominal);
+
+    if (effectiveNominal < 1000) {
+      const msg = "Nominal kwitansi minimal Rp 1.000. Silakan isi jumlah uang belanja.";
+      setSaveErrorMsg(msg);
+      swalError("Nominal Belum Diisi", msg);
+      return;
+    }
+
     // Deficit Guardrail: Block if over-budget without explicit override
     if (currentRabStatus?.isDeficit && !allowDeficitOverride) {
       const msg = `Defisit Anggaran Terdeteksi: Nominal transaksi melebihi sisa pagu rekening ${currentRabStatus.kode} sebesar Rp ${currentRabStatus.sisaPaguSebelum.toLocaleString("id-ID")}. Silakan sesuaikan nominal atau centang 'Otorisasi Khusus Defisit' jika mendesak.`;
@@ -571,11 +583,11 @@ export function KwitansiForm({
     swalLoading("Menyimpan Kwitansi...", "Mencatat bukti transaksi belanja ke Buku Kas Umum...");
     startTransition(async () => {
       const response = await saveReceiptAction({
-        nomorBukti: formData.nomorBukti,
+        nomorBukti: formData.nomorBukti.trim(),
         tanggal: formData.tanggal,
         pemberi: formData.pemberi,
-        nominal: formData.nominalValue,
-        terbilang: formData.terbilang,
+        nominal: effectiveNominal,
+        terbilang: formData.terbilang || angkaKeTerbilang(effectiveNominal),
         uraian: formData.uraian,
         ketua: formData.ketua,
         bendahara: formData.bendahara,
@@ -595,9 +607,9 @@ export function KwitansiForm({
         isPph23: formData.isPph23,
         pph23Rate: formData.pph23Rate,
         pph23Nominal: formData.pph23Nominal,
-        dpp: formData.dpp,
+        dpp: formData.dpp || effectiveNominal,
         totalPajak: formData.totalPajak,
-        nominalBersih: formData.nominalBersih,
+        nominalBersih: formData.nominalBersih || effectiveNominal,
         keteranganPajak: formData.keteranganPajak,
       });
 
@@ -630,7 +642,19 @@ export function KwitansiForm({
       });
 
       setSaveSuccessMsg(response.message);
-      swalSuccess("Kwitansi Disimpan!", response.message);
+
+      const goToBku = await swalSuccessWithAction({
+        title: "Kwitansi Berhasil Disimpan!",
+        text: `${response.message} Transaksi ${formData.nomorBukti} senilai Rp ${effectiveNominal.toLocaleString("id-ID")} telah otomatis tercatat di Buku Kas Umum (BKU).`,
+        confirmText: "Lihat di Buku Kas Umum (BKU) →",
+        cancelText: "Tetap di Generator",
+      });
+
+      if (goToBku) {
+        router.push("/user/bku");
+        router.refresh();
+      }
+
       setTimeout(() => setSaveSuccessMsg(null), 5000);
     });
   };

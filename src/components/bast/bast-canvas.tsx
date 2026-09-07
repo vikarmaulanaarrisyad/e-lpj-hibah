@@ -37,11 +37,21 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
   return (
     <div
       id="bastPrintArea"
-      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm p-4 sm:p-8 md:p-10 flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:max-w-none"
+      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-6 sm:pt-8 md:pt-[18mm] pb-6 sm:pb-8 md:pb-[18mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
       style={{
-        minHeight: "1050px",
+        minHeight: "1198px",
       }}
     >
+      {/* Indikator Panduan Margin Jilid Dokumen (Hanya Tampil di Layar / no-print) */}
+      <div
+        className="no-print absolute top-0 bottom-0 left-0 w-[24px] sm:w-[28px] md:w-[28mm] border-r border-dashed border-emerald-400/50 pointer-events-none flex flex-col justify-center items-center opacity-30 hover:opacity-90 transition-opacity"
+        title="Area Margin Penjilidan (28 mm) - Aman untuk penjilidan, staples, & lubang binder"
+      >
+        <span className="text-[8.5px] font-mono text-emerald-800 font-bold rotate-[-90deg] whitespace-nowrap tracking-wider select-none">
+          RUANG JILID (28mm)
+        </span>
+      </div>
+
       {/* ================= KOP SURAT RESMI (DARI DATABASE & CLOUDINARY) ================= */}
       <div className="flex items-center justify-between pb-3 relative">
         {/* Logo Lambang (Cloudinary Image / Fallback Vektor Hijau Resmi) */}

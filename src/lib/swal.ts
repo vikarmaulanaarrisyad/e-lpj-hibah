@@ -144,4 +144,36 @@ export const swalConfirm = async (options: {
   return result.isConfirmed;
 };
 
+// 6. SWAL SUKSES DENGAN OPSI AKSI LANGSUNG (e.g. Buka BKU)
+export const swalSuccessWithAction = async (options: {
+  title: string;
+  text?: string;
+  confirmText?: string;
+  cancelText?: string;
+}): Promise<boolean> => {
+  const result = await Swal.fire({
+    icon: "success",
+    title: options.title,
+    text: options.text,
+    showCancelButton: true,
+    confirmButtonText: options.confirmText || "Lihat di Buku Kas Umum (BKU) →",
+    cancelButtonText: options.cancelText || "Tetap di Generator",
+    confirmButtonColor: "#059669",
+    cancelButtonColor: "#334155",
+    reverseButtons: false,
+    background: "#0f172a",
+    color: "#f8fafc",
+    iconColor: "#10b981",
+    customClass: {
+      popup: "rounded-3xl border border-slate-800 shadow-2xl",
+      title: "text-base sm:text-lg font-bold text-white",
+      htmlContainer: "text-xs sm:text-sm text-slate-300",
+      confirmButton: "px-5 py-2.5 rounded-xl font-semibold text-xs shadow-md bg-emerald-600 hover:bg-emerald-700 text-white",
+      cancelButton: "px-5 py-2.5 rounded-xl font-semibold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300",
+    },
+  });
+
+  return result.isConfirmed;
+};
+
 export default Swal;

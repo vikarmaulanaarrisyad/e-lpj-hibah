@@ -17,6 +17,12 @@ export interface RabDetailRow {
   realisasi?: number;
   sisa?: number;
   statusSerapan?: "BELUM" | "SEBAGIAN" | "LUNAS" | "DEFISIT";
+  volumeRealisasi1?: number;
+  volumeRealisasi2?: number;
+  volumeSisa1?: number;
+  volumeSisa2?: number;
+  volumeRealisasiKeterangan?: string;
+  volumeSisaKeterangan?: string;
 }
 
 export interface RabStatusItem {

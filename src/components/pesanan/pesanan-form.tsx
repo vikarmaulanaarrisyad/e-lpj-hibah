@@ -25,7 +25,10 @@ import {
   Sparkles,
   Calendar,
   Edit3,
+  FileDown,
+  Loader2,
 } from "lucide-react";
+import { exportPesananToPdf } from "@/lib/pesanan-pdf";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
 import {
   formatDateIndo,
@@ -72,6 +75,7 @@ export function PesananForm({
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
   const [zoomScale, setZoomScale] = useState<number>(100);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const defaultChairman = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
   const defaultInstitution = profile?.subNama
@@ -323,6 +327,22 @@ export function PesananForm({
     setSaveErrorMsg(null);
   };
 
+  // Handler ekspor langsung ke dokumen PDF Kertas F4 Portrait (215mm x 330mm) dengan Margin Jilid
+  const handleExportPdf = async () => {
+    if (isExportingPdf) return;
+    try {
+      setIsExportingPdf(true);
+      await exportPesananToPdf({
+        elementId: "pesananPrintArea",
+        nomorSp: formData.nomorSp,
+        formData: formData,
+        profile: profile,
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   // Handler cetak SP dengan judul dokumen otomatis untuk opsi Save as PDF
   const handlePrint = () => {
     const prevTitle = document.title;
@@ -551,6 +571,21 @@ export function PesananForm({
             >
               <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
               <span>Surat Pesanan Baru (+)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/50 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+              title="Ekspor Surat Pesanan langsung ke file PDF ukuran F4 Portrait (215mm x 330mm) dengan margin jilid"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5" />
+              )}
+              <span>Ekspor PDF (F4)</span>
             </button>
           </div>
         </div>
@@ -1120,14 +1155,31 @@ export function PesananForm({
                   </Link>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Cetak / Ekspor PDF</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    disabled={isExportingPdf}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/50 text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                    title="Unduh langsung PDF F4 Portrait dengan Margin Jilid Kiri"
+                  >
+                    {isExportingPdf ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileDown className="w-4 h-4" />
+                    )}
+                    <span>Ekspor PDF (F4)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Cetak Printer</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1139,7 +1191,7 @@ export function PesananForm({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                 <span className="text-xs text-slate-200 font-semibold line-clamp-1">
-                  Pratinjau Resmi Surat Pesanan (Format A4 LPJ Bakesbangpol)
+                  Pratinjau Resmi Surat Pesanan (Format F4 Portrait • Margin Jilid 28mm)
                 </span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1164,8 +1216,23 @@ export function PesananForm({
                 </button>
                 <button
                   type="button"
+                  onClick={handleExportPdf}
+                  disabled={isExportingPdf}
+                  className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors border border-emerald-500/40 disabled:opacity-50"
+                  title="Ekspor PDF F4 Portrait"
+                >
+                  {isExportingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                  <span className="hidden sm:inline">Ekspor PDF (F4)</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+                <button
+                  type="button"
                   onClick={handlePrint}
-                  className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-[#006c4e] hover:bg-[#004532] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                  className="px-2.5 sm:px-3 py-1.5 bg-[#006c4e] hover:bg-[#004532] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Cetak Sekarang</span>
@@ -1315,6 +1382,18 @@ export function PesananForm({
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                               <span className="hidden md:inline">Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                loadPesananIntoForm(p);
+                                setTimeout(() => handleExportPdf(), 250);
+                              }}
+                              className="p-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 hover:text-white text-xs transition-colors flex items-center gap-1"
+                              title="Ekspor PDF F4 Surat Pesanan Ini"
+                            >
+                              <FileDown className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">PDF</span>
                             </button>
                             <button
                               type="button"

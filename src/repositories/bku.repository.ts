@@ -66,6 +66,7 @@ export class BkuRepository {
           jenis: "PENGELUARAN",
           kategoriRab: data.kategoriRab ?? null,
           nominal: data.nominal,
+          userId: data.userId,
         },
         create: {
           nomorBukti: data.nomorBukti,

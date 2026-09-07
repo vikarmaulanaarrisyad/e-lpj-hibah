@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import type { BkuLedgerEntry, BkuSummary } from "@/types";
 import { BkuStatsCards } from "@/components/bku/bku-stats-cards";
 import { BkuTable } from "@/components/bku/bku-table";
@@ -34,6 +34,12 @@ export function BkuClientView({
     message: string;
   } | null>(null);
 
+  // Sync state if server component passes updated props (e.g. after revalidatePath)
+  useEffect(() => {
+    setEntries(initialEntries);
+    setSummary(initialSummary);
+  }, [initialEntries, initialSummary]);
+
   const handleRefresh = async () => {
     startTransition(async () => {
       // Automatic sync unsynced receipts first
@@ -45,6 +51,11 @@ export function BkuClientView({
       }
     });
   };
+
+  // Auto-sync on client mount to guarantee real-time ledger consistency
+  useEffect(() => {
+    handleRefresh();
+  }, []);
 
   const handleForceSync = async () => {
     startTransition(async () => {
