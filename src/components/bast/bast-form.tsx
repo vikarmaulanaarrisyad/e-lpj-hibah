@@ -834,7 +834,7 @@ export function BastForm({
             <button
               type="button"
               onClick={() => setIsKopModalOpen(true)}
-              className="px-2.5 py-1 rounded bg-[#004532]/80 hover:bg-[#004532] border border-[#006c4e] text-emerald-300 text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+              className="px-2.5 py-1 rounded-xl bg-[#004532]/80 hover:bg-[#004532] border border-[#006c4e] text-emerald-300 text-xs transition-all flex items-center gap-1.5 shadow-sm btn-press hover:shadow-emerald-950/40 cursor-pointer"
               title="Sesuaikan Kop Surat, Logo Cloudinary, dan Nomor Lembaga"
             >
               <Building2 className="w-3.5 h-3.5 text-emerald-300" />
@@ -844,7 +844,7 @@ export function BastForm({
             <button
               type="button"
               onClick={handleCreateNew}
-              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition-colors flex items-center gap-1.5"
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition-all flex items-center gap-1.5 btn-press cursor-pointer hover:text-white"
             >
               <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
               <span>BAST Baru (+)</span>
@@ -854,7 +854,7 @@ export function BastForm({
               type="button"
               onClick={handleExportPdf}
               disabled={isExportingPdf}
-              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/50 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/50 text-white text-xs font-semibold transition-all shadow-md hover:shadow-emerald-900/50 flex items-center gap-1.5 disabled:opacity-50 btn-press cursor-pointer"
               title="Ekspor Berita Acara langsung ke file PDF ukuran F4 Portrait (215mm x 330mm) dengan margin jilid"
             >
               {isExportingPdf ? (
@@ -875,7 +875,7 @@ export function BastForm({
           <button
             type="button"
             onClick={() => setMobileTab("form")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all btn-press flex items-center justify-center gap-2 ${
               mobileTab === "form"
                 ? "bg-brand-primary text-white shadow-md border border-emerald-600/40"
                 : "text-slate-400 hover:text-white"
@@ -887,7 +887,7 @@ export function BastForm({
           <button
             type="button"
             onClick={() => setMobileTab("preview")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all btn-press flex items-center justify-center gap-2 ${
               mobileTab === "preview"
                 ? "bg-brand-primary text-white shadow-md border border-emerald-600/40"
                 : "text-slate-400 hover:text-white"
@@ -902,7 +902,10 @@ export function BastForm({
         <div className="mb-6 w-full">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md">
             <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
               <span className="text-xs font-bold text-white uppercase tracking-wider">
                 1 Realisasi Pembelian Pengadaan Nyambung:
               </span>
@@ -914,7 +917,7 @@ export function BastForm({
             <div className="flex items-center gap-2 flex-wrap text-xs">
               <Link
                 href={`/user/pesanan?no=${encodeURIComponent(formData.nomorSpk || "")}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors font-medium border border-slate-700/60 shadow-xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all btn-press font-medium border border-slate-700/60 shadow-xs"
               >
                 <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
                 <span>1. Surat Pesanan (SP)</span>
@@ -922,7 +925,7 @@ export function BastForm({
 
               <span className="text-slate-600 font-bold">➔</span>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950 border border-emerald-600/80 text-emerald-300 font-bold shadow-xs">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950 border border-emerald-600/80 text-emerald-300 font-bold shadow-[0_0_12px_rgba(16,185,129,0.25)]">
                 <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
                 <span>2. Berita Acara (BAST)</span>
               </div>
@@ -1581,7 +1584,7 @@ export function BastForm({
                     type="button"
                     disabled={isPending}
                     onClick={handleSaveBast}
-                    className="px-4 py-2.5 bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold rounded-xl transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+                    className="px-4 py-2.5 bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold rounded-xl transition-all shadow-md hover:shadow-emerald-900/40 flex items-center gap-2 disabled:opacity-50 btn-press cursor-pointer"
                   >
                     {isPending ? (
                       <RefreshCw className="w-4 h-4 animate-spin text-emerald-200" />
@@ -1596,7 +1599,7 @@ export function BastForm({
                       type="button"
                       disabled={isPending}
                       onClick={handleDeleteBast}
-                      className="px-3.5 py-2.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-2.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold rounded-xl transition-all btn-press flex items-center gap-1.5 cursor-pointer"
                       title="Hapus Dokumen BAST Ini"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
@@ -1606,7 +1609,7 @@ export function BastForm({
 
                   <Link
                     href="/user/bku"
-                    className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2"
+                    className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all btn-press flex items-center gap-2 hover:text-white"
                   >
                     <RefreshCw className="w-4 h-4 text-emerald-400" />
                     <span>Sinkronisasi BKU</span>
@@ -1618,7 +1621,7 @@ export function BastForm({
                     type="button"
                     onClick={handleExportBundlePdf}
                     disabled={isExportingBundle}
-                    className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 border border-emerald-400/40 disabled:opacity-50 cursor-pointer"
+                    className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md hover:shadow-teal-900/40 flex items-center gap-2 border border-emerald-400/40 disabled:opacity-50 btn-press cursor-pointer"
                     title="Unduh Surat Pesanan (Hal. 1) dan Berita Acara (Hal. 2) dalam satu file PDF F4 siap jilid"
                   >
                     {isExportingBundle ? (
@@ -1633,7 +1636,7 @@ export function BastForm({
                     type="button"
                     onClick={handleExportPdf}
                     disabled={isExportingPdf}
-                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/50 text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/50 text-white text-xs font-semibold rounded-xl transition-all shadow-sm hover:shadow-emerald-900/40 flex items-center gap-2 disabled:opacity-50 btn-press cursor-pointer"
                     title="Unduh langsung PDF F4 Portrait dengan Margin Jilid Kiri"
                   >
                     {isExportingPdf ? (
@@ -1647,7 +1650,7 @@ export function BastForm({
                   <button
                     type="button"
                     onClick={handlePrint}
-                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-semibold rounded-xl transition-all btn-press flex items-center gap-2 shadow-sm cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
                     <span>Cetak Printer</span>
@@ -1691,7 +1694,7 @@ export function BastForm({
                 <button
                   type="button"
                   onClick={() => setPreviewMode("bast")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all btn-press cursor-pointer ${
                     previewMode === "bast"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "text-slate-400 hover:text-white"
@@ -1702,7 +1705,7 @@ export function BastForm({
                 <button
                   type="button"
                   onClick={() => setPreviewMode("sp")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all btn-press cursor-pointer ${
                     previewMode === "sp"
                       ? "bg-teal-600 text-white shadow-xs"
                       : "text-slate-400 hover:text-white"
@@ -1713,7 +1716,7 @@ export function BastForm({
                 <button
                   type="button"
                   onClick={() => setPreviewMode("bundel")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all btn-press flex items-center gap-1.5 cursor-pointer ${
                     previewMode === "bundel"
                       ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-xs"
                       : "text-slate-400 hover:text-white"
@@ -1728,7 +1731,7 @@ export function BastForm({
                 <button
                   type="button"
                   onClick={() => setZoomScale((prev) => Math.max(60, prev - 10))}
-                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all btn-press cursor-pointer"
                   title="Perkecil"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
@@ -1739,7 +1742,7 @@ export function BastForm({
                 <button
                   type="button"
                   onClick={() => setZoomScale((prev) => Math.min(130, prev + 10))}
-                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all btn-press cursor-pointer"
                   title="Perbesar"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
@@ -1748,7 +1751,7 @@ export function BastForm({
                   type="button"
                   onClick={handleExportBundlePdf}
                   disabled={isExportingBundle}
-                  className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all border border-emerald-400/40 disabled:opacity-50 cursor-pointer"
+                  className="ml-1 sm:ml-2 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all border border-emerald-400/40 disabled:opacity-50 btn-press cursor-pointer"
                   title="Unduh Bundel 2 Halaman (SP + BAST)"
                 >
                   {isExportingBundle ? (

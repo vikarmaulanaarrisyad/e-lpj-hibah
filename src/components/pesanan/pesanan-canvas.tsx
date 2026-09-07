@@ -378,11 +378,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-medium text-slate-800">Untuk dan atas nama</p>
             <p className="font-bold text-black uppercase">{data.pihak2Toko || "ADHUFU"}</p>
 
-            <div className="h-16 flex items-center justify-center my-1 relative">
-              <span className="text-[10px] font-mono text-slate-400 italic border border-dashed border-slate-300 px-3 py-1.5 rounded">
-                Tandatangan & Stempel Toko
-              </span>
-            </div>
+            {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Toko */}
+            <div className="h-20 my-1" />
 
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak2Nama || "ANSHORI"}
@@ -393,45 +390,20 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
           {/* Kolom Kanan: Pemesan (Fatayat NU Dawuhan Selatan) */}
           <div className="flex flex-col items-center text-center">
             <p className="font-bold text-black uppercase">
-              Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan
+              {profile?.namaLembaga
+                ? `Ketua ${namaLembaga} ${subNama}`
+                : "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan"}
             </p>
             <p className="font-medium text-slate-800">Pemesan</p>
 
-            <div className="h-16 flex items-center justify-center my-1 relative">
-              {/* Stempel Hijau Orisinal Fatayat NU */}
-              <div className="w-14 h-14 rounded-full border-2 border-[#006c4e]/60 flex flex-col items-center justify-center bg-emerald-50/40 text-[#006c4e] text-[8px] font-bold rotate-[-10deg] shadow-xs">
-                <span>★ FATAYAT ★</span>
-                <span className="text-[7px]">DAWUHAN</span>
-                <span className="text-[6.5px]">SELATAN</span>
-              </div>
-            </div>
+            {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
+            <div className="h-20 my-1" />
 
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak1Nama || "HENI FUJIATI"}
             </p>
             <p className="text-[10px] text-slate-700">{data.pihak1Jabatan || "Ketua"}</p>
           </div>
-        </div>
-      </div>
-
-      {/* ================= FOOTER / TTE QR BARCODE AUDIT ================= */}
-      <div className="mt-4 pt-2 border-t border-slate-300 flex items-center justify-between text-[9.5px] text-slate-500">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-[8px] rounded">
-            QR
-          </div>
-          <div>
-            <p className="font-semibold text-slate-800">
-              Dokumen TTE Resmi Bakesbangpol & BPKAD Kab. Tegal
-            </p>
-            <p className="font-mono text-[9px] text-slate-500">
-              Nomor: {data.nomorSp} • Terverifikasi Otentik
-            </p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="font-mono font-bold text-[#006c4e]">E-LPJ HIBAH TA 2026</p>
-          <p className="text-[9px]">Lembar Asli Surat Pesanan (1 dari 1)</p>
         </div>
       </div>
     </div>

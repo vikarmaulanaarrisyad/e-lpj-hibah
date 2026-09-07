@@ -31,7 +31,6 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
   const alamat = profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06 Talang – Tegal 52193";
   const email = profile?.email || "prfnudawuhanselatan@gmail.com";
   const noHp = profile?.noHp || "085642719869";
-  const noRegistrasi = profile?.noRegistrasi || "HBH-2026-NU-0428";
   const logoUrl = profile?.logoUrl;
 
   return (
@@ -296,62 +295,29 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         Pekerjaan ini dibuat dengan sebenarnya dalam rangkap secukupnya untuk dipergunakan sebagaimana mestinya.
       </p>
 
-      {/* ================= DUAL SIGNATURES WITH AUTHENTIC STAMPS ================= */}
-      <div className="w-full grid grid-cols-2 mt-3 text-[12px] sm:text-[12.5px] text-black">
+      {/* ================= DUAL SIGNATURES ================= */}
+      <div className="w-full grid grid-cols-2 mt-4 text-[12px] sm:text-[12.5px] text-black">
         {/* Sisi Kiri: Pihak Kedua (Penyedia) */}
         <div className="flex flex-col items-center text-center">
           <span className="font-semibold uppercase tracking-wider">PIHAK KEDUA</span>
-          <span className="font-bold text-[13px] uppercase mt-0.5">{data.pihak2Toko || "SURYA MAS"}</span>
-          <span className="text-[11px] text-[#334155]">(Penyedia Barang / Rekanan)</span>
 
-          {/* Stamp & Signature Box */}
-          <div className="h-20 w-full flex items-center justify-center relative my-1">
-            {/* Toko Surya Mas Stamp Mock */}
-            <div className="absolute w-20 h-20 rounded-full border-2 border-dashed border-[#1e40af]/30 flex flex-col items-center justify-center text-[#1e40af]/40 -rotate-12 pointer-events-none select-none">
-              <span className="text-[7.5px] font-bold tracking-tight">TOKO REKANAN</span>
-              <span className="text-[6.5px] font-semibold">LUNAS & SAH</span>
-            </div>
-            {/* Signature line simulation */}
-            <svg className="w-32 h-12 text-[#0f172a]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 160 60">
-              <path d="M15 45 C 30 20, 45 60, 60 30 C 75 10, 85 55, 110 35 C 130 20, 140 40, 150 35" strokeLinecap="round" />
-            </svg>
-          </div>
+          {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Toko Rekanan */}
+          <div className="h-24 w-full my-1" />
 
           <span className="font-bold underline uppercase tracking-wide">{data.pihak2Nama || "ANSHORI"}</span>
-          <span className="text-[10.5px] text-slate-600 font-mono">Pemilik / Penanggung Jawab</span>
+          <span className="text-[10.5px] text-slate-600 font-mono">Penyedia Barang</span>
         </div>
 
         {/* Sisi Kanan: Pihak Kesatu (Penerima Hasil) */}
         <div className="flex flex-col items-center text-center">
           <span className="font-semibold uppercase tracking-wider">PIHAK KESATU</span>
-          <span className="font-bold text-[13px] uppercase mt-0.5 text-[#006c4e]">{namaLembaga} {subNama}</span>
-          <span className="text-[11px] text-[#334155]">(Ketua Pimpinan Ranting)</span>
 
-          {/* Stamp & Signature Box */}
-          <div className="h-20 w-full flex items-center justify-center relative my-1">
-            {/* Institution Green Stamp Mock */}
-            <div className="absolute w-20 h-20 rounded-full border-2 border-dashed border-[#006c4e]/35 flex flex-col items-center justify-center text-[#006c4e]/45 rotate-6 pointer-events-none select-none">
-              <span className="text-[7.5px] font-bold tracking-tight uppercase">{namaLembaga.substring(0, 14)}</span>
-              <span className="text-[6.5px] font-semibold uppercase">{subNama.substring(0, 16)}</span>
-            </div>
-            {/* Signature line simulation */}
-            <svg className="w-32 h-12 text-[#004532]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 160 60">
-              <path d="M20 40 C 35 15, 50 50, 70 20 C 85 30, 95 10, 120 45 C 135 25, 145 35, 155 30" strokeLinecap="round" />
-            </svg>
-          </div>
+          {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
+          <div className="h-24 w-full my-1" />
 
           <span className="font-bold underline uppercase tracking-wide text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
           <span className="text-[10.5px] text-slate-600 font-mono">Ketua Ranting</span>
         </div>
-      </div>
-
-      {/* ================= DOCUMENT WATERMARK / MICROPRINT FOOTER ================= */}
-      <div className="w-full border-t border-[#e2e8f0] pt-2 mt-6 flex items-center justify-between font-mono text-[9px] text-[#64748b] print:border-black">
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#006c4e]"></span>
-          <span>E-LPJ HIBAH KESBANGPOL KAB. TEGAL • DOKUMEN BAST OTENTIK</span>
-        </div>
-        <span>UUID: {noRegistrasi}-1A</span>
       </div>
     </div>
   );

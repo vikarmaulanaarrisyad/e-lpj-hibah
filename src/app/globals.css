@@ -44,6 +44,36 @@ body {
   scrollbar-width: none;
 }
 
+/* Micro-Interaction & Modern UI Utilities */
+.card-hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+.btn-press {
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.glow-hover-emerald {
+  transition: all 0.25s ease;
+}
+.glow-hover-emerald:hover {
+  box-shadow: 0 0 25px -3px rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
 /* ================= PRINT STYLESHEET ================= */
 @media print {
   @page {

@@ -85,23 +85,34 @@ export default async function UserDashboardPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto mt-8 space-y-8">
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-[#D97706]/15 border border-slate-800 rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+      <main className="max-w-7xl mx-auto mt-8 space-y-8 animate-fade-in">
+        {/* Welcome Banner with Dynamic Ambient Glow */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900/95 to-amber-950/20 bg-[length:200%_200%] animate-gradient-shift border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+          {/* Ambient Lighting Orbs */}
+          <div className="absolute -right-16 -top-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none animate-float" />
+          <div
+            className="absolute -left-16 -bottom-16 w-52 h-52 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-float"
+            style={{ animationDelay: "1.8s" }}
+          />
+
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-700/40 text-amber-300 text-xs font-medium mb-3">
-              <Building2 className="w-3.5 h-3.5" />
-              Lembaga Penerima Terdaftar
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-700/50 text-amber-300 text-xs font-medium mb-3 shadow-xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+              </span>
+              <span>Lembaga Penerima Terdaftar</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Selamat Datang, {session.name}
             </h2>
             <p className="mt-2 text-sm text-slate-300 max-w-2xl leading-relaxed">
               Gunakan portal ini untuk mencatat bukti kwitansi riil, mengawasi sisa pagu RAB agar tidak terjadi defisit, menghitung potongan pajak otomatis (PPh & PPN), serta menyusun Buku Kas Umum (BKU) siap cetak.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-4 text-xs text-slate-400">
-              <div className="bg-slate-950/60 px-3.5 py-2 rounded-lg border border-slate-800">
+            <div className="mt-6 flex flex-wrap gap-2.5 sm:gap-4 text-xs text-slate-400">
+              <div className="bg-slate-950/70 px-3.5 py-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors shadow-xs">
                 <span className="text-slate-500">Lembaga:</span>{" "}
                 <span className="text-slate-200 font-medium">
                   {profile?.subNama
@@ -109,25 +120,25 @@ export default async function UserDashboardPage() {
                     : session.institution || "PR Fatayat NU Dawuhan Selatan"}
                 </span>
               </div>
-              <div className="bg-slate-950/60 px-3.5 py-2 rounded-lg border border-slate-800">
+              <div className="bg-slate-950/70 px-3.5 py-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors shadow-xs">
                 <span className="text-slate-500">No. Registrasi:</span>{" "}
                 <span className="font-mono text-amber-300 font-semibold">
                   {profile?.noRegistrasi || "HBH-2026-NU-0428"}
                 </span>
               </div>
-              <div className="bg-slate-950/60 px-3.5 py-2 rounded-lg border border-slate-800">
+              <div className="bg-slate-950/70 px-3.5 py-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors shadow-xs">
                 <span className="text-slate-500">Kontak:</span>{" "}
                 <span className="font-mono text-slate-300">
                   {profile?.noHp || "085642719869"}
                 </span>
               </div>
-              <div className="bg-slate-950/60 px-3.5 py-2 rounded-lg border border-slate-800">
+              <div className="bg-slate-950/70 px-3.5 py-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors shadow-xs">
                 <span className="text-slate-500">Kop & Logo:</span>{" "}
                 <span className="font-mono text-emerald-400 font-semibold">
                   {profile?.logoUrl ? "Cloudinary Aktif" : "Default Vector"}
                 </span>
               </div>
-              <div className="bg-slate-950/60 px-3.5 py-2 rounded-lg border border-slate-800 flex items-center gap-2">
+              <div className="bg-slate-950/70 px-3.5 py-2 rounded-xl border border-slate-800 flex items-center gap-2 shadow-xs">
                 <div>
                   <span className="text-slate-500">Format No:</span>{" "}
                   <span className="font-mono text-emerald-300 font-semibold">
@@ -140,57 +151,74 @@ export default async function UserDashboardPage() {
           </div>
         </div>
 
-        {/* Real-Time Live Stat Metrics Grid */}
+        {/* Real-Time Live Stat Metrics Grid with Dynamic Entrance & Hover Lift */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          {/* Metric 1: Alokasi */}
+          <div className="card-hover-lift glow-hover-emerald bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">Alokasi Dana NPHD</span>
-              <Wallet className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-semibold text-slate-400">Alokasi Dana NPHD</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-700/50 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <Wallet className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-white mt-3 font-mono">
+            <p className="text-2xl font-bold text-white mt-3 font-mono tracking-tight">
               {formatRupiah(totalAnggaran)}
             </p>
             <p className="text-xs text-slate-500 mt-1">Total Pagu RAB yang Ditetapkan</p>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          {/* Metric 2: Realisasi */}
+          <div className="card-hover-lift bg-slate-900/80 hover:border-amber-500/50 hover:shadow-glow-amber border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">Realisasi Belanja</span>
-              <FileText className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-semibold text-slate-400">Realisasi Belanja</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-700/50 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                <FileText className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-amber-300 mt-3 font-mono">
+            <p className="text-2xl font-bold text-amber-300 mt-3 font-mono tracking-tight">
               {formatRupiah(totalRealisasi)}
             </p>
-            <p className="text-xs text-slate-500 mt-1">
-              {persentaseSerapan}% dari total anggaran (Sisa: {formatRupiah(totalSisaPagu)})
+            {/* Visual Serapan Anggaran Bar */}
+            <div className="w-full bg-slate-800/90 rounded-full h-1.5 mt-2.5 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-amber-500 to-emerald-400 h-1.5 rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(persentaseSerapan, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-slate-500 mt-1.5 flex items-center justify-between">
+              <span>{persentaseSerapan}% terserap</span>
+              <span>Sisa: {formatRupiah(totalSisaPagu)}</span>
             </p>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          {/* Metric 3: Kwitansi */}
+          <div className="card-hover-lift bg-slate-900/80 hover:border-cyan-500/50 hover:shadow-glow-cyan border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">Kwitansi Tercatat</span>
-              <UploadCloud className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-semibold text-slate-400">Kwitansi Tercatat</span>
+              <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-700/50 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                <UploadCloud className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-white mt-3 font-mono">
+            <p className="text-2xl font-bold text-white mt-3 font-mono tracking-tight">
               {receiptsCount} Dokumen
             </p>
             <p className="text-xs text-slate-500 mt-1">Format otentik blanko resmi kas negara</p>
           </div>
         </div>
 
-        {/* Action Module Cards */}
+        {/* Action Module Cards with Interactive Micro-Animations */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {/* Card 1: Kwitansi */}
           <Link
             href="/user/kwitansi"
-            className="group p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-emerald-950/40 hover:to-emerald-900/40 border border-slate-800 hover:border-emerald-600/60 rounded-2xl transition-all shadow-xl flex flex-col justify-between gap-4"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-emerald-950/40 hover:to-emerald-900/40 border border-slate-800 hover:border-emerald-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
           >
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-brand-primary/30 border border-brand-primary/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-brand-primary/30 border border-brand-primary/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
                   <FileText className="w-6 h-6 text-[#047857]" />
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700/60 text-emerald-300 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700/60 text-emerald-300 font-semibold shadow-xs">
                   Generator
                 </span>
               </div>
@@ -201,7 +229,7 @@ export default async function UserDashboardPage() {
                 Format kas negara baku, terbilang otomatis, deteksi materai, dan kalkulator pajak PPh/PPN.
               </p>
             </div>
-            <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-800/80">
+            <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Kwitansi</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
@@ -210,14 +238,14 @@ export default async function UserDashboardPage() {
           {/* Card 2: Kontrol Pagu RAB */}
           <Link
             href="/user/rab"
-            className="group p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-amber-950/30 hover:to-amber-900/30 border border-slate-800 hover:border-amber-600/60 rounded-2xl transition-all shadow-xl flex flex-col justify-between gap-4"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-amber-950/30 hover:to-amber-900/30 border border-slate-800 hover:border-amber-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
           >
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-amber-950/60 border border-amber-700/50 text-amber-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-amber-950/60 border border-amber-700/50 text-amber-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
                   <Layers className="w-6 h-6 text-amber-400" />
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded bg-amber-950 border border-amber-700/60 text-amber-300 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded bg-amber-950 border border-amber-700/60 text-amber-300 font-semibold shadow-xs">
                   Anti-Defisit
                 </span>
               </div>
@@ -228,7 +256,7 @@ export default async function UserDashboardPage() {
                 Pantau serapan per rekening (5.2.1 s/d 5.2.4), batas pagu NPHD, dan proteksi over-budget.
               </p>
             </div>
-            <div className="text-xs font-semibold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-800/80">
+            <div className="text-xs font-semibold text-amber-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Kontrol Pagu</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
@@ -237,14 +265,14 @@ export default async function UserDashboardPage() {
           {/* Card 3: Surat Pesanan (SP) */}
           <Link
             href="/user/pesanan"
-            className="group p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-teal-950/40 hover:to-teal-900/40 border border-slate-800 hover:border-teal-600/60 rounded-2xl transition-all shadow-xl flex flex-col justify-between gap-4"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-teal-950/40 hover:to-teal-900/40 border border-slate-800 hover:border-teal-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
           >
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-teal-950/70 border border-teal-700/50 text-teal-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-teal-950/70 border border-teal-700/50 text-teal-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
                   <ShoppingBag className="w-6 h-6 text-teal-300" />
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded bg-teal-950 border border-teal-700/60 text-teal-300 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded bg-teal-950 border border-teal-700/60 text-teal-300 font-semibold shadow-xs">
                   {pesananCount} Surat
                 </span>
               </div>
@@ -255,7 +283,7 @@ export default async function UserDashboardPage() {
                 Purchase Order resmi pengadaan barang & jasa, 6 klausul kontrak baku, tabel kalkulasi harga, & TTE.
               </p>
             </div>
-            <div className="text-xs font-semibold text-teal-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-800/80">
+            <div className="text-xs font-semibold text-teal-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Surat Pesanan</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
@@ -264,14 +292,14 @@ export default async function UserDashboardPage() {
           {/* Card 4: Berita Acara Serah Terima (BAST) */}
           <Link
             href="/user/bast"
-            className="group p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-[#004532]/50 hover:to-[#006c4e]/50 border border-slate-800 hover:border-[#006c4e] rounded-2xl transition-all shadow-xl flex flex-col justify-between gap-4"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-[#004532]/50 hover:to-[#006c4e]/50 border border-slate-800 hover:border-[#006c4e] rounded-2xl shadow-xl flex flex-col justify-between gap-4"
           >
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-[#004532]/80 border border-[#006c4e] text-emerald-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-[#004532]/80 border border-[#006c4e] text-emerald-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
                   <FileCheck className="w-6 h-6 text-[#97f5cc]" />
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded bg-[#004532] border border-[#006c4e] text-[#97f5cc] font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded bg-[#004532] border border-[#006c4e] text-[#97f5cc] font-semibold shadow-xs">
                   {bastCount} Arsip
                 </span>
               </div>
@@ -282,7 +310,7 @@ export default async function UserDashboardPage() {
                 Administrasi serah terima hasil pengadaan barang/sarana, terbilang resmi, uji fungsi, & 4 pilar audit.
               </p>
             </div>
-            <div className="text-xs font-semibold text-[#97f5cc] flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-800/80">
+            <div className="text-xs font-semibold text-[#97f5cc] flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka BAST Barang</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
@@ -291,14 +319,14 @@ export default async function UserDashboardPage() {
           {/* Card 5: BKU & SPJ */}
           <Link
             href="/user/bku"
-            className="group p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-cyan-950/30 hover:to-cyan-900/30 border border-slate-800 hover:border-cyan-600/60 rounded-2xl transition-all shadow-xl flex flex-col justify-between gap-4"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-cyan-950/30 hover:to-cyan-900/30 border border-slate-800 hover:border-cyan-600/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
           >
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-cyan-950/60 border border-cyan-700/50 text-cyan-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-cyan-950/60 border border-cyan-700/50 text-cyan-400 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
                   <BookOpen className="w-6 h-6 text-cyan-400" />
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700/60 text-cyan-300 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700/60 text-cyan-300 font-semibold shadow-xs">
                   Otomatis
                 </span>
               </div>
@@ -309,7 +337,7 @@ export default async function UserDashboardPage() {
                 Pembukuan kronologis debet/kredit, saldo berjalan, Kas Opname, dan Pembantu Pajak.
               </p>
             </div>
-            <div className="text-xs font-semibold text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-800/80">
+            <div className="text-xs font-semibold text-cyan-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Buku Kas</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>

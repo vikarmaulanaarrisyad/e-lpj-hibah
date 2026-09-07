@@ -713,7 +713,7 @@ export function KwitansiForm({
               type="button"
               onClick={handleExportPdf}
               disabled={isExportingPdf}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-2 border border-emerald-500/50 disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all shadow-md hover:shadow-emerald-900/50 flex items-center gap-2 border border-emerald-500/50 disabled:opacity-50 btn-press cursor-pointer"
               title="Ekspor Kwitansi langsung ke file PDF ukuran F4 Landscape (330mm x 215mm)"
             >
               {isExportingPdf ? (
@@ -726,7 +726,7 @@ export function KwitansiForm({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all shadow-md flex items-center gap-2 border border-slate-700"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all shadow-md flex items-center gap-2 border border-slate-700 btn-press cursor-pointer"
               title="Cetak langsung ke mesin printer fisik"
             >
               <Printer className="w-4 h-4 text-slate-300" />
@@ -743,7 +743,7 @@ export function KwitansiForm({
           <button
             type="button"
             onClick={() => setMobileTab("form")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all btn-press flex items-center justify-center gap-2 ${
               mobileTab === "form"
                 ? "bg-brand-primary text-white shadow-md border border-emerald-600/40"
                 : "text-slate-400 hover:text-white"
@@ -755,7 +755,7 @@ export function KwitansiForm({
           <button
             type="button"
             onClick={() => setMobileTab("preview")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all btn-press flex items-center justify-center gap-2 ${
               mobileTab === "preview"
                 ? "bg-brand-primary text-white shadow-md border border-emerald-600/40"
                 : "text-slate-400 hover:text-white"
@@ -1433,7 +1433,7 @@ export function KwitansiForm({
                         { isPpn: false, isPph23: true, pph23Rate: 0.02 }
                       )
                     }
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-all btn-press border border-transparent hover:border-emerald-700/40 cursor-pointer"
                   >
                     + Konsumsi Rapat (+PPh 23)
                   </button>
@@ -1447,7 +1447,7 @@ export function KwitansiForm({
                         { isPpn: false, isPph23: true, pph23Rate: 0.02 }
                       )
                     }
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-all btn-press border border-transparent hover:border-emerald-700/40 cursor-pointer"
                   >
                     + Sewa Terop (PPh 23)
                   </button>
@@ -1461,7 +1461,7 @@ export function KwitansiForm({
                         { isPpn: true, isPph22: true, pph22Rate: 0.015 }
                       )
                     }
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-all btn-press border border-transparent hover:border-emerald-700/40 cursor-pointer"
                   >
                     + Sound Portable (+PPN & PPh22)
                   </button>
@@ -1475,7 +1475,7 @@ export function KwitansiForm({
                         { isPph21: true, pph21Rate: 0.05, isPpn: false }
                       )
                     }
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 hover:text-emerald-200 text-slate-300 text-[11px] transition-all btn-press border border-transparent hover:border-emerald-700/40 cursor-pointer"
                   >
                     + Honor Narasumber (PPh 21)
                   </button>
@@ -1563,8 +1563,8 @@ export function KwitansiForm({
                     onClick={() => handleTemplateSelect("bank")}
                     className={`px-3 py-2 rounded-xl text-xs font-medium text-center transition-all ${
                       formData.template === "bank"
-                        ? "bg-brand-primary text-white border border-emerald-600 shadow-md font-semibold"
-                        : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+                        ? "bg-brand-primary text-white border border-emerald-600 shadow-md font-semibold btn-press"
+                        : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white btn-press"
                     }`}
                   >
                     Standar Kas Negara
@@ -1572,7 +1572,7 @@ export function KwitansiForm({
                   <button
                     type="button"
                     onClick={() => handleTemplateSelect("folio")}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium text-center transition-all ${
+                    className={`px-3 py-2 rounded-xl text-xs font-medium text-center transition-all btn-press ${
                       formData.template === "folio"
                         ? "bg-brand-primary text-white border border-emerald-600 shadow-md font-semibold"
                         : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
@@ -1583,7 +1583,7 @@ export function KwitansiForm({
                   <button
                     type="button"
                     onClick={() => handleTemplateSelect("triple")}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium text-center transition-all ${
+                    className={`px-3 py-2 rounded-xl text-xs font-medium text-center transition-all btn-press ${
                       formData.template === "triple"
                         ? "bg-brand-primary text-white border border-emerald-600 shadow-md font-semibold"
                         : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
@@ -1614,7 +1614,7 @@ export function KwitansiForm({
                   type="button"
                   disabled={isPending || (Boolean(currentRabStatus?.isDeficit) && !allowDeficitOverride)}
                   onClick={handleSaveToBKU}
-                  className="w-full px-3 py-3 rounded-xl bg-brand-primary hover:bg-brand-secondary active:scale-[0.99] text-white text-xs font-semibold shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition-all border border-emerald-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-3 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-xs font-semibold shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition-all border border-emerald-600/40 disabled:opacity-50 disabled:cursor-not-allowed btn-press cursor-pointer hover:shadow-emerald-900/40"
                 >
                   {isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin text-emerald-200" />
@@ -1631,15 +1631,15 @@ export function KwitansiForm({
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full px-3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700"
+                  className="w-full px-3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700 btn-press cursor-pointer hover:text-white"
                 >
-                  <PlusCircle className="w-4 h-4" />
+                  <PlusCircle className="w-4 h-4 text-emerald-400" />
                   <span>Kwitansi Baru (+)</span>
                 </button>
 
                 <Link
                   href={`/user/bast?receiptNo=${formData.nomorBukti}`}
-                  className="w-full px-3 py-3 rounded-xl bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md text-center"
+                  className="w-full px-3 py-3 rounded-xl bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md text-center btn-press hover:shadow-emerald-950/40"
                   title="Buat Berita Acara Serah Terima Barang untuk Kwitansi ini"
                 >
                   <FileCheck className="w-4 h-4 text-emerald-300 shrink-0" />
@@ -1653,7 +1653,7 @@ export function KwitansiForm({
                   type="button"
                   disabled={isPending}
                   onClick={handleDeleteCurrentReceipt}
-                  className="w-full mt-2 px-3 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  className="w-full mt-2 px-3 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all btn-press cursor-pointer"
                   title="Hapus kwitansi ini secara permanen dari database dan BKU"
                 >
                   <Trash2 className="w-4 h-4 text-red-400" />
