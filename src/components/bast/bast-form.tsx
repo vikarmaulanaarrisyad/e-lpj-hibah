@@ -216,7 +216,7 @@ export function BastForm({
       ...prev,
       nomorSpk: po.nomorSp,
       tanggalSpk: tglIso,
-      namaKegiatan: po.namaPaket || prev.namaKegiatan,
+      namaKegiatan: po.namaPaket ? po.namaPaket.split(/\s+sebanyak\s+/i)[0].trim() : prev.namaKegiatan,
       pihak1Nama: po.pihak1Nama || prev.pihak1Nama,
       pihak1Jabatan: po.pihak1Jabatan || prev.pihak1Jabatan,
       pihak2Nama: po.pihak2Nama || prev.pihak2Nama,
@@ -354,13 +354,14 @@ export function BastForm({
     if (receiptNoParam && initialReceipts.length > 0) {
       const r = initialReceipts.find((item) => item.nomorBukti === receiptNoParam);
       if (r) {
-        const itemName = r.uraian?.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
+        const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
+        const itemName = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
         setFormData((prev) => ({
           ...prev,
           receiptId: r.id,
           linkedReceiptNomor: r.nomorBukti,
           linkedReceiptNominal: r.nominal,
-          namaKegiatan: r.uraian,
+          namaKegiatan: cleanUraian,
           pihak2Nama: r.penerima || prev.pihak2Nama,
           pihak2Toko: `${r.penerima || "Penyedia"} (Penyedia Barang)`,
           items: [
@@ -583,13 +584,14 @@ export function BastForm({
 
     const r = initialReceipts.find((it) => it.id === receiptId);
     if (r) {
-      const cleanItem = r.uraian?.replace(/^Belanja\s+/i, "") || "Pengadaan Barang";
+      const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
+      const cleanItem = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Barang";
       setFormData((prev) => ({
         ...prev,
         receiptId: r.id,
         linkedReceiptNomor: r.nomorBukti,
         linkedReceiptNominal: r.nominal,
-        namaKegiatan: r.uraian,
+        namaKegiatan: cleanUraian,
         pihak2Nama: r.penerima || prev.pihak2Nama,
         pihak2Toko: `${r.penerima || "Penyedia"} (Penyedia Barang)`,
         items:

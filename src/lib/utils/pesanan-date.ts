@@ -296,3 +296,42 @@ export function syncNomorDokumenBulanTahun(currentNomor: string, dateStr: string
 
 // Backward compatibility alias
 export const syncNomorSpBulanTahun = syncNomorDokumenBulanTahun;
+
+/**
+ * Ekstrak nama desa / kota untuk titimangsa dokumen dari database profil lembaga
+ * 1. Mengambil nama Desa/Kelurahan dari alamat profil lembaga di database
+ * 2. Fallback ke nama depan subNama lembaga di database
+ * 3. Fallback ke default (contoh: "Dawuhan")
+ */
+export function extractNamaTempat(
+  profile?: { alamat?: string | null; subNama?: string | null } | null,
+  fallback = "Dawuhan"
+): string {
+  if (!profile) return fallback;
+
+  // 1. Coba cari nama Desa / Kelurahan dari alamat profil lembaga di database
+  // Contoh alamat: "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06 Talang – Tegal 52193"
+  if (profile.alamat) {
+    const matchDesa = profile.alamat.match(
+      /(?:Desa|Kelurahan|Kel\.|Ds\.)\s+([A-Za-z\s]+?)(?=\s+(?:RT|RW|Kec|Kecamatan|Kab|Kabupaten|–|-|\d)|$)/i
+    );
+    if (matchDesa && matchDesa[1]?.trim()) {
+      const words = matchDesa[1].trim().split(/\s+/);
+      return words
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    }
+  }
+
+  // 2. Coba ekstrak dari subNama profil lembaga di database (contoh: "DAWUHAN SELATAN" -> "Dawuhan")
+  if (profile.subNama) {
+    const cleanSub = profile.subNama.trim();
+    const words = cleanSub.split(/\s+/);
+    if (words.length > 0 && words[0]) {
+      const firstWord = words[0].trim();
+      return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+    }
+  }
+
+  return fallback;
+}

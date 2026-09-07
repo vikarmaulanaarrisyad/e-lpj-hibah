@@ -37,9 +37,9 @@ export function SuratPengantarCanvas({ data, profile }: SuratPengantarCanvasProp
         minHeight: minHeightPx,
       }}
     >
-      {/* Indikator Panduan Margin Jilid Dokumen (Hanya Tampil di Layar / no-print) */}
+      {/* Indikator Panduan Margin Jilid Dokumen (Hidden) */}
       <div
-        className="no-print absolute top-0 bottom-0 left-0 w-[24px] sm:w-[28px] md:w-[28mm] border-r border-dashed border-emerald-400/50 pointer-events-none flex flex-col justify-center items-center opacity-30 hover:opacity-90 transition-opacity"
+        className="hidden"
         title="Area Margin Penjilidan (28 mm) - Aman untuk penjilidan, staples, & lubang binder"
       >
         <span className="text-[8.5px] font-mono text-emerald-800 font-bold rotate-[-90deg] whitespace-nowrap tracking-wider select-none">

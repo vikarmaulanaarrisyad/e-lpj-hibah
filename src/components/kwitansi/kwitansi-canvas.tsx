@@ -177,15 +177,15 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
               <div className="grid grid-cols-3 gap-[1.2cqw] text-center items-end">
                 {/* Column 1: Setuju Dibayar (Ketua) */}
                 <div className="flex flex-col justify-between items-center text-center h-[10.8cqw]">
-                  <div className="text-[1.14cqw] text-slate-800 leading-tight text-center w-full flex flex-col items-center">
-                    <p className="font-semibold text-slate-950 text-center">Setuju dibayar</p>
-                    <p className="text-[1.06cqw] font-normal text-slate-700 text-center">{ketuaTitles.line1}</p>
-                    <p className="text-[1.06cqw] font-normal text-slate-700 text-center">{ketuaTitles.line2}</p>
+                  <div className="text-slate-800 leading-tight text-center w-full flex flex-col items-center">
+                    <p className="font-bold text-slate-950 text-center text-[1.35cqw]">Setuju dibayar</p>
+                    <p className="text-[1.22cqw] font-medium text-slate-800 text-center">{ketuaTitles.line1}</p>
+                    <p className="text-[1.22cqw] font-medium text-slate-800 text-center">{ketuaTitles.line2}</p>
                   </div>
                   {/* Ruang Tanda Tangan Lapang */}
-                  <div className="flex-1 min-h-[4.8cqw] flex items-center justify-center pointer-events-none" />
+                  <div className="flex-1 min-h-[4.4cqw] flex items-center justify-center pointer-events-none" />
                   <div className="w-full text-center">
-                    <span className="text-[1.42cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
+                    <span className="text-[1.45cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
                       {data.ketua || "HENI FUJIATI"}
                     </span>
                   </div>
@@ -193,17 +193,17 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
 
                 {/* Column 2: Lunas Dibayar (Bendahara) */}
                 <div className="flex flex-col justify-between items-center text-center h-[10.8cqw]">
-                  <div className="text-[1.14cqw] text-slate-800 leading-tight text-center w-full flex flex-col items-center">
-                    <p className="whitespace-nowrap text-slate-950 text-center">
+                  <div className="text-slate-800 leading-tight text-center w-full flex flex-col items-center">
+                    <p className="whitespace-nowrap text-slate-950 text-center text-[1.28cqw]">
                       Lunas dibayar Tgl :{" "}
                       <span className="font-bold">{formatDisplayDate(data.tanggal)}</span>
                     </p>
-                    <p className="text-[1.06cqw] font-normal text-slate-700 text-center">Bendahara</p>
+                    <p className="text-[1.22cqw] font-medium text-slate-800 text-center">Bendahara</p>
                   </div>
                   {/* Ruang Tanda Tangan Lapang */}
-                  <div className="flex-1 min-h-[4.8cqw] flex items-center justify-center pointer-events-none" />
+                  <div className="flex-1 min-h-[4.4cqw] flex items-center justify-center pointer-events-none" />
                   <div className="w-full text-center">
-                    <span className="text-[1.42cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
+                    <span className="text-[1.45cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
                       {data.bendahara || "NUR ALIMAH"}
                     </span>
                   </div>
@@ -226,15 +226,15 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
                     </div>
                   )}
 
-                  <div className="text-[1.14cqw] text-slate-800 leading-tight text-center w-full flex flex-col items-center">
-                    <p className="font-semibold text-slate-950 text-center">Yang Menerima</p>
+                  <div className="text-slate-800 leading-tight text-center w-full flex flex-col items-center">
+                    <p className="font-bold text-slate-950 text-center text-[1.35cqw]">Yang Menerima</p>
                   </div>
                   {/* Ruang Tanda Tangan Lapang */}
-                  <div className="flex-1 min-h-[4.8cqw] flex items-center justify-center pointer-events-none" />
+                  <div className="flex-1 min-h-[4.4cqw] flex items-center justify-center pointer-events-none" />
                   <div className="w-full text-center">
                     {data.penerima ? (
                       <div>
-                        <span className="text-[1.42cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
+                        <span className="text-[1.45cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
                           {data.penerima}
                         </span>
                       </div>

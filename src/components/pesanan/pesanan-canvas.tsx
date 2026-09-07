@@ -1,6 +1,7 @@
 "use client";
 
 import type { PesananFormData, InstitutionProfile } from "@/types";
+import { extractNamaTempat } from "@/lib/utils/pesanan-date";
 
 interface PesananCanvasProps {
   data: PesananFormData;
@@ -24,15 +25,23 @@ function formatDateIndo(dateStr?: string | null): string {
   return dateStr;
 }
 
+function cleanTitle(text?: string | null): string {
+  if (!text) return "";
+  return text.split(/\s+sebanyak\s+/i)[0].trim();
+}
+
 export function PesananCanvas({ data, profile }: PesananCanvasProps) {
   const namaLembaga = profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU";
   const subNama = profile?.subNama || "DAWUHAN SELATAN";
+  const cleanLembaga = (namaLembaga || "").replace(/^Ketua\s+/i, "").trim();
+  const showSubNama = subNama && !cleanLembaga.toLowerCase().includes(subNama.toLowerCase());
   const instansiInduk = profile?.instansiInduk || "KECAMATAN TALANG KABUPATEN TEGAL";
   const alamat = profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT. 23 RW. 06 Kec. Talang Kab. Tegal";
   const email = profile?.email || "prfnudawuhanselatan@gmail.com";
   const noHp = profile?.noHp || "085642719869";
   const noRegistrasi = profile?.noRegistrasi || "HBH-2026-NU-0428";
   const logoUrl = profile?.logoUrl;
+  const namaTempat = extractNamaTempat(profile, "Dawuhan");
 
   const totalCalculated =
     data.totalHarga > 0
@@ -47,9 +56,9 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         minHeight: "1198px",
       }}
     >
-      {/* Indikator Panduan Margin Jilid Dokumen (Hanya Tampil di Layar / no-print) */}
+      {/* Indikator Panduan Margin Jilid Dokumen (Hidden) */}
       <div
-        className="no-print absolute top-0 bottom-0 left-0 w-[24px] sm:w-[28px] md:w-[28mm] border-r border-dashed border-emerald-400/50 pointer-events-none flex flex-col justify-center items-center opacity-30 hover:opacity-90 transition-opacity"
+        className="hidden"
         title="Area Margin Penjilidan (28 mm) - Aman untuk penjilidan, staples, & lubang binder"
       >
         <span className="text-[8.5px] font-mono text-emerald-800 font-bold rotate-[-90deg] whitespace-nowrap tracking-wider select-none">
@@ -143,7 +152,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
           Nomor : <span>{data.nomorSp || "02/A/PR.FNU/VIII/2026"}</span>
         </p>
         <p className="text-xs text-black font-semibold mt-1">
-          Paket Pekerjaan : <span className="font-bold">{data.namaPaket || "Pembelian Alat Rebana"}</span>
+          Paket Pekerjaan : <span className="font-bold">{cleanTitle(data.namaPaket) || "Pembelian Alat Rebana"}</span>
         </p>
       </div>
 
@@ -236,7 +245,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
                     {index + 1}
                   </td>
                   <td className="p-1.5 align-top" style={{ borderRight: "1px solid #000" }}>
-                    <span className="font-bold block">{item.jenisBarang}</span>
+                    <span className="font-bold block">{cleanTitle(item.jenisBarang)}</span>
                     {item.spesifikasi && (
                       <span className="text-[10px] text-slate-600 block leading-tight">
                         {item.spesifikasi}
@@ -367,7 +376,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       <div className="pt-1 text-[11.5px] text-black mt-auto">
         <div className="flex justify-end mb-1">
           <p className="font-semibold text-slate-800">
-            Dawuhan, {formatDateIndo(data.tanggal || "2026-08-01")}
+            {namaTempat}, {formatDateIndo(data.tanggal || "2026-08-01")}
           </p>
         </div>
 
@@ -389,12 +398,11 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
 
           {/* Kolom Kanan: Pemesan (Fatayat NU Dawuhan Selatan) */}
           <div className="flex flex-col items-center text-center">
-            <p className="font-bold text-black uppercase">
-              {profile?.namaLembaga
-                ? `Ketua ${namaLembaga} ${subNama}`
-                : "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan"}
-            </p>
-            <p className="font-medium text-slate-800">Pemesan</p>
+            <div className="font-bold text-black uppercase leading-tight">
+              <p>{cleanLembaga}</p>
+              {showSubNama ? <p>{subNama}</p> : null}
+            </div>
+            <p className="font-medium text-slate-800 mt-0.5">Pemesan</p>
 
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
             <div className="h-20 my-1" />

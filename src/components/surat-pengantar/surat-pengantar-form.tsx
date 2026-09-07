@@ -20,7 +20,7 @@ import { exportSuratPengantarToPdf } from "@/lib/surat-pengantar-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { SuratPengantarCanvas } from "./surat-pengantar-canvas";
 import { angkaKeTerbilang, formatRupiahNumber } from "@/lib/utils/terbilang";
-import { formatDateIndo, buildFormattedDocumentNumber } from "@/lib/utils/pesanan-date";
+import { formatDateIndo, buildFormattedDocumentNumber, extractNamaTempat } from "@/lib/utils/pesanan-date";
 import type { SuratPengantarFormData, InstitutionProfile } from "@/types";
 
 interface SuratPengantarFormProps {
@@ -58,8 +58,10 @@ export function SuratPengantarForm({
   const patternFromDb = profile?.formatNomorSp || profile?.formatNomorBast || "/A/PR.FNU/";
   const initialNomorSurat = buildFormattedDocumentNumber("01", patternFromDb, "2026-12-31");
 
+  const initialKota = extractNamaTempat(profile, "Dawuhan");
+
   const [formData, setFormData] = useState<SuratPengantarFormData>({
-    kotaTanggal: "Dawuhan, 31 Desember 2026",
+    kotaTanggal: `${initialKota}, 31 Desember 2026`,
     nomorSurat: initialNomorSurat,
     lampiran: "1 (satu) bendel",
     perihal: "Laporan Pertanggungjawaban\nBantuan Hibah",
@@ -71,7 +73,7 @@ export function SuratPengantarForm({
     tahunAnggaran: "2026",
     namaLembagaPenerima: defaultNamaLembaga,
     paragrafPenutup: "Demikian laporan kami untuk menjadikan periksa dan guna seperlunya.",
-    penandatanganKota: "Dawuhan",
+    penandatanganKota: initialKota,
     penandatanganTanggal: "31 Desember 2026",
     penandatanganBulanTahun: "31 Desember 2026",
     penandatanganJabatan: profile?.jabatanKetua || "Ketua",

@@ -194,21 +194,21 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   signatoryTitleTop: {
-    fontSize: 7.8,
+    fontSize: 8.8,
     fontWeight: "bold",
     color: "#0f172a",
     textAlign: "center",
     lineHeight: 1.25,
   },
   signatoryTitleSub: {
-    fontSize: 7.2,
+    fontSize: 8.2,
     color: "#334155",
     textAlign: "center",
     lineHeight: 1.25,
   },
   signatorySpace: {
     flex: 1,
-    minHeight: 38,
+    minHeight: 34,
   },
   signatoryName: {
     fontSize: 9.6,

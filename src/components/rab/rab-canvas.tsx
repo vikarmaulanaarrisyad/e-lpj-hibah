@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import type { RabSummary, InstitutionProfile } from "@/types";
 import { angkaKeTerbilang, formatRupiahNumber } from "@/lib/utils/terbilang";
+import { extractNamaTempat } from "@/lib/utils/pesanan-date";
 
 interface RabCanvasProps {
   summary: RabSummary;
@@ -353,7 +354,7 @@ export function RabCanvas({
         {/* Kolom Tanda Tangan Bendahara (Kanan) */}
         <div className="text-center w-64 flex flex-col items-center">
           <p className="leading-tight" suppressHydrationWarning>
-            Dawuhan, {defaultTanggal}
+            {extractNamaTempat(profile, "Dawuhan")}, {defaultTanggal}
           </p>
           <p className="font-bold leading-tight">Bendahara Pengeluaran</p>
           <div className="h-20 flex items-center justify-center">

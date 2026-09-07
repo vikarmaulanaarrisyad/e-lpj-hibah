@@ -43,6 +43,7 @@ import {
   syncNomorDokumenBulanTahun,
   buildFormattedDocumentNumber,
   deconstructDocumentNumber,
+  extractNamaTempat,
 } from "@/lib/utils/pesanan-date";
 import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
@@ -353,7 +354,8 @@ export function PesananForm({
     const r = initialReceipts.find((item) => item.id === rcId);
     if (!r) return;
 
-    const itemName = r.uraian?.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
+    const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
+    const itemName = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
     const subtotal = r.nominal;
     const totalHarga = r.nominal;
     const terbilangText = r.terbilang || angkaKeTerbilang(totalHarga);
@@ -361,7 +363,7 @@ export function PesananForm({
     setFormData((prev) => ({
       ...prev,
       receiptId: r.id,
-      namaPaket: r.uraian,
+      namaPaket: cleanUraian,
       pihak2Toko: r.penerima || prev.pihak2Toko,
       pihak2Nama: r.penerima || prev.pihak2Nama,
       subtotal,
@@ -1228,7 +1230,7 @@ export function PesananForm({
 
                 <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
                   <Sparkles className="w-3 h-3 shrink-0" />
-                  <span>Titimangsa TTD: Dawuhan, {formatDateIndo(formData.tanggal)}</span>
+                  <span>Titimangsa TTD: {extractNamaTempat(profile, "Dawuhan")}, {formatDateIndo(formData.tanggal)}</span>
                 </div>
 
                 <div>

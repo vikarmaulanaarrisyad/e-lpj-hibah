@@ -24,6 +24,38 @@ function formatDateIndo(dateStr?: string) {
   return dateStr;
 }
 
+const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+function cleanTitle(text?: string | null): string {
+  if (!text) return "";
+  return text.split(/\s+sebanyak\s+/i)[0].trim();
+}
+
+function getPembukaBast(hariTanggal?: string, tanggalTerbilang?: string) {
+  let hari = (hariTanggal ? hariTanggal.split(",")[0] : "").trim();
+  let terbilang = (tanggalTerbilang || "").trim();
+
+  // Strip prefix "Pada hari ini," if stored inside tanggalTerbilang
+  terbilang = terbilang.replace(/^Pada hari ini,?\s*/i, "").trim();
+
+  // Check if terbilang starts with any day name (e.g. "Selasa tanggal...", "Selasa, tanggal...")
+  for (const h of NAMA_HARI) {
+    const reg = new RegExp(`^${h}\\b\\s*,?\\s*`, "i");
+    if (reg.test(terbilang)) {
+      hari = h;
+      terbilang = terbilang.replace(reg, "").trim();
+      break;
+    }
+  }
+
+  if (!hari) hari = "Senin";
+  if (!terbilang) {
+    terbilang = "tanggal tiga puluh satu bulan Juli tahun Dua Ribu Dua Puluh Enam (31 - 07 - 2026)";
+  }
+
+  return { hari, terbilang };
+}
+
 export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) {
   const namaLembaga = profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU";
   const subNama = profile?.subNama || "DAWUHAN SELATAN";
@@ -33,6 +65,8 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
   const noHp = profile?.noHp || "085642719869";
   const logoUrl = profile?.logoUrl;
 
+  const pembuka = getPembukaBast(data.hariTanggal, data.tanggalTerbilang);
+
   return (
     <div
       id="bastPrintArea"
@@ -41,9 +75,9 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         minHeight: "1198px",
       }}
     >
-      {/* Indikator Panduan Margin Jilid Dokumen (Hanya Tampil di Layar / no-print) */}
+      {/* Indikator Panduan Margin Jilid Dokumen (Hidden) */}
       <div
-        className="no-print absolute top-0 bottom-0 left-0 w-[24px] sm:w-[28px] md:w-[28mm] border-r border-dashed border-emerald-400/50 pointer-events-none flex flex-col justify-center items-center opacity-30 hover:opacity-90 transition-opacity"
+        className="hidden"
         title="Area Margin Penjilidan (28 mm) - Aman untuk penjilidan, staples, & lubang binder"
       >
         <span className="text-[8.5px] font-mono text-emerald-800 font-bold rotate-[-90deg] whitespace-nowrap tracking-wider select-none">
@@ -145,16 +179,8 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
 
       {/* ================= OPENING LEGAL CLAUSE ================= */}
       <p className="text-[12px] sm:text-[12.5px] leading-[19px] text-justify text-black mb-3">
-        Pada hari ini, <span className="font-semibold">{data.hariTanggal ? data.hariTanggal.split(",")[0] : "Senin"}</span>{" "}
-        {data.tanggalTerbilang ? (
-          <span>{data.tanggalTerbilang}</span>
-        ) : (
-          <span>
-            tanggal <strong className="font-semibold">tiga puluh satu</strong> bulan{" "}
-            <strong className="font-semibold">Juli</strong> tahun{" "}
-            <strong className="font-semibold">Dua Ribu Dua Puluh Enam (31 - 07 - 2026)</strong>
-          </span>
-        )}
+        Pada hari ini, <span className="font-semibold">{pembuka.hari}</span>{" "}
+        <span>{pembuka.terbilang}</span>
         , yang bertanda tangan di bawah ini :
       </p>
 
@@ -205,7 +231,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         </span>{" "}
         tanggal <span className="font-semibold">{formatDateIndo(data.tanggalSpk)}</span> PIHAK KESATU telah
         melakukan pemeriksaan hasil pekerjaan{" "}
-        <span className="font-semibold">{data.namaKegiatan || "Belanja Alat Rebana / Sound Aktif"}</span> dari PIHAK
+        <span className="font-semibold">{cleanTitle(data.namaKegiatan) || "Belanja Alat Rebana / Sound Aktif"}</span> dari PIHAK
         KEDUA dengan hasil pemeriksaan fisik sebagai berikut :
       </p>
 
@@ -250,7 +276,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
                     {index + 1}
                   </td>
                   <td className="p-1.5 text-left align-middle font-medium" style={{ borderRight: "1px solid #000", borderBottom: "1px solid #000" }}>
-                    {item.jenisBarang}
+                    {cleanTitle(item.jenisBarang)}
                   </td>
                   <td className="p-1.5 align-middle font-mono text-[11px]" style={{ borderRight: "1px solid #000", borderBottom: "1px solid #000" }}>
                     {item.pesanan}
