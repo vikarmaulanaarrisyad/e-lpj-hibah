@@ -22,13 +22,14 @@ export default async function BastPage() {
     redirect("/login");
   }
 
-  // Fetch DB user profile, institution profile, BAST list, receipts, and purchase orders (SP)
-  const [dbUser, profileRes, bastRes, userReceipts, pesananRes] = await Promise.all([
+  // Fetch DB user profile, institution profile, BAST list, receipts, purchase orders (SP), and next auto BAST number
+  const [dbUser, profileRes, bastRes, userReceipts, pesananRes, nextBastData] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     bastService.getBastList(session.sub),
     receiptRepository.findManyByUserId(session.sub),
     pesananService.getPurchaseOrders(session.sub),
+    bastService.generateNextNomorBast(session.sub),
   ]);
 
   const profile = profileRes.data || null;
@@ -56,6 +57,7 @@ export default async function BastPage() {
             initialPesananList={pesananList}
             initialReceipts={userReceipts}
             initialProfile={profile}
+            initialNextBast={nextBastData}
             userProfile={{
               name: dbUser?.name || session.name,
               leaderName: profile?.namaKetua || dbUser?.leaderName || session.leaderName,

@@ -1,4 +1,5 @@
 import { bkuRepository } from "@/repositories/bku.repository";
+import { getRomanMonth } from "@/lib/utils/pesanan-date";
 import type {
   BkuLedgerEntry,
   BkuSummary,
@@ -231,6 +232,55 @@ export class BkuService {
     } catch (error) {
       console.error("[BkuService] Auto-sync receipts error:", error);
       return 0;
+    }
+  }
+
+  /**
+   * Helper to generate next unique SP2D/Income nomor bukti (e.g. SP2D-HB/002/IX/2026).
+   */
+  async generateNextIncomeNomorBukti(
+    userId: string,
+    targetDate?: Date | string
+  ): Promise<string> {
+    try {
+      let dateObj = targetDate ? new Date(targetDate) : new Date();
+      if (isNaN(dateObj.getTime())) {
+        dateObj = new Date();
+      }
+      const currentMonth = dateObj.getMonth();
+      const currentYear = dateObj.getFullYear();
+      const romanMonth = getRomanMonth(currentMonth);
+
+      const allBkuNumbers = await bkuRepository.getAllNomorBukti(userId);
+      const usedSet = new Set(allBkuNumbers.map((n) => n.trim().toLowerCase()));
+
+      const parsedSeqNumbers: number[] = [];
+      for (const numStr of allBkuNumbers) {
+        if (numStr.toUpperCase().includes("SP2D")) {
+          const tokens = numStr.split(/[\/\-\s]+/);
+          for (const token of tokens) {
+            if (/^\d+$/.test(token)) {
+              const val = parseInt(token, 10);
+              if (val < 1990 || val > 2099) {
+                parsedSeqNumbers.push(val);
+              }
+            }
+          }
+        }
+      }
+
+      const maxSeq = parsedSeqNumbers.length > 0 ? Math.max(...parsedSeqNumbers) : 0;
+      let nextSeq = maxSeq + 1;
+      let candidate = `SP2D-HB/${nextSeq.toString().padStart(3, "0")}/${romanMonth}/${currentYear}`;
+      while (usedSet.has(candidate.toLowerCase())) {
+        nextSeq++;
+        candidate = `SP2D-HB/${nextSeq.toString().padStart(3, "0")}/${romanMonth}/${currentYear}`;
+      }
+      return candidate;
+    } catch {
+      const fallbackMonth = getRomanMonth(new Date().getMonth());
+      const fallbackYear = new Date().getFullYear();
+      return `SP2D-HB/001/${fallbackMonth}/${fallbackYear}`;
     }
   }
 }

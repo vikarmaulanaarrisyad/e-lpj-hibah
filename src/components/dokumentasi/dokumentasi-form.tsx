@@ -61,6 +61,7 @@ interface DokumentasiFormProps {
   };
   bastOptions?: BastOrSpOption[];
   spOptions?: BastOrSpOption[];
+  receiptOptions?: BastOrSpOption[];
   initialSavedList?: ActivityDocumentationRecord[];
 }
 
@@ -122,6 +123,7 @@ export function DokumentasiForm({
   userProfile,
   bastOptions = [],
   spOptions = [],
+  receiptOptions = [],
   initialSavedList = [],
 }: DokumentasiFormProps) {
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
@@ -443,37 +445,75 @@ export function DokumentasiForm({
     setFormData((prev) => ({ ...prev, photos: [] }));
   };
 
-  // Auto fill from BAST or SP selection
-  const handleSelectBastOrSp = (optionId: string) => {
-    if (!optionId) return;
+  // Auto fill from BAST, SP, or Kwitansi selection
+  const handleSelectSource = (compositeVal: string) => {
+    if (!compositeVal) return;
+    const [type, optionId] = compositeVal.split(":");
 
-    const selectedBast = bastOptions.find((b) => b.id === optionId);
-    if (selectedBast) {
-      setFormData((prev) => ({
-        ...prev,
-        namaKegiatan: selectedBast.nama || prev.namaKegiatan,
-        nomorReferensi: selectedBast.nomor || prev.nomorReferensi,
-        tanggalKegiatan: selectedBast.tanggal
-          ? selectedBast.tanggal.split("T")[0]
-          : prev.tanggalKegiatan,
-        penandatangan1Nama: selectedBast.pihak2Nama || prev.penandatangan1Nama,
-        penandatangan2Nama: selectedBast.pihak1Nama || prev.penandatangan2Nama,
-      }));
-      return;
+    if (type === "bast") {
+      const selected = bastOptions.find((b) => b.id === optionId);
+      if (selected) {
+        setFormData((prev) => ({
+          ...prev,
+          namaKegiatan: selected.nama || prev.namaKegiatan,
+          nomorReferensi: selected.nomor || prev.nomorReferensi,
+          tanggalKegiatan: selected.tanggal
+            ? selected.tanggal.split("T")[0]
+            : prev.tanggalKegiatan,
+          penandatangan1Nama: selected.pihak2Nama || prev.penandatangan1Nama,
+          penandatangan1Jabatan: `Penyedia / ${selected.pihak2Nama || "Toko Rekanan"}`,
+          penandatangan2Nama: selected.pihak1Nama || prev.penandatangan2Nama,
+        }));
+        swalSuccess(
+          "Data Ditarik dari BAST!",
+          `Nama kegiatan, tanggal, dan nomor BAST "${selected.nomor}" berhasil diisi otomatis.`
+        );
+        return;
+      }
     }
 
-    const selectedSp = spOptions.find((s) => s.id === optionId);
-    if (selectedSp) {
-      setFormData((prev) => ({
-        ...prev,
-        namaKegiatan: selectedSp.nama || prev.namaKegiatan,
-        nomorReferensi: selectedSp.nomor || prev.nomorReferensi,
-        tanggalKegiatan: selectedSp.tanggal
-          ? selectedSp.tanggal.split("T")[0]
-          : prev.tanggalKegiatan,
-        penandatangan1Nama: selectedSp.pihak2Nama || prev.penandatangan1Nama,
-        penandatangan2Nama: selectedSp.pihak1Nama || prev.penandatangan2Nama,
-      }));
+    if (type === "sp") {
+      const selected = spOptions.find((s) => s.id === optionId);
+      if (selected) {
+        setFormData((prev) => ({
+          ...prev,
+          namaKegiatan: selected.nama || prev.namaKegiatan,
+          nomorReferensi: selected.nomor || prev.nomorReferensi,
+          tanggalKegiatan: selected.tanggal
+            ? selected.tanggal.split("T")[0]
+            : prev.tanggalKegiatan,
+          penandatangan1Nama: selected.pihak2Nama || prev.penandatangan1Nama,
+          penandatangan1Jabatan: `Penyedia / ${selected.pihak2Nama || "Toko Rekanan"}`,
+          penandatangan2Nama: selected.pihak1Nama || prev.penandatangan2Nama,
+        }));
+        swalSuccess(
+          "Data Ditarik dari SP!",
+          `Nama kegiatan, tanggal, dan nomor SP "${selected.nomor}" berhasil diisi otomatis.`
+        );
+        return;
+      }
+    }
+
+    if (type === "receipt") {
+      const selected = receiptOptions.find((r) => r.id === optionId);
+      if (selected) {
+        setFormData((prev) => ({
+          ...prev,
+          namaKegiatan: selected.nama || prev.namaKegiatan,
+          nomorReferensi: selected.nomor || prev.nomorReferensi,
+          tanggalKegiatan: selected.tanggal
+            ? selected.tanggal.split("T")[0]
+            : prev.tanggalKegiatan,
+          penandatangan1Nama: selected.pihak2Nama || prev.penandatangan1Nama,
+          penandatangan1Jabatan: `Penyedia / ${selected.pihak2Nama || "Penerima Dana"}`,
+          penandatangan2Nama: selected.pihak1Nama || prev.penandatangan2Nama,
+        }));
+        swalSuccess(
+          "Data Ditarik dari Kwitansi!",
+          `Uraian belanja, tanggal, dan nomor kwitansi "${selected.nomor}" berhasil diisi otomatis.`
+        );
+        return;
+      }
     }
   };
 
@@ -680,40 +720,6 @@ export function DokumentasiForm({
                 </div>
               </div>
             )}
-
-            {/* Dropdown Ambil dari BAST / SP */}
-            {(bastOptions.length > 0 || spOptions.length > 0) && (
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                  Ambil Data dari Berita Acara (BAST) / Surat Pesanan:
-                </label>
-                <select
-                  onChange={(e) => handleSelectBastOrSp(e.target.value)}
-                  defaultValue=""
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">-- Pilih Berkas Pengadaan / BAST --</option>
-                  {bastOptions.length > 0 && (
-                    <optgroup label="Berita Acara Serah Terima (BAST)">
-                      {bastOptions.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.nomor} - {b.nama}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {spOptions.length > 0 && (
-                    <optgroup label="Surat Pesanan (SP)">
-                      {spOptions.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nomor} - {s.nama}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              </div>
-            )}
           </div>
 
           {/* Activity Information Form */}
@@ -722,6 +728,58 @@ export function DokumentasiForm({
               <FileText className="w-4 h-4" />
               <span>Informasi Kegiatan &amp; Dokumen</span>
             </h2>
+
+            {/* Quick Auto-Fill Source Banner: Menjawab pertanyaan user tentang cara otomatis */}
+            {(bastOptions.length > 0 || spOptions.length > 0 || receiptOptions.length > 0) && (
+              <div className="bg-emerald-950/50 border border-emerald-600/60 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Tarik Otomatis dari Berkas (Tidak Perlu Ketik Manual):</span>
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/80 text-emerald-300 font-semibold font-mono">
+                    1-Klik Otomatis
+                  </span>
+                </div>
+                <select
+                  onChange={(e) => handleSelectSource(e.target.value)}
+                  defaultValue=""
+                  className="w-full bg-slate-950 border border-emerald-600/70 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-medium cursor-pointer"
+                >
+                  <option value="">-- Pilih Berkas: BAST / Surat Pesanan / Kwitansi --</option>
+                  {bastOptions.length > 0 && (
+                    <optgroup label="📋 Berita Acara Serah Terima (BAST)">
+                      {bastOptions.map((b) => (
+                        <option key={`bast-${b.id}`} value={`bast:${b.id}`}>
+                          BAST: {b.nomor} - {b.nama}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {spOptions.length > 0 && (
+                    <optgroup label="📦 Surat Pesanan (SP)">
+                      {spOptions.map((s) => (
+                        <option key={`sp-${s.id}`} value={`sp:${s.id}`}>
+                          SP: {s.nomor} - {s.nama}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {receiptOptions.length > 0 && (
+                    <optgroup label="🧾 Kwitansi Belanja">
+                      {receiptOptions.map((r) => (
+                        <option key={`receipt-${r.id}`} value={`receipt:${r.id}`}>
+                          Kwitansi: {r.nomor} - {r.nama}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <p className="text-[10.5px] text-slate-400 leading-snug">
+                  💡 Memilih berkas di atas akan otomatis mengisikan <strong>Nama Kegiatan</strong>, <strong>Tanggal</strong>, <strong>Nomor Referensi</strong>, dan <strong>Nama Rekanan Toko</strong>. Anda tetap bisa mengubahnya manual jika diperlukan.
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">

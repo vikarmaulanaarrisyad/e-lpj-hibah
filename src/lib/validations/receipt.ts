@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const receiptSchema = z.object({
+  id: z.string().optional(),
   nomorBukti: z
     .string({ required_error: "Nomor bukti kas (BKU) wajib diisi" })
     .min(3, "Nomor bukti minimal 3 karakter"),

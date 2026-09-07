@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react/no-unserializable-props */
 
 import { useState, useEffect, useTransition, useRef, ChangeEvent } from "react";
 import { createPortal } from "react-dom";
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
-import { buildFormattedDocumentNumber } from "@/lib/utils/pesanan-date";
+import { buildFormattedDocumentNumber, getRomanMonth } from "@/lib/utils/pesanan-date";
 import type { InstitutionProfile } from "@/types";
 
 interface KopSuratModalProps {
@@ -55,7 +56,7 @@ export function KopSuratModal({
     logoBase64OrUrl: initialProfile?.logoUrl || "",
     formatNomorSp: initialProfile?.formatNomorSp || "/A/PR.FNU/",
     formatNomorBast: initialProfile?.formatNomorBast || "/A/PR.FNU/",
-    formatNomorKwitansi: initialProfile?.formatNomorKwitansi || "BKU-HB",
+    formatNomorKwitansi: initialProfile?.formatNomorKwitansi || "/A/PR.FNU/",
   });
 
   const [logoPreview, setLogoPreview] = useState<string>(initialProfile?.logoUrl || "");
@@ -81,7 +82,7 @@ export function KopSuratModal({
         logoBase64OrUrl: initialProfile.logoUrl || "",
         formatNomorSp: initialProfile.formatNomorSp || "/A/PR.FNU/",
         formatNomorBast: initialProfile.formatNomorBast || "/A/PR.FNU/",
-        formatNomorKwitansi: initialProfile.formatNomorKwitansi || "BKU-HB",
+        formatNomorKwitansi: initialProfile.formatNomorKwitansi || "/A/PR.FNU/",
       });
       setLogoPreview(initialProfile.logoUrl || "");
     }
@@ -510,11 +511,34 @@ export function KopSuratModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Format Kwitansi & BKU */}
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-200 font-semibold flex items-center justify-between">
+                    <span>Prefix Kwitansi / Kas</span>
+                    <span className="text-[10px] text-amber-400 font-mono font-normal">Contoh: /A/PR.FNU/</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.formatNomorKwitansi || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, formatNomorKwitansi: e.target.value })
+                    }
+                    placeholder="/A/PR.FNU/"
+                    className="w-full text-xs font-mono font-semibold bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-amber-300 focus:outline-none focus:border-emerald-500"
+                  />
+                  <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
+                    <span className="text-slate-400">Pratinjau Kas:</span>
+                    <span className="font-mono font-bold text-amber-400">
+                      {buildFormattedDocumentNumber("01", formData.formatNomorKwitansi || "/A/PR.FNU/", new Date())}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Format Surat Pesanan (SP) */}
                 <div className="space-y-1.5">
                   <label className="text-xs text-slate-200 font-semibold flex items-center justify-between">
-                    <span>Format Kode Surat Pesanan (SP)</span>
+                    <span>Kode Surat Pesanan (SP)</span>
                     <span className="text-[10px] text-emerald-400 font-mono font-normal">Contoh: /A/PR.FNU/</span>
                   </label>
                   <input
@@ -527,7 +551,7 @@ export function KopSuratModal({
                     className="w-full text-xs font-mono font-semibold bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 focus:outline-none focus:border-emerald-500"
                   />
                   <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
-                    <span className="text-slate-400">Hasil Pratinjau SP:</span>
+                    <span className="text-slate-400">Pratinjau SP:</span>
                     <span className="font-mono font-bold text-emerald-400">
                       {buildFormattedDocumentNumber("01", formData.formatNomorSp || "/A/PR.FNU/", new Date())}
                     </span>
@@ -537,8 +561,8 @@ export function KopSuratModal({
                 {/* Format Berita Acara (BAST) */}
                 <div className="space-y-1.5">
                   <label className="text-xs text-slate-200 font-semibold flex items-center justify-between">
-                    <span>Format Kode Berita Acara (BAST)</span>
-                    <span className="text-[10px] text-emerald-400 font-mono font-normal">Contoh: /A/PR.FNU/</span>
+                    <span>Kode Berita Acara (BAST)</span>
+                    <span className="text-[10px] text-teal-400 font-mono font-normal">Contoh: /A/PR.FNU/</span>
                   </label>
                   <input
                     type="text"
@@ -547,22 +571,25 @@ export function KopSuratModal({
                       setFormData({ ...formData, formatNomorBast: e.target.value })
                     }
                     placeholder="/A/PR.FNU/"
-                    className="w-full text-xs font-mono font-semibold bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 focus:outline-none focus:border-emerald-500"
+                    className="w-full text-xs font-mono font-semibold bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-teal-300 focus:outline-none focus:border-emerald-500"
                   />
                   <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
-                    <span className="text-slate-400">Hasil Pratinjau BAST:</span>
-                    <span className="font-mono font-bold text-emerald-400">
+                    <span className="text-slate-400">Pratinjau BAST:</span>
+                    <span className="font-mono font-bold text-teal-400">
                       {buildFormattedDocumentNumber("01", formData.formatNomorBast || "/A/PR.FNU/", new Date())}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-400 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80 flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">💡 Info:</span>
-                <span>
-                  Rumus otomatis: <code className="text-emerald-300 font-mono">[No. Urut] + [Format Anda] + [Bulan Romawi] + [Tahun]</code>. Ketika tanggal surat Anda ubah ke bulan lain, penomoran surat otomatis diperbarui sesuai tanggal tersebut.
-                </span>
+              <div className="text-[11px] text-slate-400 bg-slate-950/50 p-3 rounded-lg border border-slate-800/80 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Tersimpan di Database Akun & Multi-User Aman</span>
+                </div>
+                <p className="leading-relaxed">
+                  Format penomoran ini disimpan di database profil akun masing-masing. Setiap user dapat menggunakan format yang sama (misal format baku instansi) maupun berbeda-beda sesuai kebutuhan. Urutan penomoran setiap user terpisah dan anti-bentrok.
+                </p>
               </div>
             </div>
 
@@ -614,3 +641,5 @@ export function KopSuratModal({
     document.body
   );
 }
+
+export default KopSuratModal;

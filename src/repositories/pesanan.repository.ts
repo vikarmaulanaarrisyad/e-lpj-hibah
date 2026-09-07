@@ -14,6 +14,34 @@ export class PesananRepository {
 
       const itemsJsonString = JSON.stringify(input.items || []);
 
+      // Sanitize receiptId: ensure it's a non-empty string and actually exists in receipts for this user
+      let cleanReceiptId: string | null = null;
+      if (input.receiptId && typeof input.receiptId === "string" && input.receiptId.trim().length > 0) {
+        const validReceipt = await prisma.receipt.findFirst({
+          where: { id: input.receiptId.trim(), userId },
+        });
+        if (validReceipt) {
+          cleanReceiptId = validReceipt.id;
+        }
+      }
+
+      // If cleanReceiptId is provided, unlink any other PO belonging to this user that currently holds it
+      if (cleanReceiptId) {
+        const existingLinkedPo = await prisma.purchaseOrder.findUnique({
+          where: { receiptId: cleanReceiptId },
+        });
+        if (existingLinkedPo && existingLinkedPo.id !== input.id) {
+          if (existingLinkedPo.userId === userId) {
+            await prisma.purchaseOrder.update({
+              where: { id: existingLinkedPo.id },
+              data: { receiptId: null },
+            });
+          } else {
+            cleanReceiptId = null;
+          }
+        }
+      }
+
       const dataFields = {
         nomorSp: input.nomorSp,
         tanggal: parsedDate,
@@ -35,7 +63,7 @@ export class PesananRepository {
         alamatPengiriman: input.alamatPengiriman ?? null,
         alamatPemeriksaan: input.alamatPemeriksaan ?? null,
         dendaKeterlambatan: input.dendaKeterlambatan ?? null,
-        receiptId: input.receiptId ?? null,
+        receiptId: cleanReceiptId,
       };
 
       // 1. If explicit ID provided and exists, update that record
@@ -51,10 +79,10 @@ export class PesananRepository {
         }
       }
 
-      // 2. If receiptId provided and an existing PO is already linked, update it
-      if (input.receiptId) {
+      // 2. If cleanReceiptId provided and an existing PO is already linked, update it
+      if (cleanReceiptId) {
         const existingByReceipt = await prisma.purchaseOrder.findUnique({
-          where: { receiptId: input.receiptId },
+          where: { receiptId: cleanReceiptId },
         });
         if (existingByReceipt && existingByReceipt.userId === userId) {
           return await prisma.purchaseOrder.update({
@@ -64,9 +92,14 @@ export class PesananRepository {
         }
       }
 
-      // 3. Fallback to upsert by nomorSp
+      // 3. Fallback to upsert by userId and nomorSp
       return await prisma.purchaseOrder.upsert({
-        where: { nomorSp: input.nomorSp },
+        where: {
+          userId_nomorSp: {
+            userId,
+            nomorSp: input.nomorSp,
+          },
+        } as any,
         update: dataFields,
         create: {
           ...dataFields,

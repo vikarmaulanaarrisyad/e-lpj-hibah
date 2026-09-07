@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { authService } from "@/services/auth.service";
 import { userRepository } from "@/repositories/user.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
+import { receiptService } from "@/services/receipt.service";
 import { rabService } from "@/services/rab.service";
 import { institutionService } from "@/services/institution.service";
 import { redirect } from "next/navigation";
@@ -21,12 +22,13 @@ export default async function KwitansiPage() {
     redirect("/login");
   }
 
-  // Fetch full user profile, saved receipts, RAB budget status, and institution profile from database
-  const [userProfile, profileRes, savedReceipts, rabStatusRes] = await Promise.all([
+  // Fetch full user profile, saved receipts, RAB budget status, institution profile, and next unique nomor bukti from database
+  const [userProfile, profileRes, savedReceipts, rabStatusRes, nextNomorBukti] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     receiptRepository.findManyByUserId(session.sub),
     rabService.getRabStatus(session.sub),
+    receiptService.generateNextNomorBukti(session.sub),
   ]);
 
   const profile = profileRes.data || null;
@@ -57,6 +59,7 @@ export default async function KwitansiPage() {
             initialProfile={profile}
             savedReceipts={savedReceipts}
             initialRabSummary={initialRabSummary}
+            initialNextNomorBukti={nextNomorBukti}
           />
         </Suspense>
       </main>

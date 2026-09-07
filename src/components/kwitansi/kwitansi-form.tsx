@@ -32,9 +32,13 @@ import {
   ChevronUp,
   ShoppingBag,
   Trash2,
+  RotateCw,
+  Settings,
 } from "lucide-react";
+import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib/utils/terbilang";
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
+import { getRomanMonth, syncNomorDokumenBulanTahun } from "@/lib/utils/pesanan-date";
 import {
   saveReceiptAction,
   getNextNomorBuktiAction,
@@ -71,6 +75,7 @@ export interface KwitansiFormProps {
   initialProfile?: InstitutionProfile | null;
   savedReceipts?: Receipt[];
   initialRabSummary?: RabSummary;
+  initialNextNomorBukti?: string;
 }
 
 export function KwitansiForm({
@@ -80,6 +85,7 @@ export function KwitansiForm({
   initialProfile,
   savedReceipts = [],
   initialRabSummary,
+  initialNextNomorBukti,
 }: KwitansiFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -100,6 +106,7 @@ export function KwitansiForm({
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
 
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
+  const [isKopModalOpen, setIsKopModalOpen] = useState(false);
 
   const defaultChairman = profile?.namaKetua || initialLeaderName || "HENI FUJIATI";
   const defaultTreasurer = profile?.namaBendahara || initialUserName || "NUR ALIMAH";
@@ -136,6 +143,7 @@ export function KwitansiForm({
       });
 
       return {
+        id: first.id,
         nomorBukti: first.nomorBukti,
         tanggal: toDateInputValue(first.tanggal),
         pemberi: first.pemberi,
@@ -173,7 +181,8 @@ export function KwitansiForm({
     }
 
     return {
-      nomorBukti: "BKU-HB/001/VIII/2026",
+      id: undefined,
+      nomorBukti: initialNextNomorBukti || "01/A/PR.FNU/IX/2026",
       tanggal: toDateInputValue(),
       pemberi: defaultInstitution,
       nominal: "0",
@@ -265,6 +274,7 @@ export function KwitansiForm({
     });
 
     setFormData({
+      id: r.id,
       nomorBukti: r.nomorBukti,
       tanggal: toDateInputValue(r.tanggal),
       pemberi: r.pemberi,
@@ -300,6 +310,42 @@ export function KwitansiForm({
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
     setAllowDeficitOverride(false);
+  };
+
+  // Real-time detection if current nomorBukti is already taken by another receipt
+  const isDuplicateNoBukti = useMemo(() => {
+    if (!formData.nomorBukti) return false;
+    const clean = formData.nomorBukti.trim().toLowerCase();
+    return receiptsList.some((r) => {
+      // If editing existing receipt, ignore itself
+      if (formData.id && r.id === formData.id) return false;
+      if (selectedReceiptNo !== "NEW" && r.nomorBukti.trim().toLowerCase() === selectedReceiptNo.trim().toLowerCase()) return false;
+      return r.nomorBukti.trim().toLowerCase() === clean;
+    });
+  }, [formData.nomorBukti, formData.id, selectedReceiptNo, receiptsList]);
+
+  // Handler to generate and set the next guaranteed unique nomor bukti
+  const handleGenerateNewNomorBukti = () => {
+    startTransition(async () => {
+      const res = await getNextNomorBuktiAction(formData.tanggal);
+      if (res.success && res.data) {
+        const nextNo = res.data;
+        setFormData((prev) => ({ ...prev, nomorBukti: nextNo }));
+      }
+    });
+  };
+
+  // Handle transaction date change with auto-sync of roman month and year for new receipts
+  const handleDateChange = (newDateStr: string) => {
+    let updatedNomor = formData.nomorBukti;
+    if (selectedReceiptNo === "NEW" && updatedNomor) {
+      updatedNomor = syncNomorDokumenBulanTahun(updatedNomor, newDateStr);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      tanggal: newDateStr,
+      nomorBukti: updatedNomor,
+    }));
   };
 
   // Check URL query param ?no=... (e.g. clicked from BKU table or "Realisasikan" from RAB Table)
@@ -424,13 +470,15 @@ export function KwitansiForm({
   };
 
   // Reset / Kwitansi Baru
-  const handleResetForm = () => {
+  const handleResetForm = (targetDateStr?: unknown) => {
     startTransition(async () => {
-      const res = await getNextNomorBuktiAction();
-      const nextNo = res.data || "BKU-HB/001/VIII/2026";
+      const activeDate = typeof targetDateStr === "string" ? targetDateStr : toDateInputValue();
+      const res = await getNextNomorBuktiAction(activeDate);
+      const nextNo = res.data || initialNextNomorBukti || "01/A/PR.FNU/IX/2026";
       setFormData({
+        id: undefined,
         nomorBukti: nextNo,
-        tanggal: toDateInputValue(),
+        tanggal: activeDate,
         pemberi: defaultInstitution,
         nominal: "0",
         nominalValue: 0,
@@ -583,6 +631,7 @@ export function KwitansiForm({
     swalLoading("Menyimpan Kwitansi...", "Mencatat bukti transaksi belanja ke Buku Kas Umum...");
     startTransition(async () => {
       const response = await saveReceiptAction({
+        id: selectedReceiptNo === "NEW" ? undefined : formData.id,
         nomorBukti: formData.nomorBukti.trim(),
         tanggal: formData.tanggal,
         pemberi: formData.pemberi,
@@ -619,9 +668,14 @@ export function KwitansiForm({
         return;
       }
 
-      // Update receipts list in state
+      // Update receipts list and form state with newly confirmed data
       if (response.data) {
         const saved = response.data;
+        setFormData((prev) => ({
+          ...prev,
+          id: saved.id,
+          nomorBukti: saved.nomorBukti,
+        }));
         setReceiptsList((prev) => {
           const idx = prev.findIndex((x) => x.id === saved.id || x.nomorBukti === saved.nomorBukti);
           if (idx >= 0) {
@@ -822,19 +876,62 @@ export function KwitansiForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Nomor Bukti Kas (BKU)
-                  </label>
-                  <div className="relative">
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Nomor Bukti Kas (BKU)
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsKopModalOpen(true)}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition-colors"
+                        title="Buka pengaturan format penomoran akun database"
+                      >
+                        <Settings className="w-3 h-3" />
+                        <span>Atur Format Akun</span>
+                      </button>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Otomatis • Anti-Double
+                      </span>
+                    </div>
+                  </div>
+                  <div className="relative flex items-center">
                     <input
                       type="text"
                       value={formData.nomorBukti}
                       onChange={(e) =>
                         setFormData({ ...formData, nomorBukti: e.target.value })
                       }
-                      className="w-full font-mono text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-emerald-600"
+                      placeholder="Contoh: 01/A/PR.FNU/IX/2026"
+                      className={`w-full font-mono text-xs bg-slate-950 border rounded-xl pl-3 pr-24 py-2.5 text-white focus:outline-none focus:ring-1 transition-all ${
+                        isDuplicateNoBukti
+                          ? "border-amber-500/80 focus:ring-amber-500 text-amber-200"
+                          : "border-slate-800 focus:ring-brand-primary focus:border-emerald-600"
+                      }`}
                     />
+                    <button
+                      type="button"
+                      onClick={handleGenerateNewNomorBukti}
+                      disabled={isPending}
+                      title="Buat / hitung nomor urut berikutnya secara otomatis bebas bentrok"
+                      className="absolute right-1.5 top-1.5 bottom-1.5 px-2.5 text-[11px] font-medium bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 hover:text-white rounded-lg border border-emerald-600/40 transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
+                    >
+                      <RotateCw className={`w-3 h-3 ${isPending ? "animate-spin" : ""}`} />
+                      <span>Auto-Baru</span>
+                    </button>
                   </div>
+                  {isDuplicateNoBukti ? (
+                    <p className="text-[11px] text-amber-400 mt-1.5 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Nomor sudah ada di daftar! Klik <b>Auto-Baru</b> agar tidak ganda.</span>
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span>Nomor kas urut unik & terhindar dari nomor ganda (anti-double).</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -845,12 +942,13 @@ export function KwitansiForm({
                     <input
                       type="date"
                       value={formData.tanggal}
-                      onChange={(e) =>
-                        setFormData({ ...formData, tanggal: e.target.value })
-                      }
+                      onChange={(e) => handleDateChange(e.target.value)}
                       className="w-full text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-emerald-600 [color-scheme:dark]"
                     />
                   </div>
+                  <p className="text-[10px] text-slate-500 mt-1.5">
+                    Format bulan romawi & tahun pada nomor bukti kas akan otomatis sinkron.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1814,6 +1912,16 @@ export function KwitansiForm({
             <span>Kembali ke Formulir</span>
           </button>
         )}
+        {/* Modal Kop Surat & Format Penomoran Akun */}
+        <KopSuratModal
+          isOpen={isKopModalOpen}
+          onClose={() => setIsKopModalOpen(false)}
+          initialProfile={profile}
+          onProfileUpdated={(updated) => {
+            setProfile(updated);
+            handleGenerateNewNomorBukti();
+          }}
+        />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { bastService } from "@/services/bast.service";
 import { pesananService } from "@/services/pesanan.service";
 import { institutionService } from "@/services/institution.service";
 import { userRepository } from "@/repositories/user.repository";
+import { receiptRepository } from "@/repositories/receipt.repository";
 import { dokumentasiService } from "@/services/dokumentasi.service";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { DokumentasiForm } from "@/components/dokumentasi/dokumentasi-form";
@@ -21,12 +22,13 @@ export default async function DokumentasiPage() {
     redirect("/login");
   }
 
-  // Ambil profil user, profil lembaga, arsip BAST, SP, dan dokumentasi yang pernah disimpan
-  const [dbUser, profileRes, bastRes, pesananRes, savedDocsRes] = await Promise.all([
+  // Ambil profil user, profil lembaga, arsip BAST, SP, Kwitansi, dan dokumentasi tersimpan
+  const [dbUser, profileRes, bastRes, pesananRes, userReceipts, savedDocsRes] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     bastService.getBastList(session.sub),
     pesananService.getPurchaseOrders(session.sub),
+    receiptRepository.findManyByUserId(session.sub),
     dokumentasiService.getDokumentasiList(session.sub),
   ]);
 
@@ -51,6 +53,15 @@ export default async function DokumentasiPage() {
     tanggal: s.tanggal.toISOString ? s.tanggal.toISOString() : String(s.tanggal),
     pihak1Nama: s.pihak1Nama,
     pihak2Nama: s.pihak2Nama || s.pihak2Toko,
+  }));
+
+  const receiptOptions = userReceipts.map((r) => ({
+    id: r.id,
+    nomor: r.nomorBukti,
+    nama: r.uraian,
+    tanggal: r.tanggal.toISOString ? r.tanggal.toISOString() : String(r.tanggal),
+    pihak1Nama: r.ketua,
+    pihak2Nama: r.penerima,
   }));
 
   return (
@@ -81,6 +92,7 @@ export default async function DokumentasiPage() {
             }}
             bastOptions={bastOptions}
             spOptions={spOptions}
+            receiptOptions={receiptOptions}
             initialSavedList={savedDocsRes.data || []}
           />
         </Suspense>

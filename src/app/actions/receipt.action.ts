@@ -102,23 +102,24 @@ export async function getReceiptByNomorBuktiAction(
 }
 
 /**
- * Server action to get next suggested BKU nomor bukti
+ * Server action to get next suggested BKU nomor bukti (anti-double & unique)
  */
-export async function getNextNomorBuktiAction(): Promise<ActionResponse<string>> {
+export async function getNextNomorBuktiAction(dateString?: string): Promise<ActionResponse<string>> {
   try {
     const session = await authService.getSession();
     const userId = session?.sub || "default";
-    const nextNomor = await receiptService.generateNextNomorBukti(userId);
+    const nextNomor = await receiptService.generateNextNomorBukti(userId, dateString);
     return {
       success: true,
-      message: "Nomor bukti dibuat.",
+      message: "Nomor bukti dibuat otomatis.",
       data: nextNomor,
     };
-  } catch {
+  } catch (error) {
+    console.error("[getNextNomorBuktiAction] Error:", error);
     return {
       success: true,
       message: "Nomor bukti default.",
-      data: "BKU-HB/001/VIII/2026",
+      data: "01/A/PR.FNU/IX/2026",
     };
   }
 }

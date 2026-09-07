@@ -56,7 +56,7 @@ export class InstitutionRepository {
         namaBendahara: data.namaBendahara ?? "NUR ALIMAH",
         formatNomorSp: data.formatNomorSp ?? "/A/PR.FNU/",
         formatNomorBast: data.formatNomorBast ?? "/A/PR.FNU/",
-        formatNomorKwitansi: data.formatNomorKwitansi ?? "BKU-HB",
+        formatNomorKwitansi: data.formatNomorKwitansi ?? "/A/PR.FNU/",
       };
 
       return await prisma.institutionProfile.upsert({

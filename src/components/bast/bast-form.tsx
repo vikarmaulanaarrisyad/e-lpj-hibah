@@ -34,13 +34,15 @@ import {
   ArrowRight,
   FolderSync,
   Settings,
+  RotateCw,
+  AlertTriangle,
 } from "lucide-react";
 import { exportBastToPdf } from "@/lib/bast-pdf";
 import { BastCanvas } from "./bast-canvas";
 import { PesananCanvas } from "@/components/pesanan/pesanan-canvas";
 import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
-import { saveBastAction, deleteBastAction } from "@/app/actions/bast.action";
+import { saveBastAction, deleteBastAction, getNextNomorBastAction } from "@/app/actions/bast.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { formatTanggalTerbilang } from "@/services/bast.service";
@@ -77,6 +79,7 @@ interface BastFormProps {
   initialPesananList?: PurchaseOrder[];
   initialReceipts?: Receipt[];
   initialProfile?: InstitutionProfile | null;
+  initialNextBast?: { nomorBast: string; nomorUrut: string };
   userProfile?: {
     name: string;
     leaderName?: string | null;
@@ -89,6 +92,7 @@ export function BastForm({
   initialPesananList = [],
   initialReceipts = [],
   initialProfile,
+  initialNextBast,
   userProfile,
 }: BastFormProps) {
   const searchParams = useSearchParams();
@@ -160,8 +164,9 @@ export function BastForm({
       };
     }
 
+    const defaultBastNo = initialNextBast?.nomorBast || "01/A/PR.FNU/IX/2026";
     return {
-      nomorBast: "014/BAST-HB/FTY/VII/2026",
+      nomorBast: defaultBastNo,
       tanggal: todayStr,
       hariTanggal: initHariTanggal,
       tanggalTerbilang: initTerbilang,
@@ -202,6 +207,12 @@ export function BastForm({
     }
 
     const tglIso = po.tanggal ? new Date(po.tanggal).toISOString().split("T")[0] : todayStr;
+    const poDate = po.tanggal ? new Date(po.tanggal) : new Date();
+    const { hariTanggal: spHariTanggal, terbilangResmi: spTerbilang } = formatTanggalTerbilang(poDate);
+    const updatedBastNo = isManualNomorBast
+      ? syncNomorDokumenBulanTahun(formData.nomorBast, tglIso)
+      : buildFormattedDocumentNumber(nomorUrutBast, formatPatternBast, tglIso);
+
     const mappedItems: BastItem[] = parsedItems.map((it, idx) => ({
       id: String(idx + 1),
       no: idx + 1,
@@ -214,6 +225,10 @@ export function BastForm({
 
     setFormData((prev) => ({
       ...prev,
+      tanggal: tglIso,
+      hariTanggal: spHariTanggal,
+      tanggalTerbilang: spTerbilang,
+      nomorBast: updatedBastNo,
       nomorSpk: po.nomorSp,
       tanggalSpk: tglIso,
       namaKegiatan: po.namaPaket ? po.namaPaket.split(/\s+sebanyak\s+/i)[0].trim() : prev.namaKegiatan,
@@ -440,9 +455,43 @@ export function BastForm({
     }
     return initBastDecomp.formatPattern || "/A/PR.FNU/";
   });
-  const [nomorUrutBast, setNomorUrutBast] = useState<string>(initBastDecomp.nomorUrut || "01");
+  const [nomorUrutBast, setNomorUrutBast] = useState<string>(() => {
+    if (initialBastList.length > 0) {
+      return initBastDecomp.nomorUrut || "01";
+    }
+    return initialNextBast?.nomorUrut || initBastDecomp.nomorUrut || "01";
+  });
   const [isManualNomorBast, setIsManualNomorBast] = useState<boolean>(false);
   const [isSavingPattern, startSavePattern] = useTransition();
+  const [isGeneratingNo, setIsGeneratingNo] = useState<boolean>(false);
+
+  // Deteksi nomor BAST duplikat secara real-time
+  const isDuplicateNomorBast = useMemo(() => {
+    if (!formData.nomorBast) return false;
+    const currentTrimmed = formData.nomorBast.trim().toLowerCase();
+    return bastList.some(
+      (b) => b.id !== formData.id && b.nomorBast.trim().toLowerCase() === currentTrimmed
+    );
+  }, [formData.nomorBast, formData.id, bastList]);
+
+  // Handler untuk menghasilkan No. Urut BAST otomatis berikutnya (anti-double)
+  const handleAutoGenerateUrut = async (targetDateStr?: string) => {
+    setIsGeneratingNo(true);
+    try {
+      const dateToUse = targetDateStr || formData.tanggal || todayStr;
+      const res = await getNextNomorBastAction(dateToUse);
+      if (res.success && res.data) {
+        setNomorUrutBast(res.data.nomorUrut);
+        setFormData((prev) => ({
+          ...prev,
+          nomorBast: res.data!.nomorBast,
+        }));
+        setIsManualNomorBast(false);
+      }
+    } finally {
+      setIsGeneratingNo(false);
+    }
+  };
 
   // Sinkronisasi bila profile lembaga dari database berubah
   useEffect(() => {
@@ -586,8 +635,19 @@ export function BastForm({
     if (r) {
       const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
       const cleanItem = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Barang";
+      const receiptDate = r.tanggal ? new Date(r.tanggal) : new Date();
+      const receiptDateIso = r.tanggal ? new Date(r.tanggal).toISOString().split("T")[0] : formData.tanggal;
+      const { hariTanggal: rHariTanggal, terbilangResmi: rTerbilang } = formatTanggalTerbilang(receiptDate);
+      const syncedNomorBast = isManualNomorBast
+        ? syncNomorDokumenBulanTahun(formData.nomorBast, receiptDateIso)
+        : buildFormattedDocumentNumber(nomorUrutBast, formatPatternBast, receiptDateIso);
+
       setFormData((prev) => ({
         ...prev,
+        tanggal: receiptDateIso,
+        hariTanggal: rHariTanggal,
+        tanggalTerbilang: rTerbilang,
+        nomorBast: syncedNomorBast,
         receiptId: r.id,
         linkedReceiptNomor: r.nomorBukti,
         linkedReceiptNominal: r.nominal,
@@ -646,9 +706,18 @@ export function BastForm({
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
 
+    if (isDuplicateNomorBast) {
+      swalError(
+        "Nomor BAST Duplikat",
+        `Nomor BAST "${formData.nomorBast}" sudah terdaftar pada dokumen BAST lain. Silakan ubah No. Urut atau klik tombol Auto Urut.`
+      );
+      return;
+    }
+
     swalLoading("Menyimpan BAST...", "Sedang menyimpan Berita Acara Serah Terima ke database...");
     startTransition(async () => {
       const payload: CreateBastInput = {
+        id: formData.id,
         nomorBast: formData.nomorBast,
         tanggal: formData.tanggal,
         hariTanggal: formData.hariTanggal,
@@ -664,7 +733,7 @@ export function BastForm({
         catatanUji: formData.catatanUji,
         statusUji: formData.statusUji,
         fotoFisikNama: formData.fotoFisikNama,
-        receiptId: formData.receiptId,
+        receiptId: formData.receiptId || null,
       };
 
       const res = await saveBastAction(payload);
@@ -726,21 +795,24 @@ export function BastForm({
   };
 
   // Create new blank BAST
-  const handleCreateNew = () => {
-    const nextIdx = bastList.length + 1;
-    const nextUrut = String(nextIdx).padStart(2, "0");
-    setNomorUrutBast(nextUrut);
-    const nextNo = buildFormattedDocumentNumber(nextUrut, formatPatternBast, todayStr);
-    setIsManualNomorBast(false);
+  const handleCreateNew = async () => {
     const { hariTanggal, terbilangResmi } = formatTanggalTerbilang(new Date());
+
+    // Otomatis cari nomor urut berikutnya yang belum pernah dipakai di DB
+    const res = await getNextNomorBastAction(todayStr);
+    const nextUrut = res.success && res.data ? res.data.nomorUrut : "01";
+    const nextNo = res.success && res.data ? res.data.nomorBast : buildFormattedDocumentNumber("01", formatPatternBast, todayStr);
+
+    setNomorUrutBast(nextUrut);
+    setIsManualNomorBast(false);
 
     setFormData({
       nomorBast: nextNo,
       tanggal: todayStr,
       hariTanggal,
       tanggalTerbilang: terbilangResmi,
-      nomorSpk: `Wk.5c.74.II/MI.bhd.01/${370 + nextIdx}/7/2026`,
-      tanggalSpk: "17 Juli 2026",
+      nomorSpk: `Wk.5c.74.II/MI.bhd.01/${370 + parseInt(nextUrut || "1", 10)}/7/2026`,
+      tanggalSpk: todayStr,
       namaKegiatan: "Pengadaan Sarana & Prasarana Fatayat NU",
       pihak1Nama: defaultChairman,
       pihak1Jabatan: `Ketua ${defaultInstitution}`,
@@ -1080,11 +1152,16 @@ export function BastForm({
 
               {/* Section 1: Nomor & Tanggal Berita Acara */}
               <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col gap-3.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>1. Waktu & Nomor Berita Acara (BAST)</span>
-                  </span>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>1. Waktu & Nomor Berita Acara (BAST)</span>
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 font-medium">
+                      ⚡ No. Urut Otomatis • Anti-Double
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setIsManualNomorBast(!isManualNomorBast)}
@@ -1098,10 +1175,22 @@ export function BastForm({
                 {!isManualNomorBast ? (
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                     {/* No. Urut */}
-                    <div className="md:col-span-2">
-                      <label className="text-[11px] text-slate-300 font-medium block mb-1">
-                        No. Urut
-                      </label>
+                    <div className="md:col-span-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] text-slate-300 font-medium">
+                          No. Urut
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleAutoGenerateUrut()}
+                          disabled={isGeneratingNo}
+                          className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition-colors disabled:opacity-50"
+                          title="Generate otomatis No. Urut BAST berikutnya (Anti-Double)"
+                        >
+                          <RotateCw className={`w-2.5 h-2.5 ${isGeneratingNo ? "animate-spin" : ""}`} />
+                          <span>Auto Urut</span>
+                        </button>
+                      </div>
                       <input
                         type="text"
                         value={nomorUrutBast}
@@ -1153,7 +1242,7 @@ export function BastForm({
                     </div>
 
                     {/* Tanggal Pelaksanaan BAST */}
-                    <div className="md:col-span-5">
+                    <div className="md:col-span-4">
                       <label className="text-[11px] text-slate-300 font-medium block mb-1">
                         Tanggal Pelaksanaan BAST
                       </label>
@@ -1166,12 +1255,24 @@ export function BastForm({
                     </div>
 
                     {/* Banner Hasil Penomoran Otomatis */}
-                    <div className="md:col-span-12 bg-slate-900/90 border border-emerald-700/40 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2.5">
+                    <div className={`md:col-span-12 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2.5 transition-all ${
+                      isDuplicateNomorBast
+                        ? "bg-rose-950/40 border border-rose-600/70"
+                        : "bg-slate-900/90 border border-emerald-700/40"
+                    }`}>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] uppercase font-bold text-slate-400">Nomor BAST Otomatis:</span>
-                        <span className="font-mono text-xs sm:text-sm font-bold text-emerald-300 tracking-wide">
+                        <span className={`font-mono text-xs sm:text-sm font-bold tracking-wide ${
+                          isDuplicateNomorBast ? "text-rose-400 underline decoration-wavy" : "text-emerald-300"
+                        }`}>
                           {formData.nomorBast}
                         </span>
+                        {isDuplicateNomorBast && (
+                          <span className="flex items-center gap-1 text-[11px] font-bold text-rose-300 bg-rose-950/90 border border-rose-500/70 px-2 py-0.5 rounded animate-pulse">
+                            <AlertTriangle className="w-3 h-3 text-rose-400" />
+                            Nomor BAST Terpakai! Klik "Auto Urut"
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
                         <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold">
@@ -1196,8 +1297,16 @@ export function BastForm({
                         onChange={(e) =>
                           setFormData({ ...formData, nomorBast: e.target.value })
                         }
-                        className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className={`px-3 py-2 bg-slate-900 border rounded-lg font-mono text-xs text-white focus:outline-none focus:border-emerald-500 ${
+                          isDuplicateNomorBast ? "border-rose-500 focus:border-rose-500" : "border-slate-700"
+                        }`}
                       />
+                      {isDuplicateNomorBast && (
+                        <p className="text-[11px] text-rose-400 flex items-center gap-1 mt-0.5 font-medium">
+                          <AlertTriangle className="w-3 h-3" />
+                          Nomor BAST ini sudah digunakan pada BAST lain!
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs text-slate-300 font-medium">

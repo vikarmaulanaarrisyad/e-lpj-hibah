@@ -180,6 +180,22 @@ export class BkuRepository {
       throw error;
     }
   }
+
+  /**
+   * Get all nomorBukti recorded in BKU transactions for a user.
+   */
+  async getAllNomorBukti(userId: string): Promise<string[]> {
+    try {
+      const items = await prisma.bkuTransaction.findMany({
+        where: { userId },
+        select: { nomorBukti: true },
+      });
+      return items.map((i) => i.nomorBukti);
+    } catch (error) {
+      console.error("[BkuRepository] Error in getAllNomorBukti:", error);
+      return [];
+    }
+  }
 }
 
 export const bkuRepository = new BkuRepository();

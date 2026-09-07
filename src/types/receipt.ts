@@ -5,6 +5,7 @@ export type Receipt = PrismaReceipt;
 export type ReceiptTemplateMode = "bank" | "folio" | "triple";
 
 export interface CreateReceiptInput {
+  id?: string;
   nomorBukti: string;
   tanggal: string; // ISO date string or formatted date
   pemberi: string;
@@ -38,6 +39,7 @@ export interface CreateReceiptInput {
 }
 
 export interface ReceiptFormData {
+  id?: string;
   nomorBukti: string;
   tanggal: string;
   pemberi: string;

@@ -25,23 +25,52 @@ export class BastRepository {
 
       const itemsJsonString = JSON.stringify(input.items || []);
 
+      // Sanitize receiptId: ensure it's a non-empty string and actually exists in receipts for this user
+      let cleanReceiptId: string | null = null;
+      if (input.receiptId && typeof input.receiptId === "string" && input.receiptId.trim().length > 0) {
+        const validReceipt = await prisma.receipt.findFirst({
+          where: { id: input.receiptId.trim(), userId },
+        });
+        if (validReceipt) {
+          cleanReceiptId = validReceipt.id;
+        }
+      }
+
+      // If cleanReceiptId is provided, unlink any other BAST belonging to this user that currently holds it
+      if (cleanReceiptId) {
+        const existingLinkedBast = await prisma.bastDocument.findUnique({
+          where: { receiptId: cleanReceiptId },
+        });
+        if (existingLinkedBast && existingLinkedBast.id !== input.id) {
+          if (existingLinkedBast.userId === userId) {
+            await prisma.bastDocument.update({
+              where: { id: existingLinkedBast.id },
+              data: { receiptId: null },
+            });
+          } else {
+            // Receipt is linked to another user's BAST, don't hijack
+            cleanReceiptId = null;
+          }
+        }
+      }
+
       const dataFields = {
-        nomorBast: input.nomorBast,
+        nomorBast: input.nomorBast?.trim() || "01/A/PR.FNU/IX/2026",
         tanggal: parsedDate,
-        hariTanggal: input.hariTanggal,
-        tanggalTerbilang: input.tanggalTerbilang,
-        nomorSpk: input.nomorSpk,
-        tanggalSpk: input.tanggalSpk,
-        namaKegiatan: input.namaKegiatan,
-        pihak1Nama: input.pihak1Nama,
-        pihak1Jabatan: input.pihak1Jabatan,
-        pihak2Nama: input.pihak2Nama,
-        pihak2Toko: input.pihak2Toko,
+        hariTanggal: input.hariTanggal?.trim() || "Senin, 01 September 2026",
+        tanggalTerbilang: input.tanggalTerbilang?.trim() || "-",
+        nomorSpk: input.nomorSpk?.trim() || "-",
+        tanggalSpk: input.tanggalSpk?.trim() || parsedDate.toISOString().split("T")[0],
+        namaKegiatan: input.namaKegiatan?.trim() || "-",
+        pihak1Nama: input.pihak1Nama?.trim() || "Ketua",
+        pihak1Jabatan: input.pihak1Jabatan?.trim() || "Ketua",
+        pihak2Nama: input.pihak2Nama?.trim() || "Penyedia",
+        pihak2Toko: input.pihak2Toko?.trim() || "Toko Penyedia",
         itemsJson: itemsJsonString,
         catatanUji: input.catatanUji ?? null,
         statusUji: input.statusUji ?? "Lulus Uji Coba",
         fotoFisikNama: input.fotoFisikNama ?? null,
-        receiptId: input.receiptId ?? null,
+        receiptId: cleanReceiptId,
       };
 
       // 1. If explicit ID provided and exists, update that record
@@ -57,10 +86,10 @@ export class BastRepository {
         }
       }
 
-      // 2. If receiptId provided and an existing BAST is already linked, update it
-      if (input.receiptId) {
+      // 2. If cleanReceiptId provided and an existing BAST of this user is already linked, update it
+      if (cleanReceiptId) {
         const existingByReceipt = await prisma.bastDocument.findUnique({
-          where: { receiptId: input.receiptId },
+          where: { receiptId: cleanReceiptId },
         });
         if (existingByReceipt && existingByReceipt.userId === userId) {
           return await prisma.bastDocument.update({
@@ -70,9 +99,14 @@ export class BastRepository {
         }
       }
 
-      // 3. Fallback to upsert by nomorBast
+      // 3. Fallback to upsert by compound unique [userId, nomorBast]
       return await prisma.bastDocument.upsert({
-        where: { nomorBast: input.nomorBast },
+        where: {
+          userId_nomorBast: {
+            userId,
+            nomorBast: dataFields.nomorBast,
+          },
+        } as any,
         update: dataFields,
         create: {
           ...dataFields,
@@ -115,9 +149,32 @@ export class BastRepository {
   /**
    * Mengambil satu dokumen BAST berdasarkan nomor register
    */
-  async findByNomorBast(nomorBast: string): Promise<BastWithReceipt | null> {
+  async findByNomorBast(nomorBast: string, userId?: string): Promise<BastWithReceipt | null> {
     try {
-      return (await prisma.bastDocument.findUnique({
+      if (userId) {
+        return (await prisma.bastDocument.findUnique({
+          where: {
+            userId_nomorBast: {
+              userId,
+              nomorBast,
+            },
+          } as any,
+          include: {
+            receipt: {
+              select: {
+                id: true,
+                nomorBukti: true,
+                nominal: true,
+                tanggal: true,
+                uraian: true,
+                penerima: true,
+              },
+            },
+          },
+        })) as BastWithReceipt | null;
+      }
+
+      return (await prisma.bastDocument.findFirst({
         where: { nomorBast },
         include: {
           receipt: {
@@ -178,6 +235,22 @@ export class BastRepository {
     } catch (error) {
       console.error("[BastRepository] Error in delete:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Mengambil semua nomor register BAST milik pengguna
+   */
+  async getAllNomorBast(userId: string): Promise<string[]> {
+    try {
+      const items = await prisma.bastDocument.findMany({
+        where: { userId },
+        select: { nomorBast: true },
+      });
+      return items.map((i) => i.nomorBast);
+    } catch (error) {
+      console.error("[BastRepository] Error in getAllNomorBast:", error);
+      return [];
     }
   }
 }

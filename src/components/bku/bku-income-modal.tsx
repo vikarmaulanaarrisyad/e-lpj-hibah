@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { addBkuIncomeAction } from "@/app/actions/bku.action";
-import { X, ArrowDownRight, Loader2 } from "lucide-react";
+import { useState, useTransition, useEffect } from "react";
+import { addBkuIncomeAction, getNextIncomeNomorBuktiAction } from "@/app/actions/bku.action";
+import { X, ArrowDownRight, Loader2, Sparkles, RotateCw } from "lucide-react";
 import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
 
 interface BkuIncomeModalProps {
@@ -16,12 +16,24 @@ export function BkuIncomeModal({ isOpen, onClose, onSuccess }: BkuIncomeModalPro
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    nomorBukti: "SP2D-HB/002/IX/2026",
+    nomorBukti: "",
     tanggal: new Date().toISOString().split("T")[0],
     uraian: "Pencairan Dana Hibah Tahap 2 Sesuai NPHD",
     kategoriRab: "Pencairan Hibah",
     nominalStr: "15000000",
   });
+
+  // Auto-fetch next SP2D number when modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      getNextIncomeNomorBuktiAction(formData.tanggal).then((res) => {
+        if (res.success && res.data) {
+          const nextVal = res.data;
+          setFormData((prev) => ({ ...prev, nomorBukti: nextVal }));
+        }
+      });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -99,19 +111,45 @@ export function BkuIncomeModal({ isOpen, onClose, onSuccess }: BkuIncomeModalPro
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nomor Bukti / SP2D
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.nomorBukti}
-                onChange={(e) =>
-                  setFormData({ ...formData, nomorBukti: e.target.value })
-                }
-                placeholder="SP2D/002/2026"
-                className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-600"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Nomor Bukti / SP2D
+                </label>
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  Otomatis
+                </span>
+              </div>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  required
+                  value={formData.nomorBukti}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nomorBukti: e.target.value })
+                  }
+                  placeholder="SP2D-HB/001/IX/2026"
+                  className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-20 py-2 text-white focus:outline-none focus:border-emerald-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    startTransition(async () => {
+                      const res = await getNextIncomeNomorBuktiAction(formData.tanggal);
+                      if (res.success && res.data) {
+                        const nextVal = res.data;
+                        setFormData((prev) => ({ ...prev, nomorBukti: nextVal }));
+                      }
+                    });
+                  }}
+                  disabled={isPending}
+                  title="Generate nomor SP2D berikutnya otomatis"
+                  className="absolute right-1 top-1 bottom-1 px-2 text-[10px] font-medium bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 rounded-lg border border-emerald-600/40 flex items-center gap-1"
+                >
+                  <RotateCw className={`w-3 h-3 ${isPending ? "animate-spin" : ""}`} />
+                  <span>Auto</span>
+                </button>
+              </div>
             </div>
 
             <div>

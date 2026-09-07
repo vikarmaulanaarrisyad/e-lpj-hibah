@@ -125,7 +125,7 @@ model RabItem {
 
 model BastDocument {
   id               String    @id @default(cuid())
-  nomorBast        String    @unique // Contoh: "014/BAST-HB/FTY/VII/2026"
+  nomorBast        String    // Contoh: "014/BAST-HB/FTY/VII/2026"
   tanggal          DateTime
   hariTanggal      String    // Contoh: "Senin, 31 Juli 2026"
   tanggalTerbilang String   // Contoh: "Senin tanggal tiga puluh satu bulan Juli tahun Dua Ribu Dua Puluh Enam (31 - 07 - 2026)"
@@ -148,6 +148,7 @@ model BastDocument {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
+  @@unique([userId, nomorBast])
   @@index([userId])
   @@index([tanggal])
   @@map("bast_documents")
@@ -181,7 +182,7 @@ model InstitutionProfile {
   // Format Penomoran Dokumen Otomatis per Akun / Lembaga
   formatNomorSp       String?  @default("/A/PR.FNU/")
   formatNomorBast     String?  @default("/A/PR.FNU/")
-  formatNomorKwitansi String?  @default("BKU-HB")
+  formatNomorKwitansi String?  @default("/A/PR.FNU/")
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -191,7 +192,7 @@ model InstitutionProfile {
 
 model PurchaseOrder {
   id                 String    @id @default(cuid())
-  nomorSp            String    @unique // Contoh: "014/SP/SPK-FTY/VII/2026"
+  nomorSp            String    // Contoh: "014/SP/SPK-FTY/VII/2026"
   tanggal            DateTime  // Tanggal Surat Pesanan
   namaPaket          String    // Paket Pekerjaan / Pengadaan (cth: "Pembelian Sound Aktif & Sarana")
 
@@ -230,6 +231,7 @@ model PurchaseOrder {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
+  @@unique([userId, nomorSp])
   @@index([userId])
   @@index([tanggal])
   @@map("purchase_orders")

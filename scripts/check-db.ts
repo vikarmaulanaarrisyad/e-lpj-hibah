@@ -12,6 +12,10 @@ async function main() {
   const bku = await prisma.bkuTransaction.findMany();
   console.log("=== BKU TRANSACTIONS ===");
   console.log(bku);
+
+  const profiles = await prisma.institutionProfile.findMany();
+  console.log("=== PROFILES ===");
+  console.log(profiles);
 }
 
 main().finally(() => prisma.$disconnect());

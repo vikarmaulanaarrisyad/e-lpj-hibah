@@ -114,3 +114,28 @@ export async function syncBkuReceiptsAction(): Promise<ActionResponse<number>> {
     };
   }
 }
+
+/**
+ * Server Action to get next unique SP2D / Cash Income nomor bukti
+ */
+export async function getNextIncomeNomorBuktiAction(
+  dateString?: string
+): Promise<ActionResponse<string>> {
+  try {
+    const session = await authService.getSession();
+    const userId = session?.sub || "default";
+    const nextNomor = await bkuService.generateNextIncomeNomorBukti(userId, dateString);
+    return {
+      success: true,
+      message: "Nomor SP2D dibuat otomatis.",
+      data: nextNomor,
+    };
+  } catch (error) {
+    console.error("[getNextIncomeNomorBuktiAction] Error:", error);
+    return {
+      success: true,
+      message: "Nomor SP2D default.",
+      data: "SP2D-HB/001/IX/2026",
+    };
+  }
+}

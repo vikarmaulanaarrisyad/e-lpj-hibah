@@ -35,7 +35,7 @@ export class InstitutionService {
           namaBendahara: user?.name || "NUR ALIMAH",
           formatNomorSp: "/A/PR.FNU/",
           formatNomorBast: "/A/PR.FNU/",
-          formatNomorKwitansi: "BKU-HB",
+          formatNomorKwitansi: "/A/PR.FNU/",
         });
       }
 

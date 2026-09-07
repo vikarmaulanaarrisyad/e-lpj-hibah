@@ -1,13 +1,16 @@
+import { prisma } from "@/lib/prisma";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { bkuRepository } from "@/repositories/bku.repository";
+import { institutionRepository } from "@/repositories/institution.repository";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
-import { getRomanMonth } from "@/lib/utils/pesanan-date";
+import { buildFormattedDocumentNumber, getRomanMonth } from "@/lib/utils/pesanan-date";
 import type { Receipt, CreateReceiptInput, ServiceResponse } from "@/types";
 
 export class ReceiptService {
   /**
    * Save or update a receipt into Buku Kas Umum (BKU).
-   * Enforces business rules: Auto-terbilang check, materai rules, and date normalization.
+   * Enforces business rules: Auto-terbilang check, materai rules, date normalization,
+   * and guaranteed collision-free distinct cash proof numbering (No. Bukti Kas).
    */
   async saveReceipt(
     input: CreateReceiptInput,
@@ -35,9 +38,53 @@ export class ReceiptService {
         parsedDate = new Date();
       }
 
-      // 5. Persist via repository layer
+      let finalNomorBukti = input.nomorBukti ? input.nomorBukti.trim() : "";
+
+      // 5. Uniqueness & Anti-Double Guarantee
+      if (input.id) {
+        // Edit Mode: verify this receipt exists and belongs to this user
+        const existingReceipt = await receiptRepository.findById(input.id);
+        if (!existingReceipt || existingReceipt.userId !== userId) {
+          return {
+            success: false,
+            message: "Data kwitansi yang akan diedit tidak ditemukan.",
+          };
+        }
+
+        // If nomorBukti is changed, ensure it doesn't collide with another receipt
+        if (finalNomorBukti && finalNomorBukti !== existingReceipt.nomorBukti) {
+          const conflict = await prisma.receipt.findFirst({
+            where: {
+              userId,
+              nomorBukti: finalNomorBukti,
+              NOT: { id: input.id },
+            },
+          });
+          if (conflict) {
+            return {
+              success: false,
+              message: `Nomor bukti kas "${finalNomorBukti}" sudah digunakan oleh kwitansi lain. Silakan gunakan nomor lain yang belum terpakai.`,
+            };
+          }
+        } else if (!finalNomorBukti) {
+          finalNomorBukti = existingReceipt.nomorBukti;
+        }
+      } else {
+        // Create Mode: ensure nomorBukti is not empty and is not already taken
+        const conflict = finalNomorBukti
+          ? await receiptRepository.findByNomorBukti(finalNomorBukti, userId)
+          : null;
+
+        if (conflict || !finalNomorBukti || finalNomorBukti.toUpperCase() === "AUTO") {
+          // Otomatis tentukan nomor urut berikutnya yang 100% bebas bentrok
+          finalNomorBukti = await this.generateNextNomorBukti(userId, parsedDate);
+        }
+      }
+
+      // 6. Persist via repository layer
       const saved = await receiptRepository.create({
-        nomorBukti: input.nomorBukti.trim(),
+        id: input.id,
+        nomorBukti: finalNomorBukti,
         tanggal: parsedDate,
         pemberi: input.pemberi.trim(),
         nominal: input.nominal,
@@ -68,7 +115,7 @@ export class ReceiptService {
         userId,
       });
 
-      // 6. Automatically sync to Buku Kas Umum (BKU)
+      // 7. Automatically sync to Buku Kas Umum (BKU)
       await bkuRepository.upsertFromReceipt(
         {
           nomorBukti: saved.nomorBukti,
@@ -180,18 +227,80 @@ export class ReceiptService {
   }
 
   /**
-   * Helper to generate next suggested BKU nomor bukti (e.g. BKU-HB/015/VIII/2026)
+   * Helper to generate next suggested BKU nomor bukti (e.g. 01/A/PR.FNU/IX/2026).
+   * Guaranteed to be distinct, strictly sequential, collision-free, and dynamic to transaction date.
    */
-  async generateNextNomorBukti(userId: string): Promise<string> {
+  async generateNextNomorBukti(
+    userId: string,
+    targetDate?: Date | string
+  ): Promise<string> {
     try {
-      const count = await receiptRepository.countByUserId(userId);
-      const nextNum = (count + 1).toString().padStart(3, "0");
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+      // 1. Resolve transaction date for roman month & year
+      let dateObj = targetDate ? new Date(targetDate) : new Date();
+      if (isNaN(dateObj.getTime())) {
+        dateObj = new Date();
+      }
+      const currentMonth = dateObj.getMonth();
+      const currentYear = dateObj.getFullYear();
       const romanMonth = getRomanMonth(currentMonth);
-      return `BKU-HB/${nextNum}/${romanMonth}/${currentYear}`;
-    } catch {
-      return `BKU-HB/001/VIII/2026`;
+
+      // 2. Resolve institution numbering format (default: "/A/PR.FNU/")
+      let pattern = "/A/PR.FNU/";
+      try {
+        const profile = await institutionRepository.findByUserId(userId);
+        if (profile?.formatNomorKwitansi && profile.formatNomorKwitansi.trim()) {
+          pattern = profile.formatNomorKwitansi.trim();
+        } else if (profile?.formatNomorBast && profile.formatNomorBast.trim()) {
+          pattern = profile.formatNomorBast.trim();
+        } else if (profile?.formatNomorSp && profile.formatNomorSp.trim()) {
+          pattern = profile.formatNomorSp.trim();
+        }
+      } catch (err) {
+        console.warn("[ReceiptService] Could not fetch institution profile prefix:", err);
+      }
+
+      // 3. Fetch all used numbers from receipts and BKU transactions
+      const [receiptNumbers, bkuNumbers] = await Promise.all([
+        receiptRepository.getAllNomorBukti(userId),
+        bkuRepository.getAllNomorBukti(userId),
+      ]);
+
+      const allUsed = [...receiptNumbers, ...bkuNumbers];
+      const usedSet = new Set(allUsed.map((n) => n.trim().toLowerCase()));
+
+      // 4. Extract highest sequence number used so far
+      const parsedSeqNumbers: number[] = [];
+      for (const numStr of allUsed) {
+        const tokens = numStr.split(/[\/\-\s]+/);
+        for (const token of tokens) {
+          if (/^\d+$/.test(token)) {
+            const val = parseInt(token, 10);
+            // Ignore 4-digit years (e.g. 1990 - 2099)
+            if (val < 1990 || val > 2099) {
+              parsedSeqNumbers.push(val);
+            }
+          }
+        }
+      }
+
+      const maxSeq = parsedSeqNumbers.length > 0 ? Math.max(...parsedSeqNumbers) : 0;
+      let nextSeq = Math.max(maxSeq, receiptNumbers.length) + 1;
+      if (nextSeq < 1) nextSeq = 1;
+
+      // 5. Collision-free verification loop using standard document number builder (e.g. 01/A/PR.FNU/IX/2026)
+      let paddedUrut = String(nextSeq).padStart(2, "0");
+      let candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
+      while (usedSet.has(candidate.toLowerCase())) {
+        nextSeq++;
+        paddedUrut = String(nextSeq).padStart(2, "0");
+        candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
+      }
+
+      return candidate;
+    } catch (error) {
+      console.error("[ReceiptService] Error generating next nomor bukti:", error);
+      const fallbackDate = targetDate || new Date();
+      return buildFormattedDocumentNumber("01", "/A/PR.FNU/", fallbackDate);
     }
   }
 }

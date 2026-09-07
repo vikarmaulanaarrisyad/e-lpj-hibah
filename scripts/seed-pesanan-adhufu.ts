@@ -37,7 +37,12 @@ async function main() {
   const tanggal = new Date("2026-08-01T00:00:00.000Z");
 
   const purchaseOrder = await prisma.purchaseOrder.upsert({
-    where: { nomorSp },
+    where: {
+      userId_nomorSp: {
+        userId: user.id,
+        nomorSp,
+      },
+    } as any,
     update: {
       tanggal,
       namaPaket: "Pembelian Alat Rebana",
