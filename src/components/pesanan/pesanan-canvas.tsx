@@ -195,7 +195,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <span>:</span>
             <span className="font-bold text-black">{data.pihak2Nama || "ANSHORI"}</span>
           </div>
-          <p className="text-slate-700 italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
+          <p className="text-black italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
             Selanjutnya disebut sebagai <strong>Penyedia Barang</strong>
           </p>
         </div>
@@ -378,8 +378,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         <div className="grid grid-cols-2 gap-4">
           {/* Kolom Kiri: Penyedia Barang (ADHUFU) */}
           <div className="flex flex-col items-center text-center">
-            <p className="font-medium text-slate-800">Menerima dan Menyetujui</p>
-            <p className="font-medium text-slate-800">Untuk dan atas nama</p>
+            <p className="font-medium text-black">Menerima dan Menyetujui</p>
+            <p className="font-medium text-black">Untuk dan atas nama</p>
             <p className="font-bold text-black uppercase">{data.pihak2Toko || "ADHUFU"}</p>
 
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Toko */}
@@ -388,7 +388,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak2Nama || "ANSHORI"}
             </p>
-            <p className="text-[10.5px] sm:text-[11px] text-slate-700">Pimpinan Penyedia barang</p>
+            <p className="text-[10.5px] sm:text-[11px] text-black">Pimpinan Penyedia barang</p>
           </div>
 
           {/* Kolom Kanan: Pemesan (Fatayat NU Dawuhan Selatan) */}
@@ -397,7 +397,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
               <p>{cleanLembaga}</p>
               {showSubNama ? <p>{subNama}</p> : null}
             </div>
-            <p className="font-medium text-slate-800 mt-0.5">Pemesan</p>
+            <p className="font-medium text-black mt-0.5">Pemesan</p>
 
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
             <div className="h-20 my-1" />
@@ -405,7 +405,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak1Nama || "HENI FUJIATI"}
             </p>
-            <p className="text-[10.5px] sm:text-[11px] text-slate-700">{data.pihak1Jabatan || "Ketua"}</p>
+            <p className="text-[10.5px] sm:text-[11px] text-black">{data.pihak1Jabatan || "Ketua"}</p>
           </div>
         </div>
       </div>

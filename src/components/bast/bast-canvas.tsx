@@ -199,7 +199,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         </div>
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
-          <span className="col-span-11 italic font-semibold text-[#1e293b]">
+          <span className="col-span-11 italic font-semibold text-black">
             Kemudian disebut PIHAK KESATU
           </span>
         </div>
@@ -217,7 +217,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         </div>
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
-          <span className="col-span-11 italic font-semibold text-[#1e293b]">
+          <span className="col-span-11 italic font-semibold text-black">
             kemudian disebut PIHAK KEDUA
           </span>
         </div>
@@ -331,7 +331,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           <div className="h-24 w-full my-1" />
 
           <span className="font-bold underline uppercase tracking-wide">{data.pihak2Nama || "ANSHORI"}</span>
-          <span className="text-[10.5px] text-slate-600 font-mono">Penyedia Barang</span>
+          <span className="text-[10.5px] text-black font-mono">Penyedia Barang</span>
         </div>
 
         {/* Sisi Kanan: Pihak Kesatu (Penerima Hasil) */}
@@ -342,7 +342,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           <div className="h-24 w-full my-1" />
 
           <span className="font-bold underline uppercase tracking-wide text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
-          <span className="text-[10.5px] text-slate-600 font-mono">Ketua Ranting</span>
+          <span className="text-[10.5px] text-black font-mono">Ketua Ranting</span>
         </div>
       </div>
     </div>
