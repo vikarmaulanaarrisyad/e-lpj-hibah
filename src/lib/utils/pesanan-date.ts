@@ -95,11 +95,15 @@ export function addDaysToDate(dateStr: string, days: number): string {
 
 /**
  * Menghitung selisih hari kalender dan menghasilkan deskripsi waktu penyelesaian resmi:
- * Contoh: "3 (tiga) hari kalender dan pekerjaan harus sudah selesai pada tanggal 04 Agustus 2026"
+ * Mendukung perhitungan inklusif (tanggal SP s/d Batas Waktu) atau override durasi eksplisit.
+ * Contoh:
+ *   SP 01 Agustus 2026 s/d Batas 04 Agustus 2026 -> 4 (empat) hari kalender (1, 2, 3, 4 Agustus)
+ *   SP 04 Agustus 2026 s/d Batas 04 Agustus 2026 -> 1 (satu) hari kalender
  */
 export function calculateDurasiDanDeskripsi(
   tanggalSpStr: string,
-  batasWaktuStr: string
+  batasWaktuStr: string,
+  explicitDurasi?: number
 ): {
   durasiHari: number;
   durasiTerbilang: string;
@@ -108,28 +112,32 @@ export function calculateDurasiDanDeskripsi(
   deskripsiWaktuPenyelesaian: string;
 } {
   let diffDays = 1;
-  const p1 = (tanggalSpStr || "").split("T")[0].split("-").map(Number);
-  const p2 = (batasWaktuStr || "").split("T")[0].split("-").map(Number);
 
-  if (p1.length === 3 && p2.length === 3 && !p1.some(isNaN) && !p2.some(isNaN)) {
-    const d1 = new Date(p1[0], p1[1] - 1, p1[2]);
-    const d2 = new Date(p2[0], p2[1] - 1, p2[2]);
-    const diffMs = d2.getTime() - d1.getTime();
-    diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (explicitDurasi && explicitDurasi > 0) {
+    diffDays = explicitDurasi;
   } else {
-    const dStart = new Date(tanggalSpStr);
-    const dEnd = new Date(batasWaktuStr);
-    dStart.setHours(0, 0, 0, 0);
-    dEnd.setHours(0, 0, 0, 0);
-    const diffMs = dEnd.getTime() - dStart.getTime();
-    diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    const p1 = (tanggalSpStr || "").split("T")[0].split("-").map(Number);
+    const p2 = (batasWaktuStr || "").split("T")[0].split("-").map(Number);
+
+    if (p1.length === 3 && p2.length === 3 && !p1.some(isNaN) && !p2.some(isNaN)) {
+      const d1 = new Date(p1[0], p1[1] - 1, p1[2]);
+      const d2 = new Date(p2[0], p2[1] - 1, p2[2]);
+      const diffMs = d2.getTime() - d1.getTime();
+      const rawDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      diffDays = rawDiff >= 0 ? rawDiff + 1 : 1;
+    } else {
+      const dStart = new Date(tanggalSpStr);
+      const dEnd = new Date(batasWaktuStr);
+      dStart.setHours(0, 0, 0, 0);
+      dEnd.setHours(0, 0, 0, 0);
+      const diffMs = dEnd.getTime() - dStart.getTime();
+      const rawDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      diffDays = rawDiff >= 0 ? rawDiff + 1 : 1;
+    }
   }
 
-  if (isNaN(diffDays) || diffDays < 0) {
+  if (isNaN(diffDays) || diffDays < 1) {
     diffDays = 1;
-  }
-  if (diffDays === 0) {
-    diffDays = 1; // Minimal 1 hari kalender
   }
 
   // Konversi angka durasi ke terbilang kata bahasa Indonesia
@@ -150,6 +158,17 @@ export function calculateDurasiDanDeskripsi(
     formattedTanggalSp,
     deskripsiWaktuPenyelesaian,
   };
+}
+
+/**
+ * Menghitung mundur tanggal Surat Pesanan (SP) dari tanggal Nota/Batas Waktu:
+ * Contoh:
+ *   Nota: "2026-08-04", Durasi: 4 hari -> "2026-08-01" (1 s/d 4 Agustus = 4 hari)
+ *   Nota: "2026-08-04", Durasi: 1 hari -> "2026-08-04" (Belanja langsung hari yang sama)
+ */
+export function calculateTanggalSpDariNota(batasWaktuStr: string, durasiHari: number): string {
+  const safeDays = Math.max(1, durasiHari);
+  return addDaysToDate(batasWaktuStr, -(safeDays - 1));
 }
 
 /**

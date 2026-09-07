@@ -39,6 +39,7 @@ import {
   formatDateIndo,
   calculateDurasiDanDeskripsi,
   addDaysToDate,
+  calculateTanggalSpDariNota,
   syncNomorSpBulanTahun,
   syncNomorDokumenBulanTahun,
   buildFormattedDocumentNumber,
@@ -178,7 +179,7 @@ export function PesananForm({
       totalHarga: 5800000,
       terbilang: "Lima Juta Delapan Ratus Ribu Rupiah",
       batasWaktu: "2026-08-04",
-      waktuPenyelesaian: "3 (tiga) hari kalender dan pekerjaan harus sudah selesai pada tanggal 04 Agustus 2026",
+      waktuPenyelesaian: "4 (empat) hari kalender dan pekerjaan harus sudah selesai pada tanggal 04 Agustus 2026",
       alamatPengiriman: "Jl. Sunan Amangkurat 1 Pesarean Kejeron",
       alamatPemeriksaan: "Jl. Kemuning 2016 Desa Dawuhan RT. 23 RW. 06 Kec. Talang Kab. Tegal",
       dendaKeterlambatan: "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku",
@@ -191,7 +192,7 @@ export function PesananForm({
       const { durasiHari: d } = calculateDurasiDanDeskripsi(formData.tanggal, formData.batasWaktu);
       return d;
     }
-    return 3;
+    return 4;
   });
 
   // Parameter Otomatisasi Format Penomoran SP (Contoh: /A/PR.FNU/)
@@ -275,8 +276,8 @@ export function PesananForm({
 
   // Handler perubahan Tanggal Surat Pesanan (Otomatis menyesuaikan batas waktu, waktu penyelesaian & nomor SP)
   const handleTanggalSpChange = (dateVal: string) => {
-    const nextBatasWaktu = addDaysToDate(dateVal, durasiHari);
-    const { deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(dateVal, nextBatasWaktu);
+    const nextBatasWaktu = addDaysToDate(dateVal, durasiHari - 1);
+    const { deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(dateVal, nextBatasWaktu, durasiHari);
     const syncedNomorSp = isManualNomorSp
       ? syncNomorDokumenBulanTahun(formData.nomorSp, dateVal)
       : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, dateVal);
@@ -290,34 +291,48 @@ export function PesananForm({
     }));
   };
 
-  // Handler perubahan Batas Waktu Penerimaan Barang (Otomatis hitung selisih hari & deskripsi klausul 3)
+  // Handler perubahan Batas Waktu Penerimaan Barang / Tanggal Nota (Otomatis hitung mundur tanggal SP)
   const handleBatasWaktuChange = (batasVal: string) => {
-    const { durasiHari: newDurasi, deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(
-      formData.tanggal,
-      batasVal
+    const nextTanggalSp = calculateTanggalSpDariNota(batasVal, durasiHari);
+    const { deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(
+      nextTanggalSp,
+      batasVal,
+      durasiHari
     );
-    setDurasiHari(newDurasi);
+    const syncedNomorSp = isManualNomorSp
+      ? syncNomorDokumenBulanTahun(formData.nomorSp, nextTanggalSp)
+      : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, nextTanggalSp);
+
     setFormData((prev) => ({
       ...prev,
       batasWaktu: batasVal,
+      tanggal: nextTanggalSp,
       waktuPenyelesaian: deskripsiWaktuPenyelesaian,
+      nomorSp: syncedNomorSp,
     }));
   };
 
   // Handler perubahan Durasi Hari Kalender (via input number atau tombol preset)
+  // Menjaga tanggal batas waktu nota tetap & otomatis menghitung mundur tanggal SP
   const handleDurasiHariChange = (days: number) => {
     const safeDays = Math.max(1, days);
     setDurasiHari(safeDays);
-    const nextBatasWaktu = addDaysToDate(formData.tanggal, safeDays);
+
+    const nextTanggalSp = calculateTanggalSpDariNota(formData.batasWaktu, safeDays);
     const { deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(
-      formData.tanggal,
-      nextBatasWaktu
+      nextTanggalSp,
+      formData.batasWaktu,
+      safeDays
     );
+    const syncedNomorSp = isManualNomorSp
+      ? syncNomorDokumenBulanTahun(formData.nomorSp, nextTanggalSp)
+      : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, nextTanggalSp);
 
     setFormData((prev) => ({
       ...prev,
-      batasWaktu: nextBatasWaktu,
+      tanggal: nextTanggalSp,
       waktuPenyelesaian: deskripsiWaktuPenyelesaian,
+      nomorSp: syncedNomorSp,
     }));
   };
 
@@ -360,6 +375,16 @@ export function PesananForm({
     const totalHarga = r.nominal;
     const terbilangText = r.terbilang || angkaKeTerbilang(totalHarga);
 
+    // Otomatis sinkronisasi tanggal nota ke Batas Waktu & hitung mundur Tanggal SP
+    const notaDate = r.tanggal
+      ? new Date(r.tanggal).toISOString().split("T")[0]
+      : formData.batasWaktu;
+    const nextTanggalSp = calculateTanggalSpDariNota(notaDate, durasiHari);
+    const { deskripsiWaktuPenyelesaian } = calculateDurasiDanDeskripsi(nextTanggalSp, notaDate, durasiHari);
+    const syncedNomorSp = isManualNomorSp
+      ? syncNomorDokumenBulanTahun(formData.nomorSp, nextTanggalSp)
+      : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, nextTanggalSp);
+
     setFormData((prev) => ({
       ...prev,
       receiptId: r.id,
@@ -369,6 +394,10 @@ export function PesananForm({
       subtotal,
       totalHarga,
       terbilang: terbilangText,
+      batasWaktu: notaDate,
+      tanggal: nextTanggalSp,
+      waktuPenyelesaian: deskripsiWaktuPenyelesaian,
+      nomorSp: syncedNomorSp,
       items: [
         {
           id: "1",
@@ -1480,7 +1509,7 @@ export function PesananForm({
                       />
                       <span className="text-xs text-slate-400">Hari</span>
                       <div className="flex items-center gap-1 flex-wrap">
-                        {[1, 3, 7, 14].map((dPreset) => (
+                        {[1, 3, 4, 7, 14].map((dPreset) => (
                           <button
                             key={dPreset}
                             type="button"
@@ -1497,6 +1526,22 @@ export function PesananForm({
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Indikator Panduan Otomatisasi Perhitungan Tanggal SP dari Nota */}
+                <div className="p-2.5 bg-emerald-950/40 border border-emerald-800/60 rounded-lg text-xs space-y-1">
+                  <div className="flex items-center justify-between text-emerald-300 font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      Perhitungan Otomatis Tanggal SP
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-700/50">
+                      Hitung Mundur Kalender
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Nota Selesai: <strong className="text-white">{formatDateIndo(formData.batasWaktu)}</strong> • Durasi: <strong className="text-white">{durasiHari} Hari Kalender</strong> • Tanggal SP Otomatis: <strong className="text-emerald-300 underline underline-offset-2">{formatDateIndo(formData.tanggal)}</strong>
+                  </p>
                 </div>
 
                 <div>
