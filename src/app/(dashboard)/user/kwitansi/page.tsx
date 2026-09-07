@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { authService } from "@/services/auth.service";
 import { userRepository } from "@/repositories/user.repository";
@@ -47,13 +48,15 @@ export default async function KwitansiPage() {
 
       {/* ================= WORKSPACE BODY ================= */}
       <main className="flex-1 pb-16">
-        <KwitansiForm
-          initialInstitution={institution}
-          initialUserName={userName}
-          initialLeaderName={leaderName}
-          savedReceipts={savedReceipts}
-          initialRabSummary={initialRabSummary}
-        />
+        <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat Generator Kwitansi...</div>}>
+          <KwitansiForm
+            initialInstitution={institution}
+            initialUserName={userName}
+            initialLeaderName={leaderName}
+            savedReceipts={savedReceipts}
+            initialRabSummary={initialRabSummary}
+          />
+        </Suspense>
       </main>
 
       {/* ================= FOOTER ================= */}

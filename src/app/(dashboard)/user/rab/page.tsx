@@ -53,6 +53,7 @@ export default async function UserRabPage() {
           receipts={receipts}
           institutionName={institution}
           userName={userName}
+          leaderName={user?.leaderName || "HENI FUJIATI"}
         />
       </main>
 

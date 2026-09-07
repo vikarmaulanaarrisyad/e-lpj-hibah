@@ -3,9 +3,12 @@ import { receiptRepository } from "@/repositories/receipt.repository";
 import type {
   RabSummary,
   RabStatusItem,
+  RabDetailRow,
   RabAbsorptionStatus,
   BudgetCeilingCheckResult,
   UpdateRabItemInput,
+  AddRabDetailRowInput,
+  UpdateRabDetailRowInput,
   ServiceResponse,
 } from "@/types";
 
@@ -38,13 +41,86 @@ export class RabService {
 
       const items: RabStatusItem[] = rabItems.map((item) => {
         const matchingReceipts = receipts.filter((r) =>
-          this.isCategoryMatch(r.kategoriRab, item.kode)
+          this.isCategoryMatch(r.kategoriRab, item.kode) ||
+          this.isCategoryMatch(r.kategoriRab, item.nama)
         );
 
+        // Parse detail rincian rows jika tersimpan dalam format JSON pada kolom keterangan
+        let rincian: RabDetailRow[] = [];
+        if (item.keterangan) {
+          try {
+            const parsed = JSON.parse(item.keterangan);
+            if (Array.isArray(parsed)) {
+              rincian = parsed.map((row, idx) => {
+                const vol1 = Number(row.koefisien1Vol) || 1;
+                const vol2 = row.koefisien2Vol != null && !isNaN(Number(row.koefisien2Vol)) ? Number(row.koefisien2Vol) : null;
+                const hrg = Number(row.hargaSatuan) || 0;
+                const total = Number(row.total) || vol1 * (vol2 ?? 1) * hrg;
+
+                return {
+                  id: row.id || `${item.id}-${idx + 1}`,
+                  no: row.no || idx + 1,
+                  uraian: row.uraian || "Rincian Item Anggaran",
+                  koefisien1Vol: vol1,
+                  koefisien1Satuan: row.koefisien1Satuan || "Paket",
+                  koefisien2Vol: vol2,
+                  koefisien2Satuan: row.koefisien2Satuan || null,
+                  hargaSatuan: hrg,
+                  total,
+                };
+              });
+            }
+          } catch {
+            // Not JSON string, keep as regular note
+          }
+        }
+
+        // Jika rincian kosong, buatkan 1 baris representasi bawaan
+        if (rincian.length === 0) {
+          rincian = [
+            {
+              id: `${item.id}-1`,
+              no: 1,
+              uraian: item.nama,
+              koefisien1Vol: 1,
+              koefisien1Satuan: "Paket",
+              koefisien2Vol: null,
+              koefisien2Satuan: null,
+              hargaSatuan: item.anggaran,
+              total: item.anggaran,
+            },
+          ];
+        }
+
+        // Hitung realisasi per baris rincian berdasarkan kwitansi yang uraiannya berkaitan
+        rincian = rincian.map((row) => {
+          const rowReceipts = matchingReceipts.filter((r) => {
+            if (!r.uraian) return false;
+            const rLow = r.uraian.toLowerCase();
+            const uLow = row.uraian.toLowerCase();
+            return rLow.includes(uLow) || uLow.includes(rLow);
+          });
+          const rowRealisasi = rowReceipts.reduce((sum, r) => sum + r.nominal, 0);
+          const rowSisa = row.total - rowRealisasi;
+          let statusSerapan: RabDetailRow["statusSerapan"] = "BELUM";
+          if (rowSisa < 0) statusSerapan = "DEFISIT";
+          else if (rowRealisasi >= row.total) statusSerapan = "LUNAS";
+          else if (rowRealisasi > 0) statusSerapan = "SEBAGIAN";
+
+          return {
+            ...row,
+            realisasi: rowRealisasi,
+            sisa: rowSisa,
+            statusSerapan,
+          };
+        });
+
+        // Hitung total pagu anggaran kelompok dari akumulasi rincian
+        const calculatedAnggaran = rincian.reduce((acc, curr) => acc + curr.total, 0) || item.anggaran;
         const realisasi = matchingReceipts.reduce((acc, curr) => acc + curr.nominal, 0);
-        const sisaPagu = item.anggaran - realisasi;
+        const sisaPagu = calculatedAnggaran - realisasi;
         const persentaseSerapan =
-          item.anggaran > 0 ? (realisasi / item.anggaran) * 100 : 0;
+          calculatedAnggaran > 0 ? (realisasi / calculatedAnggaran) * 100 : 0;
 
         let status: RabAbsorptionStatus = "SAFE";
         if (sisaPagu < 0) {
@@ -53,20 +129,21 @@ export class RabService {
           status = "WARNING";
         }
 
-        totalAnggaran += item.anggaran;
+        totalAnggaran += calculatedAnggaran;
         totalRealisasi += realisasi;
 
         return {
           id: item.id,
           kode: item.kode,
           nama: item.nama,
-          anggaran: item.anggaran,
+          anggaran: calculatedAnggaran,
           realisasi,
           sisaPagu,
           persentaseSerapan: Math.round(persentaseSerapan * 10) / 10,
           status,
           keterangan: item.keterangan,
           jumlahTransaksi: matchingReceipts.length,
+          rincian,
         };
       });
 
@@ -339,6 +416,196 @@ export class RabService {
         success: false,
         message: "Terjadi kesalahan saat menghapus pos rekening.",
       };
+    }
+  }
+
+  /**
+   * Menambahkan baris rincian item ke dalam kelompok kegiatan RAB
+   */
+  async addDetailRow(
+    userId: string,
+    rabItemId: string,
+    input: AddRabDetailRowInput
+  ): Promise<ServiceResponse<RabStatusItem>> {
+    try {
+      const target = await rabRepository.findById(rabItemId);
+      if (!target || target.userId !== userId) {
+        return { success: false, message: "Kelompok kegiatan RAB tidak ditemukan." };
+      }
+
+      let existingRows: RabDetailRow[] = [];
+      if (target.keterangan) {
+        try {
+          const parsed = JSON.parse(target.keterangan);
+          if (Array.isArray(parsed)) existingRows = parsed;
+        } catch {
+          existingRows = [];
+        }
+      }
+
+      const vol1 = Number(input.koefisien1Vol) || 1;
+      const vol2 = input.koefisien2Vol != null && !isNaN(Number(input.koefisien2Vol)) ? Number(input.koefisien2Vol) : null;
+      const hrg = Number(input.hargaSatuan) || 0;
+      const total = vol1 * (vol2 ?? 1) * hrg;
+
+      const newRow: RabDetailRow = {
+        id: `row-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        no: existingRows.length + 1,
+        uraian: input.uraian.trim(),
+        koefisien1Vol: vol1,
+        koefisien1Satuan: input.koefisien1Satuan.trim() || "Paket",
+        koefisien2Vol: vol2,
+        koefisien2Satuan: input.koefisien2Satuan?.trim() || null,
+        hargaSatuan: hrg,
+        total,
+      };
+
+      const updatedRows = [...existingRows, newRow];
+      const newTotalAnggaran = updatedRows.reduce((acc, curr) => acc + curr.total, 0);
+
+      const updatedItem = await rabRepository.updateItem(rabItemId, {
+        anggaran: newTotalAnggaran,
+        keterangan: JSON.stringify(updatedRows),
+      });
+
+      const summaryRes = await this.getRabStatus(userId);
+      const found = summaryRes.data?.items.find((i) => i.id === rabItemId);
+
+      return {
+        success: true,
+        message: `Rincian "${newRow.uraian}" berhasil ditambahkan.`,
+        data: found,
+      };
+    } catch (error) {
+      console.error("[RabService] Failed to addDetailRow:", error);
+      return { success: false, message: "Gagal menambahkan rincian item RAB." };
+    }
+  }
+
+  /**
+   * Mengubah baris rincian item pada kelompok kegiatan RAB
+   */
+  async updateDetailRow(
+    userId: string,
+    rabItemId: string,
+    input: UpdateRabDetailRowInput
+  ): Promise<ServiceResponse<RabStatusItem>> {
+    try {
+      const target = await rabRepository.findById(rabItemId);
+      if (!target || target.userId !== userId) {
+        return { success: false, message: "Kelompok kegiatan RAB tidak ditemukan." };
+      }
+
+      let existingRows: RabDetailRow[] = [];
+      if (target.keterangan) {
+        try {
+          const parsed = JSON.parse(target.keterangan);
+          if (Array.isArray(parsed)) existingRows = parsed;
+        } catch {
+          existingRows = [];
+        }
+      }
+
+      const vol1 = Number(input.koefisien1Vol) || 1;
+      const vol2 = input.koefisien2Vol != null && !isNaN(Number(input.koefisien2Vol)) ? Number(input.koefisien2Vol) : null;
+      const hrg = Number(input.hargaSatuan) || 0;
+      const total = vol1 * (vol2 ?? 1) * hrg;
+
+      const updatedRows = existingRows.map((row) =>
+        row.id === input.id
+          ? {
+              ...row,
+              uraian: input.uraian.trim(),
+              koefisien1Vol: vol1,
+              koefisien1Satuan: input.koefisien1Satuan.trim() || "Paket",
+              koefisien2Vol: vol2,
+              koefisien2Satuan: input.koefisien2Satuan?.trim() || null,
+              hargaSatuan: hrg,
+              total,
+            }
+          : row
+      );
+
+      const newTotalAnggaran = updatedRows.reduce((acc, curr) => acc + curr.total, 0);
+
+      await rabRepository.updateItem(rabItemId, {
+        anggaran: newTotalAnggaran,
+        keterangan: JSON.stringify(updatedRows),
+      });
+
+      const summaryRes = await this.getRabStatus(userId);
+      const found = summaryRes.data?.items.find((i) => i.id === rabItemId);
+
+      return {
+        success: true,
+        message: "Rincian item berhasil diperbarui.",
+        data: found,
+      };
+    } catch (error) {
+      console.error("[RabService] Failed to updateDetailRow:", error);
+      return { success: false, message: "Gagal memperbarui rincian item RAB." };
+    }
+  }
+
+  /**
+   * Menghapus baris rincian item dari kelompok kegiatan RAB
+   */
+  async deleteDetailRow(
+    userId: string,
+    rabItemId: string,
+    rowId: string
+  ): Promise<ServiceResponse<RabStatusItem>> {
+    try {
+      const target = await rabRepository.findById(rabItemId);
+      if (!target || target.userId !== userId) {
+        return { success: false, message: "Kelompok kegiatan RAB tidak ditemukan." };
+      }
+
+      let existingRows: RabDetailRow[] = [];
+      if (target.keterangan) {
+        try {
+          const parsed = JSON.parse(target.keterangan);
+          if (Array.isArray(parsed)) existingRows = parsed;
+        } catch {
+          existingRows = [];
+        }
+      }
+
+      const filtered = existingRows
+        .filter((row) => row.id !== rowId)
+        .map((row, idx) => ({ ...row, no: idx + 1 }));
+
+      const newTotalAnggaran = filtered.reduce((acc, curr) => acc + curr.total, 0);
+
+      await rabRepository.updateItem(rabItemId, {
+        anggaran: newTotalAnggaran,
+        keterangan: JSON.stringify(filtered),
+      });
+
+      const summaryRes = await this.getRabStatus(userId);
+      const found = summaryRes.data?.items.find((i) => i.id === rabItemId);
+
+      return {
+        success: true,
+        message: "Rincian item berhasil dihapus.",
+        data: found,
+      };
+    } catch (error) {
+      console.error("[RabService] Failed to deleteDetailRow:", error);
+      return { success: false, message: "Gagal menghapus rincian item RAB." };
+    }
+  }
+
+  /**
+   * Reset data RAB pengguna agar memuat kelompok kegiatan dan 10 rincian bawaan format resmi NPHD
+   */
+  async resetToNphdDefaults(userId: string): Promise<ServiceResponse<RabSummary>> {
+    try {
+      await rabRepository.resetToNphdDefaults(userId);
+      return await this.getRabStatus(userId);
+    } catch (error) {
+      console.error("[RabService] Failed to resetToNphdDefaults:", error);
+      return { success: false, message: "Gagal memuat template resmi NPHD." };
     }
   }
 }

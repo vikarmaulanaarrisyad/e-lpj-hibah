@@ -7,6 +7,8 @@ import type {
   BudgetCeilingCheckResult,
   UpdateRabItemInput,
   RabStatusItem,
+  AddRabDetailRowInput,
+  UpdateRabDetailRowInput,
   ServiceResponse,
 } from "@/types";
 import { revalidatePath } from "next/cache";
@@ -159,5 +161,110 @@ export async function deleteRabItemAction(
       success: false,
       message: "Terjadi kesalahan saat menghapus pos rekening RAB.",
     };
+  }
+}
+
+/**
+ * Server Action: Menambahkan rincian item ke kelompok kegiatan RAB
+ */
+export async function addRabDetailRowAction(
+  rabItemId: string,
+  input: AddRabDetailRowInput
+): Promise<ServiceResponse<RabStatusItem>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return { success: false, message: "Sesi tidak valid." };
+    }
+
+    const res = await rabService.addDetailRow(session.sub, rabItemId, input);
+    if (res.success) {
+      revalidatePath("/user");
+      revalidatePath("/user/rab");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+    }
+    return res;
+  } catch (error) {
+    console.error("[addRabDetailRowAction] Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat menambahkan rincian item RAB." };
+  }
+}
+
+/**
+ * Server Action: Mengubah rincian item pada kelompok kegiatan RAB
+ */
+export async function updateRabDetailRowAction(
+  rabItemId: string,
+  input: UpdateRabDetailRowInput
+): Promise<ServiceResponse<RabStatusItem>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return { success: false, message: "Sesi tidak valid." };
+    }
+
+    const res = await rabService.updateDetailRow(session.sub, rabItemId, input);
+    if (res.success) {
+      revalidatePath("/user");
+      revalidatePath("/user/rab");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+    }
+    return res;
+  } catch (error) {
+    console.error("[updateRabDetailRowAction] Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat mengubah rincian item RAB." };
+  }
+}
+
+/**
+ * Server Action: Menghapus rincian item dari kelompok kegiatan RAB
+ */
+export async function deleteRabDetailRowAction(
+  rabItemId: string,
+  rowId: string
+): Promise<ServiceResponse<RabStatusItem>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return { success: false, message: "Sesi tidak valid." };
+    }
+
+    const res = await rabService.deleteDetailRow(session.sub, rabItemId, rowId);
+    if (res.success) {
+      revalidatePath("/user");
+      revalidatePath("/user/rab");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+    }
+    return res;
+  } catch (error) {
+    console.error("[deleteRabDetailRowAction] Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat menghapus rincian item RAB." };
+  }
+}
+
+/**
+ * Server Action: Reset seluruh kelompok kegiatan ke format resmi NPHD gambar referensi
+ */
+export async function resetRabToNphdDefaultsAction(): Promise<ServiceResponse<RabSummary>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return { success: false, message: "Sesi tidak valid." };
+    }
+
+    const res = await rabService.resetToNphdDefaults(session.sub);
+    if (res.success) {
+      revalidatePath("/user");
+      revalidatePath("/user/rab");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/bku");
+    }
+    return res;
+  } catch (error) {
+    console.error("[resetRabToNphdDefaultsAction] Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat memuat template NPHD." };
   }
 }

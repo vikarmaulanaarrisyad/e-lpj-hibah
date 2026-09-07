@@ -23,6 +23,7 @@ import {
   PlusCircle,
   Trash2,
   Sparkles,
+  Table,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -31,12 +32,14 @@ import {
   deleteRabItemAction,
 } from "@/app/actions/rab.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import { RabTableView } from "./rab-table-view";
 
 interface RabDashboardProps {
   initialSummary: RabSummary;
   receipts?: Receipt[];
   institutionName?: string;
   userName?: string;
+  leaderName?: string;
 }
 
 export function RabDashboard({
@@ -44,8 +47,10 @@ export function RabDashboard({
   receipts = [],
   institutionName = "PR Fatayat NU Dawuhan Selatan",
   userName = "NUR ALIMAH",
+  leaderName = "HENI FUJIATI",
 }: RabDashboardProps) {
   const [summary, setSummary] = useState<RabSummary>(initialSummary);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedKode, setSelectedKode] = useState<string>("ALL");
   const [editingItem, setEditingItem] = useState<RabStatusItem | null>(null);
   const [editPaguValue, setEditPaguValue] = useState<string>("");
@@ -380,168 +385,223 @@ export function RabDashboard({
         </div>
       </div>
 
-      {/* ================= POS REKENING RAB CARDS GRID ================= */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-          <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-400" />
-              Rincian Pos Rekening Anggaran Biaya (RAB)
-              <span className="px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 text-xs font-mono font-bold border border-slate-700">
-                {summary.items.length} Pos
-              </span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Klik tombol pensil untuk mengubah pagu penetapan NPHD atau tambah pos rekening baru
-            </p>
-          </div>
+      {/* ================= VIEW SWITCHER TABS ================= */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900/60 p-2.5 rounded-2xl border border-slate-800 no-print">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              viewMode === "table"
+                ? "bg-emerald-600 text-white shadow-md border border-emerald-500/50"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80"
+            }`}
+          >
+            <Table className="w-4 h-4" />
+            <span>Tabel Rincian Format Resmi NPHD</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-emerald-950 text-emerald-300 text-[10px] font-mono font-bold">
+              Foto
+            </span>
+          </button>
 
           <button
             type="button"
-            onClick={openAddModal}
-            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold border border-emerald-500/50 shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            onClick={() => setViewMode("cards")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              viewMode === "cards"
+                ? "bg-emerald-600 text-white shadow-md border border-emerald-500/50"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80"
+            }`}
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>+ Tambah Pos Rekening RAB</span>
+            <Layers className="w-4 h-4" />
+            <span>Ringkasan Kartu Pos Anggaran</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {summary.items.map((item) => {
-            const isDeficit = item.sisaPagu < 0;
-            const isWarning = item.persentaseSerapan >= 80 && !isDeficit;
-
-            return (
-              <div
-                key={item.id}
-                className={`p-5 rounded-2xl border transition-all shadow-md flex flex-col justify-between ${
-                  isDeficit
-                    ? "bg-red-950/20 border-red-700/60"
-                    : isWarning
-                    ? "bg-amber-950/20 border-amber-700/50"
-                    : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-slate-800 font-mono text-xs font-bold text-emerald-400 border border-slate-700">
-                          {item.kode}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            isDeficit
-                              ? "bg-red-900/80 text-red-200 border border-red-600"
-                              : isWarning
-                              ? "bg-amber-900/80 text-amber-200 border border-amber-600"
-                              : "bg-emerald-950 text-emerald-300 border border-emerald-800"
-                          }`}
-                        >
-                          {isDeficit ? "DEFISIT" : isWarning ? "WASPADA" : "AMAN"}
-                        </span>
-                      </div>
-                      <h4 className="text-sm font-bold text-white mt-1.5">{item.nama}</h4>
-                      {item.keterangan && (
-                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">{item.keterangan}</p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {item.jumlahTransaksi === 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRab(item)}
-                          className="p-2 rounded-xl bg-slate-800/80 hover:bg-red-950/80 text-slate-400 hover:text-red-400 border border-slate-700/80 hover:border-red-700/60 transition-colors cursor-pointer"
-                          title="Hapus Pos Rekening (Belum ada transaksi)"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => openEditModal(item)}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-                        title="Ubah Alokasi Pagu"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Metrics Table */}
-                  <div className="grid grid-cols-3 gap-2 mt-4 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-center">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Pagu NPHD</span>
-                      <span className="font-mono text-xs font-bold text-slate-200">
-                        {formatRupiah(item.anggaran)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Realisasi ({item.jumlahTransaksi} Kwt)</span>
-                      <span className="font-mono text-xs font-semibold text-cyan-300">
-                        {formatRupiah(item.realisasi)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Sisa Pagu</span>
-                      <span
-                        className={`font-mono text-xs font-bold ${
-                          isDeficit ? "text-red-400" : "text-emerald-400"
-                        }`}
-                      >
-                        {isDeficit ? "-" : ""}
-                        {formatRupiah(Math.abs(item.sisaPagu))}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="text-slate-400">Tingkat Penyerapan</span>
-                      <span
-                        className={`font-mono font-bold ${
-                          isDeficit ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"
-                        }`}
-                      >
-                        {item.persentaseSerapan}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full ${
-                          isDeficit ? "bg-red-500" : isWarning ? "bg-amber-400" : "bg-emerald-500"
-                        }`}
-                        style={{ width: `${Math.min(100, item.persentaseSerapan)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Action */}
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedKode(selectedKode === item.kode ? "ALL" : item.kode)}
-                    className="text-slate-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
-                  >
-                    <span>{selectedKode === item.kode ? "Tampilkan Semua Pos" : "Lihat Kwitansi Pos Ini"}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  <Link
-                    href={`/user/kwitansi`}
-                    className="text-emerald-400 hover:text-emerald-300 font-semibold"
-                  >
-                    + Buat Kwitansi
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+        <div className="text-xs text-slate-400 hidden md:flex items-center gap-1.5 pr-2">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+          <span>
+            {viewMode === "table"
+              ? "Format rincian multi-koefisien lengkap dengan tombol Realisasikan"
+              : "Tampilan kartu alokasi penetapan pagu"}
+          </span>
         </div>
       </div>
+
+      {/* Render TABEL RINCIAN MULTI-KOEFISIEN SESUAI GAMBAR atau KARTU */}
+      {viewMode === "table" ? (
+        <RabTableView
+          summary={summary}
+          onSummaryUpdated={(newSummary) => setSummary(newSummary)}
+          institutionName={institutionName}
+          leaderName={leaderName}
+          treasurerName={userName}
+          onOpenAddGroupModal={openAddModal}
+        />
+      ) : (
+        /* ================= POS REKENING RAB CARDS GRID ================= */
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-400" />
+                Rincian Pos Rekening Anggaran Biaya (RAB)
+                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 text-xs font-mono font-bold border border-slate-700">
+                  {summary.items.length} Pos
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Klik tombol pensil untuk mengubah pagu penetapan NPHD atau tambah pos rekening baru
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openAddModal}
+              className="self-start sm:self-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold border border-emerald-500/50 shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Tambah Pos Rekening RAB</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {summary.items.map((item) => {
+              const isDeficit = item.sisaPagu < 0;
+              const isWarning = item.persentaseSerapan >= 80 && !isDeficit;
+
+              return (
+                <div
+                  key={item.id}
+                  className={`p-5 rounded-2xl border transition-all shadow-md flex flex-col justify-between ${
+                    isDeficit
+                      ? "bg-red-950/20 border-red-700/60"
+                      : isWarning
+                      ? "bg-amber-950/20 border-amber-700/50"
+                      : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 font-mono text-xs font-bold text-emerald-400 border border-slate-700">
+                            {item.kode}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              isDeficit
+                                ? "bg-red-900/80 text-red-200 border border-red-600"
+                                : isWarning
+                                ? "bg-amber-950/80 text-amber-200 border border-amber-600"
+                                : "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                            }`}
+                          >
+                            {isDeficit ? "DEFISIT" : isWarning ? "WASPADA" : "AMAN"}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mt-1.5">{item.nama}</h4>
+                        {item.keterangan && (
+                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{item.keterangan}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {item.jumlahTransaksi === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRab(item)}
+                            className="p-2 rounded-xl bg-slate-800/80 hover:bg-red-950/80 text-slate-400 hover:text-red-400 border border-slate-700/80 hover:border-red-700/60 transition-colors cursor-pointer"
+                            title="Hapus Pos Rekening (Belum ada transaksi)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(item)}
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+                          title="Ubah Alokasi Pagu"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Metrics Table */}
+                    <div className="grid grid-cols-3 gap-2 mt-4 p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-center">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Pagu NPHD</span>
+                        <span className="font-mono text-xs font-bold text-slate-200">
+                          {formatRupiah(item.anggaran)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Realisasi ({item.jumlahTransaksi} Kwt)</span>
+                        <span className="font-mono text-xs font-semibold text-cyan-300">
+                          {formatRupiah(item.realisasi)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Sisa Pagu</span>
+                        <span
+                          className={`font-mono text-xs font-bold ${
+                            isDeficit ? "text-red-400" : "text-emerald-400"
+                          }`}
+                        >
+                          {isDeficit ? "-" : ""}
+                          {formatRupiah(Math.abs(item.sisaPagu))}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className="text-slate-400">Tingkat Penyerapan</span>
+                        <span
+                          className={`font-mono font-bold ${
+                            isDeficit ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"
+                          }`}
+                        >
+                          {item.persentaseSerapan}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-2 rounded-full ${
+                            isDeficit ? "bg-red-500" : isWarning ? "bg-amber-400" : "bg-emerald-500"
+                          }`}
+                          style={{ width: `${Math.min(100, item.persentaseSerapan)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Action */}
+                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedKode(selectedKode === item.kode ? "ALL" : item.kode)}
+                      className="text-slate-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
+                    >
+                      <span>{selectedKode === item.kode ? "Tampilkan Semua Pos" : "Lihat Kwitansi Pos Ini"}</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <Link
+                      href={`/user/kwitansi`}
+                      className="text-emerald-400 hover:text-emerald-300 font-semibold"
+                    >
+                      + Buat Kwitansi
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ================= TRANSAKSI TERKAIT TABEL ================= */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
@@ -595,7 +655,7 @@ export function RabDashboard({
                 filteredReceipts.map((r, idx) => (
                   <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="py-3 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
-                    <td className="py-3 px-3 text-slate-300 whitespace-nowrap">
+                    <td className="py-3 px-3 text-slate-300 whitespace-nowrap" suppressHydrationWarning>
                       {new Date(r.tanggal).toLocaleDateString("id-ID", {
                         day: "2-digit",
                         month: "short",

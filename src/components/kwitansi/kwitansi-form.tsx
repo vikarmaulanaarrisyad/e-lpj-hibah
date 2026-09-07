@@ -280,7 +280,7 @@ export function KwitansiForm({
     setAllowDeficitOverride(false);
   };
 
-  // Check URL query param ?no=... (e.g. clicked from BKU table)
+  // Check URL query param ?no=... (e.g. clicked from BKU table or "Realisasikan" from RAB Table)
   useEffect(() => {
     const noParam = searchParams.get("no");
     if (noParam) {
@@ -295,6 +295,31 @@ export function KwitansiForm({
           }
         });
       }
+      return;
+    }
+
+    // Check prefill from RAB item realization
+    const uraianParam = searchParams.get("uraian");
+    const nominalParam = searchParams.get("nominal");
+    const kategoriParam = searchParams.get("kategori");
+
+    if (uraianParam || nominalParam || kategoriParam) {
+      const num = nominalParam ? parseFloat(nominalParam) : 0;
+      const validNum = isNaN(num) ? 0 : num;
+      const formatted = formatRupiahNumber(validNum);
+      const terbilangText = angkaKeTerbilang(validNum);
+      const autoMaterai = validNum >= 5000000;
+
+      setFormData((prev) =>
+        updateFormWithTax(prev, {
+          uraian: uraianParam ? decodeURIComponent(uraianParam) : prev.uraian,
+          nominal: formatted,
+          nominalValue: validNum,
+          terbilang: terbilangText,
+          denganMaterai: autoMaterai,
+          kategoriRab: kategoriParam ? decodeURIComponent(kategoriParam) : prev.kategoriRab,
+        })
+      );
     }
   }, [searchParams, receiptsList]);
 

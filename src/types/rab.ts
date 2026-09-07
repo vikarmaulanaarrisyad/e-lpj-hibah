@@ -4,6 +4,21 @@ export type RabItem = PrismaRabItem;
 
 export type RabAbsorptionStatus = "SAFE" | "WARNING" | "DEFICIT";
 
+export interface RabDetailRow {
+  id: string;
+  no: number;
+  uraian: string;
+  koefisien1Vol: number;
+  koefisien1Satuan: string;
+  koefisien2Vol?: number | null;
+  koefisien2Satuan?: string | null;
+  hargaSatuan: number;
+  total: number;
+  realisasi?: number;
+  sisa?: number;
+  statusSerapan?: "BELUM" | "SEBAGIAN" | "LUNAS" | "DEFISIT";
+}
+
 export interface RabStatusItem {
   id: string;
   kode: string;
@@ -15,6 +30,7 @@ export interface RabStatusItem {
   status: RabAbsorptionStatus; // SAFE (<80%), WARNING (80-99.9%), DEFICIT (>=100%)
   keterangan?: string | null;
   jumlahTransaksi: number;
+  rincian?: RabDetailRow[];
 }
 
 export interface RabSummary {
@@ -26,11 +42,25 @@ export interface RabSummary {
   items: RabStatusItem[];
 }
 
+export interface AddRabDetailRowInput {
+  uraian: string;
+  koefisien1Vol: number;
+  koefisien1Satuan: string;
+  koefisien2Vol?: number | null;
+  koefisien2Satuan?: string | null;
+  hargaSatuan: number;
+}
+
+export interface UpdateRabDetailRowInput extends AddRabDetailRowInput {
+  id: string;
+}
+
 export interface UpdateRabItemInput {
   kode: string;
   nama: string;
   anggaran: number;
   keterangan?: string;
+  rincian?: RabDetailRow[];
 }
 
 export interface BudgetCeilingCheckResult {
