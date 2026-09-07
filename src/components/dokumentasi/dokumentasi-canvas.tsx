@@ -24,6 +24,15 @@ function formatDateIndo(dateStr?: string | null): string {
   return dateStr;
 }
 
+function cleanTitle(text?: string | null): string {
+  if (!text) return "";
+  let clean = text.trim();
+  clean = clean.split(/\s+(?:sebanyak|sebesar|sejumlah|senilai)\s+/i)[0].trim();
+  clean = clean.split(/\s*x\s*@\s*Rp/i)[0].trim();
+  clean = clean.split(/\s*=\s*Rp/i)[0].trim();
+  return clean;
+}
+
 export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
   const namaLembaga = profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU";
   const subNama = profile?.subNama || "DAWUHAN SELATAN";
@@ -170,31 +179,31 @@ export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
                     <table className="w-full border-collapse">
                       <tbody>
                         <tr className="leading-relaxed">
-                          <td className="w-32 font-semibold text-slate-700 align-top py-0.5">Nama Kegiatan</td>
-                          <td className="w-3 text-slate-500 align-top py-0.5">:</td>
-                          <td className="font-bold text-slate-900 align-top py-0.5">
-                            {data.namaKegiatan || "Pengadaan Sarana & Prasarana Organisasi"}
+                          <td className="w-32 font-semibold text-black align-top py-0.5">Nama Kegiatan</td>
+                          <td className="w-3 text-black align-top py-0.5">:</td>
+                          <td className="font-bold text-black align-top py-0.5">
+                            {cleanTitle(data.namaKegiatan) || "Pengadaan Sarana & Prasarana Organisasi"}
                           </td>
                         </tr>
                         <tr className="leading-relaxed">
-                          <td className="font-semibold text-slate-700 align-top py-0.5">Hari / Tanggal</td>
-                          <td className="text-slate-500 align-top py-0.5">:</td>
-                          <td className="text-slate-800 align-top py-0.5">
+                          <td className="font-semibold text-black align-top py-0.5">Hari / Tanggal</td>
+                          <td className="text-black align-top py-0.5">:</td>
+                          <td className="text-black align-top py-0.5">
                             {formatDateIndo(data.tanggalKegiatan)}
                           </td>
                         </tr>
                         <tr className="leading-relaxed">
-                          <td className="font-semibold text-slate-700 align-top py-0.5">Tempat / Lokasi</td>
-                          <td className="text-slate-500 align-top py-0.5">:</td>
-                          <td className="text-slate-800 align-top py-0.5">
+                          <td className="font-semibold text-black align-top py-0.5">Tempat / Lokasi</td>
+                          <td className="text-black align-top py-0.5">:</td>
+                          <td className="text-black align-top py-0.5">
                             {data.lokasiKegiatan || "Sekretariat PR Fatayat NU Dawuhan Selatan"}
                           </td>
                         </tr>
                         {data.nomorReferensi && (
                           <tr className="leading-relaxed">
-                            <td className="font-semibold text-slate-700 align-top py-0.5">No. BAST / SP</td>
-                            <td className="text-slate-500 align-top py-0.5">:</td>
-                            <td className="font-mono font-semibold text-slate-800 align-top py-0.5">
+                            <td className="font-semibold text-black align-top py-0.5">No. BAST / SP</td>
+                            <td className="text-black align-top py-0.5">:</td>
+                            <td className="font-mono font-semibold text-black align-top py-0.5">
                               {data.nomorReferensi}
                             </td>
                           </tr>
@@ -205,13 +214,13 @@ export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
                 </>
               ) : (
                 /* Header Ringkas untuk Halaman ke-2 dst */
-                <div className="mb-4 pb-2 border-b border-slate-300 flex items-center justify-between text-xs text-slate-600">
+                <div className="mb-4 pb-2 border-b border-slate-300 flex items-center justify-between text-xs text-black">
                   <div>
-                    <span className="font-bold text-slate-800 uppercase">{cleanLembaga} {subNama}</span>
+                    <span className="font-bold text-black uppercase">{cleanLembaga} {subNama}</span>
                     <span className="mx-2">•</span>
-                    <span>{data.namaKegiatan || "Dokumentasi Kegiatan"}</span>
+                    <span>{cleanTitle(data.namaKegiatan) || "Dokumentasi Kegiatan"}</span>
                   </div>
-                  <span className="font-semibold text-slate-500">Lembar {pageNumber}</span>
+                  <span className="font-semibold text-black">Lembar {pageNumber}</span>
                 </div>
               )}
 

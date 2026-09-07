@@ -118,6 +118,15 @@ async function compressImageClient(
   });
 }
 
+function cleanTitle(text?: string | null): string {
+  if (!text) return "";
+  let clean = text.trim();
+  clean = clean.split(/\s+(?:sebanyak|sebesar|sejumlah|senilai)\s+/i)[0].trim();
+  clean = clean.split(/\s*x\s*@\s*Rp/i)[0].trim();
+  clean = clean.split(/\s*=\s*Rp/i)[0].trim();
+  return clean;
+}
+
 export function DokumentasiForm({
   initialProfile,
   userProfile,
@@ -455,7 +464,7 @@ export function DokumentasiForm({
       if (selected) {
         setFormData((prev) => ({
           ...prev,
-          namaKegiatan: selected.nama || prev.namaKegiatan,
+          namaKegiatan: cleanTitle(selected.nama) || prev.namaKegiatan,
           nomorReferensi: selected.nomor || prev.nomorReferensi,
           tanggalKegiatan: selected.tanggal
             ? selected.tanggal.split("T")[0]
@@ -477,7 +486,7 @@ export function DokumentasiForm({
       if (selected) {
         setFormData((prev) => ({
           ...prev,
-          namaKegiatan: selected.nama || prev.namaKegiatan,
+          namaKegiatan: cleanTitle(selected.nama) || prev.namaKegiatan,
           nomorReferensi: selected.nomor || prev.nomorReferensi,
           tanggalKegiatan: selected.tanggal
             ? selected.tanggal.split("T")[0]
@@ -499,7 +508,7 @@ export function DokumentasiForm({
       if (selected) {
         setFormData((prev) => ({
           ...prev,
-          namaKegiatan: selected.nama || prev.namaKegiatan,
+          namaKegiatan: cleanTitle(selected.nama) || prev.namaKegiatan,
           nomorReferensi: selected.nomor || prev.nomorReferensi,
           tanggalKegiatan: selected.tanggal
             ? selected.tanggal.split("T")[0]

@@ -27,7 +27,11 @@ function formatDateIndo(dateStr?: string | null): string {
 
 function cleanTitle(text?: string | null): string {
   if (!text) return "";
-  return text.split(/\s+sebanyak\s+/i)[0].trim();
+  let clean = text.trim();
+  clean = clean.split(/\s+(?:sebanyak|sebesar|sejumlah|senilai)\s+/i)[0].trim();
+  clean = clean.split(/\s*x\s*@\s*Rp/i)[0].trim();
+  clean = clean.split(/\s*=\s*Rp/i)[0].trim();
+  return clean;
 }
 
 export function PesananCanvas({ data, profile }: PesananCanvasProps) {
