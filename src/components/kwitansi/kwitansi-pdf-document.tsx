@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    height: 66,
+    height: 84,
     width: "100%",
   },
   signatoryCol: {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   signatorySpace: {
     flex: 1,
-    minHeight: 24,
+    minHeight: 38,
   },
   signatoryName: {
     fontSize: 9.6,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   materaiBox: {
     position: "absolute",
-    top: 16,
+    top: 20,
     width: 44,
     height: 24,
     borderWidth: 0.8,
