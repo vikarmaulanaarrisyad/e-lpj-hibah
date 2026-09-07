@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { deleteBkuTransactionAction } from "@/app/actions/bku.action";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 
 interface BkuTableProps {
   entries: BkuLedgerEntry[];
@@ -63,12 +64,21 @@ export function BkuTable({
   });
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus transaksi penerimaan ini?")) return;
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Transaksi BKU?",
+      text: "Apakah Anda yakin ingin menghapus transaksi penerimaan kas ini dari pembukuan BKU?",
+      confirmText: "Ya, Hapus!",
+      cancelText: "Batal",
+    });
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus Transaksi...", "Sedang memperbarui pembukuan kas umum...");
     const res = await deleteBkuTransactionAction(id);
     if (res.success) {
+      swalSuccess("Berhasil Dihapus!", res.message);
       onRefresh();
     } else {
-      alert(res.message);
+      swalError("Gagal Menghapus Transaksi", res.message);
     }
   };
 

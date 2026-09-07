@@ -172,3 +172,38 @@ body {
   }
 }
 
+/* ================= SWEETALERT2 DARK THEME STYLING ================= */
+.swal2-container {
+  z-index: 99999 !important;
+  backdrop-filter: blur(4px);
+}
+.swal2-popup {
+  border-radius: 1.5rem !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75) !important;
+  font-family: var(--font-sans) !important;
+  padding: 1.75rem !important;
+}
+.swal2-title {
+  color: #ffffff !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+.swal2-html-container {
+  color: #94a3b8 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+.swal2-timer-progress-bar {
+  background: #10b981 !important;
+  height: 4px !important;
+}
+.swal2-loader {
+  border-color: #10b981 transparent #10b981 transparent !important;
+}
+.swal2-actions {
+  gap: 0.75rem !important;
+  margin-top: 1.25rem !important;
+}
+

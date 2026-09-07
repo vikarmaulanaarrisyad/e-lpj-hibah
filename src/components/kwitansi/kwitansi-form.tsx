@@ -35,6 +35,7 @@ import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
 import { saveReceiptAction, getNextNomorBuktiAction, getReceiptByNomorBuktiAction } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
+import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
 import { KwitansiCanvas } from "./kwitansi-canvas";
 import type {
   Receipt,
@@ -429,12 +430,13 @@ export function KwitansiForm({
 
     // Deficit Guardrail: Block if over-budget without explicit override
     if (currentRabStatus?.isDeficit && !allowDeficitOverride) {
-      setSaveErrorMsg(
-        `Defisit Anggaran Terdeteksi: Nominal transaksi melebihi sisa pagu rekening ${currentRabStatus.kode} sebesar Rp ${currentRabStatus.sisaPaguSebelum.toLocaleString("id-ID")}. Silakan sesuaikan nominal atau centang 'Otorisasi Khusus Defisit' jika mendesak.`
-      );
+      const msg = `Defisit Anggaran Terdeteksi: Nominal transaksi melebihi sisa pagu rekening ${currentRabStatus.kode} sebesar Rp ${currentRabStatus.sisaPaguSebelum.toLocaleString("id-ID")}. Silakan sesuaikan nominal atau centang 'Otorisasi Khusus Defisit' jika mendesak.`;
+      setSaveErrorMsg(msg);
+      swalError("Peringatan Defisit Anggaran", msg);
       return;
     }
 
+    swalLoading("Menyimpan Kwitansi...", "Mencatat bukti transaksi belanja ke Buku Kas Umum...");
     startTransition(async () => {
       const response = await saveReceiptAction({
         nomorBukti: formData.nomorBukti,
@@ -469,6 +471,7 @@ export function KwitansiForm({
 
       if (!response.success) {
         setSaveErrorMsg(response.message);
+        swalError("Gagal Menyimpan Kwitansi", response.message);
         return;
       }
 
@@ -495,6 +498,7 @@ export function KwitansiForm({
       });
 
       setSaveSuccessMsg(response.message);
+      swalSuccess("Kwitansi Disimpan!", response.message);
       setTimeout(() => setSaveSuccessMsg(null), 5000);
     });
   };

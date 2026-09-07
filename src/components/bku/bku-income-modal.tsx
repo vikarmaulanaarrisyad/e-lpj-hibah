@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { addBkuIncomeAction } from "@/app/actions/bku.action";
 import { X, ArrowDownRight, Loader2 } from "lucide-react";
+import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
 
 interface BkuIncomeModalProps {
   isOpen: boolean;
@@ -31,9 +32,11 @@ export function BkuIncomeModal({ isOpen, onClose, onSuccess }: BkuIncomeModalPro
     const numericNominal = parseFloat(formData.nominalStr.replace(/\D/g, ""));
     if (isNaN(numericNominal) || numericNominal <= 0) {
       setErrorMsg("Nominal harus berupa angka valid lebih besar dari 0.");
+      swalError("Nominal Tidak Valid", "Nominal penerimaan harus berupa angka valid lebih besar dari Rp 0.");
       return;
     }
 
+    swalLoading("Mencatat Penerimaan...", "Menyimpan transaksi kas masuk ke Buku Kas Umum...");
     startTransition(async () => {
       const res = await addBkuIncomeAction({
         nomorBukti: formData.nomorBukti,
@@ -45,9 +48,11 @@ export function BkuIncomeModal({ isOpen, onClose, onSuccess }: BkuIncomeModalPro
 
       if (!res.success) {
         setErrorMsg(res.message);
+        swalError("Gagal Mencatat Penerimaan", res.message);
       } else {
         onSuccess();
         onClose();
+        swalSuccess("Penerimaan Dicatat!", res.message);
       }
     });
   };

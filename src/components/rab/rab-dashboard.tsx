@@ -30,6 +30,7 @@ import {
   createRabItemAction,
   deleteRabItemAction,
 } from "@/app/actions/rab.action";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 
 interface RabDashboardProps {
   initialSummary: RabSummary;
@@ -82,19 +83,20 @@ export function RabDashboard({
 
   const handleCreateRab = () => {
     if (!newKode.trim()) {
-      setFeedbackMsg({ type: "error", text: "Kode rekening pos RAB wajib diisi (contoh: 5.2.5)." });
+      swalError("Validasi Gagal", "Kode rekening pos RAB wajib diisi (contoh: 5.2.5).");
       return;
     }
     if (!newNama.trim()) {
-      setFeedbackMsg({ type: "error", text: "Nama pos rekening wajib diisi." });
+      swalError("Validasi Gagal", "Nama pos rekening wajib diisi.");
       return;
     }
     const num = parseFloat(newAnggaran);
     if (isNaN(num) || num < 0) {
-      setFeedbackMsg({ type: "error", text: "Pagu anggaran harus berupa nominal angka valid (>= 0)." });
+      swalError("Validasi Gagal", "Pagu anggaran harus berupa nominal angka valid (>= 0).");
       return;
     }
 
+    swalLoading("Menyimpan Pos Rekening...", "Mendaftarkan pos rekening anggaran baru...");
     startTransition(async () => {
       const res = await createRabItemAction({
         kode: newKode.trim(),
@@ -126,25 +128,27 @@ export function RabDashboard({
             items: updatedItems,
           };
         });
-        setFeedbackMsg({ type: "success", text: res.message });
-        setTimeout(() => {
-          setIsAddModalOpen(false);
-          setFeedbackMsg(null);
-        }, 1200);
+        setIsAddModalOpen(false);
+        setFeedbackMsg(null);
+        swalSuccess("Pos Rekening Ditambahkan!", res.message);
       } else {
         setFeedbackMsg({ type: "error", text: res.message });
+        swalError("Gagal Menyimpan Pos", res.message);
       }
     });
   };
 
-  const handleDeleteRab = (item: RabStatusItem) => {
-    if (
-      !confirm(
-        `Yakin ingin menghapus pos rekening "${item.kode} - ${item.nama}"? Tindakan ini hanya dapat dilakukan jika belum ada kwitansi yang menggunakan pos ini.`
-      )
-    ) {
-      return;
-    }
+  const handleDeleteRab = async (item: RabStatusItem) => {
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Pos Rekening?",
+      text: `Apakah Anda yakin ingin menghapus pos rekening "${item.kode} - ${item.nama}"? Tindakan ini hanya dapat dilakukan jika belum ada kwitansi yang menggunakan pos ini.`,
+      confirmText: "Ya, Hapus!",
+      cancelText: "Batal",
+    });
+
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus Pos Rekening...", "Sedang memproses penghapusan data...");
     startTransition(async () => {
       const res = await deleteRabItemAction(item.id);
       if (res.success) {
@@ -166,8 +170,9 @@ export function RabDashboard({
             items: updatedItems,
           };
         });
+        swalSuccess("Berhasil Dihapus!", res.message);
       } else {
-        alert(res.message);
+        swalError("Gagal Menghapus Pos", res.message);
       }
     });
   };
@@ -183,10 +188,11 @@ export function RabDashboard({
     if (!editingItem) return;
     const num = parseFloat(editPaguValue);
     if (isNaN(num) || num < 0) {
-      setFeedbackMsg({ type: "error", text: "Pagu anggaran harus berupa angka positif." });
+      swalError("Validasi Gagal", "Pagu anggaran harus berupa nominal angka valid (>= 0).");
       return;
     }
 
+    swalLoading("Menyimpan Perubahan Pagu...", "Memperbarui pagu penetapan NPHD di sistem...");
     startTransition(async () => {
       const res = await updateRabAllocationAction({
         kode: editingItem.kode,
@@ -215,13 +221,12 @@ export function RabDashboard({
             items: updatedItems,
           };
         });
-        setFeedbackMsg({ type: "success", text: res.message });
-        setTimeout(() => {
-          setEditingItem(null);
-          setFeedbackMsg(null);
-        }, 1500);
+        setEditingItem(null);
+        setFeedbackMsg(null);
+        swalSuccess("Pagu NPHD Diperbarui!", res.message);
       } else {
         setFeedbackMsg({ type: "error", text: res.message });
+        swalError("Gagal Menyimpan Pagu", res.message);
       }
     });
   };

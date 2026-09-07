@@ -29,6 +29,7 @@ import {
 import { BastCanvas } from "./bast-canvas";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { saveBastAction } from "@/app/actions/bast.action";
+import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
 import { formatTanggalTerbilang } from "@/services/bast.service";
 import type {
   BastDocument,
@@ -351,6 +352,7 @@ export function BastForm({
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
 
+    swalLoading("Menyimpan BAST...", "Sedang menyimpan Berita Acara Serah Terima ke database...");
     startTransition(async () => {
       const payload: CreateBastInput = {
         nomorBast: formData.nomorBast,
@@ -382,8 +384,11 @@ export function BastForm({
           return [res.data!, ...prev];
         });
         setFormData((prev) => ({ ...prev, id: res.data!.id }));
+        swalSuccess("BAST Disimpan!", `Berita Acara ${res.data.nomorBast} berhasil tersimpan.`);
       } else {
-        setSaveErrorMsg(res.message || "Gagal menyimpan BAST");
+        const err = res.message || "Gagal menyimpan BAST";
+        setSaveErrorMsg(err);
+        swalError("Gagal Menyimpan BAST", err);
       }
     });
   };

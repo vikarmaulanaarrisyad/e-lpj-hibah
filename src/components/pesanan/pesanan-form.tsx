@@ -32,6 +32,7 @@ import {
   syncNomorSpBulanTahun,
 } from "@/lib/utils/pesanan-date";
 import { savePurchaseOrderAction } from "@/app/actions/pesanan.action";
+import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { PesananCanvas } from "./pesanan-canvas";
 import type {
@@ -390,6 +391,7 @@ export function PesananForm({
     setSaveErrorMsg(null);
     setSaveSuccessMsg(null);
 
+    swalLoading("Menyimpan Surat Pesanan...", "Sedang menyimpan dokumen pengadaan barang...");
     startTransition(async () => {
       const res = await savePurchaseOrderAction(formData);
       if (res.success && res.data) {
@@ -404,8 +406,11 @@ export function PesananForm({
           }
           return [res.data!, ...prev];
         });
+        swalSuccess("Surat Pesanan Disimpan!", res.message);
       } else {
-        setSaveErrorMsg(res.message || "Gagal menyimpan Surat Pesanan.");
+        const err = res.message || "Gagal menyimpan Surat Pesanan.";
+        setSaveErrorMsg(err);
+        swalError("Gagal Menyimpan", err);
       }
     });
   };

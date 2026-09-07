@@ -18,6 +18,7 @@ import {
   Cloud,
 } from "lucide-react";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
+import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
 import type { InstitutionProfile } from "@/types";
 
 interface KopSuratModalProps {
@@ -88,24 +89,22 @@ export function KopSuratModal({
     e.preventDefault();
     setFeedbackMsg(null);
 
+    swalLoading("Menyimpan Kop Surat...", "Mengunggah logo dan menyimpan identitas lembaga ke Cloudinary...");
     startTransition(async () => {
       const res = await saveInstitutionProfileAction(formData);
       if (res.success && res.data) {
-        setFeedbackMsg({
-          type: "success",
-          text: res.message || "Pengaturan Kop Surat & Logo berhasil disimpan!",
-        });
         if (onProfileUpdated) {
           onProfileUpdated(res.data);
         }
-        setTimeout(() => {
-          onClose();
-        }, 1200);
+        onClose();
+        swalSuccess("Kop Surat Disimpan!", res.message || "Pengaturan Kop Surat & Logo berhasil disimpan!");
       } else {
+        const err = res.message || "Gagal menyimpan data ke database.";
         setFeedbackMsg({
           type: "error",
-          text: res.message || "Gagal menyimpan data ke database.",
+          text: err,
         });
+        swalError("Gagal Menyimpan", err);
       }
     });
   };
