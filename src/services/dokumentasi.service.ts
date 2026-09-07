@@ -97,13 +97,14 @@ export class DokumentasiService {
   }
 
   /**
-   * Mengambil daftar seluruh dokumen dokumentasi milik user
+   * Mengambil daftar seluruh dokumen dokumentasi milik user, opsional difilter per tahun kegiatan
    */
   async getDokumentasiList(
-    userId: string
+    userId: string,
+    tahun?: string | null
   ): Promise<ServiceResponse<ActivityDocumentationRecord[]>> {
     try {
-      const list = await dokumentasiRepository.findManyByUserId(userId);
+      const list = await dokumentasiRepository.findManyByUserId(userId, tahun);
       return {
         success: true,
         message: `Berhasil memuat ${list.length} arsip dokumentasi.`,

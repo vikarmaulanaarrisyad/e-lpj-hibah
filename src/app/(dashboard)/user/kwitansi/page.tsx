@@ -10,6 +10,9 @@ import { redirect } from "next/navigation";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { KwitansiForm } from "@/components/kwitansi/kwitansi-form";
 
+import { cookies } from "next/headers";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
+
 export const metadata: Metadata = {
   title: "Generator Kwitansi & Pratinjau | E-LPJ Hibah Internal",
   description: "Modul pembuatan bukti kas riil, format baku blanko kwitansi hibah, dan preview cetak fisik.",
@@ -22,11 +25,15 @@ export default async function KwitansiPage() {
     redirect("/login");
   }
 
-  // Fetch full user profile, saved receipts, RAB budget status, institution profile, and next unique nomor bukti from database
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
+  // Fetch full user profile, saved receipts for active year, RAB budget status, institution profile, and next unique nomor bukti from database
   const [userProfile, profileRes, savedReceipts, rabStatusRes, nextNomorBukti] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
-    receiptRepository.findManyByUserId(session.sub),
+    receiptRepository.findManyByUserId(session.sub, activeTahun),
     rabService.getRabStatus(session.sub),
     receiptService.generateNextNomorBukti(session.sub),
   ]);

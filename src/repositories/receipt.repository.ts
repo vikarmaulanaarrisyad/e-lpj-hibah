@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getYearDateRange } from "@/lib/utils/tahun-anggaran";
 import type { Receipt } from "@/types";
 
 export interface CreateReceiptRepoData {
@@ -196,12 +197,16 @@ export class ReceiptRepository {
   }
 
   /**
-   * Get all receipts belonging to a user/grant recipient.
+   * Get all receipts belonging to a user/grant recipient, optionally filtered by tahun anggaran.
    */
-  async findManyByUserId(userId: string): Promise<Receipt[]> {
+  async findManyByUserId(userId: string, tahun?: string | null): Promise<Receipt[]> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return await prisma.receipt.findMany({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
         orderBy: { tanggal: "desc" },
       });
     } catch (error) {
@@ -211,12 +216,16 @@ export class ReceiptRepository {
   }
 
   /**
-   * Count total receipts recorded for a specific user.
+   * Count total receipts recorded for a specific user, optionally filtered by tahun anggaran.
    */
-  async countByUserId(userId: string): Promise<number> {
+  async countByUserId(userId: string, tahun?: string | null): Promise<number> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return await prisma.receipt.count({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
       });
     } catch (error) {
       console.error("[ReceiptRepository] Error in countByUserId:", error);

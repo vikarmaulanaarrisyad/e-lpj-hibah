@@ -66,11 +66,11 @@ export class PesananService {
   }
 
   /**
-   * Mengambil semua Surat Pesanan milik pengguna
+   * Mengambil semua Surat Pesanan milik pengguna, opsional difilter per tahun anggaran
    */
-  async getPurchaseOrders(userId: string): Promise<ServiceResponse<PurchaseOrder[]>> {
+  async getPurchaseOrders(userId: string, tahun?: string | null): Promise<ServiceResponse<PurchaseOrder[]>> {
     try {
-      const list = await pesananRepository.findManyByUserId(userId);
+      const list = await pesananRepository.findManyByUserId(userId, tahun);
       return {
         success: true,
         message: "Data Surat Pesanan berhasil dimuat.",

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getYearDateRange } from "@/lib/utils/tahun-anggaran";
 import type { ActivityDocumentationRecord, DokumentasiFormData } from "@/types";
 
 export class DokumentasiRepository {
@@ -57,11 +58,15 @@ export class DokumentasiRepository {
   }
 
   /**
-   * Mengambil semua dokumentasi kegiatan milik user
+   * Mengambil semua dokumentasi kegiatan milik user, opsional difilter tahun kegiatan
    */
-  async findManyByUserId(userId: string): Promise<ActivityDocumentationRecord[]> {
+  async findManyByUserId(userId: string, tahun?: string | null): Promise<ActivityDocumentationRecord[]> {
+    const { startDate, endDate } = getYearDateRange(tahun);
     return await this.model.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(startDate && endDate ? { tanggalKegiatan: { gte: startDate, lte: endDate } } : {}),
+      },
       orderBy: { createdAt: "desc" },
     });
   }

@@ -7,6 +7,9 @@ import { redirect } from "next/navigation";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { BkuClientView } from "@/components/bku/bku-client-view";
 
+import { cookies } from "next/headers";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
+
 export const metadata: Metadata = {
   title: "Buku Kas Umum (BKU) & Rekap Saldo | E-LPJ Hibah",
   description:
@@ -20,10 +23,14 @@ export default async function BkuPage() {
     redirect("/login");
   }
 
-  // Preload user profile, ledger entries, and institution profile concurrently
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
+  // Preload user profile, ledger entries for active year, and institution profile concurrently
   const [user, ledgerRes, profileRes] = await Promise.all([
     userRepository.findById(session.sub),
-    bkuService.getBkuLedger(session.sub),
+    bkuService.getBkuLedger(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
   ]);
 

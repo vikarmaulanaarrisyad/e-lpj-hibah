@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getYearDateRange } from "@/lib/utils/tahun-anggaran";
 import type { BkuTransaction, BkuType } from "@/types";
 
 export interface CreateBkuRepoData {
@@ -88,11 +89,16 @@ export class BkuRepository {
   /**
    * Get all transactions for a user, sorted chronologically for accurate running balance.
    * Includes receipt data (ketua, bendahara, penerima, dan rincian pajak).
+   * Opsional difilter per tahun anggaran.
    */
-  async findByUserId(userId: string): Promise<BkuTransactionWithReceipt[]> {
+  async findByUserId(userId: string, tahun?: string | null): Promise<BkuTransactionWithReceipt[]> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return (await prisma.bkuTransaction.findMany({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
         include: {
           receipt: {
             select: {

@@ -10,9 +10,12 @@ import { dokumentasiService } from "@/services/dokumentasi.service";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { DokumentasiForm } from "@/components/dokumentasi/dokumentasi-form";
 
+import { cookies } from "next/headers";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
+
 export const metadata = {
-  title: "Lembar Dokumentasi Kegiatan | E-LPJ Hibah",
-  description: "Dokumentasi Foto Fisik Serah Terima Barang & Kegiatan Hibah Kertas F4 Portrait Siap Cetak",
+  title: "Dokumentasi Kegiatan & Pengadaan Sarana | E-LPJ Hibah",
+  description: "Formulir & lembar lampiran dokumentasi kegiatan dan foto fisik barang pengadaan sarana hibah.",
 };
 
 export default async function DokumentasiPage() {
@@ -22,14 +25,18 @@ export default async function DokumentasiPage() {
     redirect("/login");
   }
 
-  // Ambil profil user, profil lembaga, arsip BAST, SP, Kwitansi, dan dokumentasi tersimpan
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
+  // Ambil profil user, profil lembaga, arsip BAST, SP, Kwitansi, dan dokumentasi tersimpan untuk tahun aktif
   const [dbUser, profileRes, bastRes, pesananRes, userReceipts, savedDocsRes] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
-    bastService.getBastList(session.sub),
-    pesananService.getPurchaseOrders(session.sub),
-    receiptRepository.findManyByUserId(session.sub),
-    dokumentasiService.getDokumentasiList(session.sub),
+    bastService.getBastList(session.sub, activeTahun),
+    pesananService.getPurchaseOrders(session.sub, activeTahun),
+    receiptRepository.findManyByUserId(session.sub, activeTahun),
+    dokumentasiService.getDokumentasiList(session.sub, activeTahun),
   ]);
 
   const profile = profileRes.data || null;

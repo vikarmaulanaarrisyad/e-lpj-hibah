@@ -17,13 +17,13 @@ export class BkuService {
    * Get complete BKU ledger with calculated running balance and financial summary.
    * Also ensures all existing receipts in the database are synced to BKU.
    */
-  async getBkuLedger(userId: string): Promise<ServiceResponse<BkuLedgerResult>> {
+  async getBkuLedger(userId: string, tahun?: string | null): Promise<ServiceResponse<BkuLedgerResult>> {
     try {
       // 1. Auto-sync any unsynced receipts first
       await this.syncAllUnsyncedReceipts(userId);
 
-      // 2. Fetch all transactions ordered chronologically
-      const rawTransactions = await bkuRepository.findByUserId(userId);
+      // 2. Fetch all transactions ordered chronologically (opsional difilter tahun)
+      const rawTransactions = await bkuRepository.findByUserId(userId, tahun);
 
       // 3. Compute running balance, ledger entries, and tax metrics
       let runningBalance = 0;

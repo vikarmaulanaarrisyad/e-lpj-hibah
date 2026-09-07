@@ -52,11 +52,11 @@ export function formatTanggalTerbilang(input: Date | string): { hariTanggal: str
 
 export class BastService {
   /**
-   * Mengambil semua dokumen BAST milik user
+   * Mengambil semua dokumen BAST milik user, opsional difilter per tahun anggaran
    */
-  async getBastList(userId: string): Promise<ServiceResponse<BastWithReceipt[]>> {
+  async getBastList(userId: string, tahun?: string | null): Promise<ServiceResponse<BastWithReceipt[]>> {
     try {
-      const list = await bastRepository.findManyByUserId(userId);
+      const list = await bastRepository.findManyByUserId(userId, tahun);
       return {
         success: true,
         message: `Berhasil memuat ${list.length} Berita Acara Serah Terima.`,

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getYearDateRange } from "@/lib/utils/tahun-anggaran";
 import type { BastDocument, CreateBastInput } from "@/types";
 
 export interface BastWithReceipt extends BastDocument {
@@ -120,12 +121,16 @@ export class BastRepository {
   }
 
   /**
-   * Mengambil semua dokumen BAST milik user
+   * Mengambil semua dokumen BAST milik user, opsional difilter per tahun anggaran
    */
-  async findManyByUserId(userId: string): Promise<BastWithReceipt[]> {
+  async findManyByUserId(userId: string, tahun?: string | null): Promise<BastWithReceipt[]> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return (await prisma.bastDocument.findMany({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
         include: {
           receipt: {
             select: {
@@ -210,12 +215,16 @@ export class BastRepository {
   }
 
   /**
-   * Menghitung total dokumen BAST user
+   * Menghitung total dokumen BAST user, opsional difilter per tahun anggaran
    */
-  async countByUserId(userId: string): Promise<number> {
+  async countByUserId(userId: string, tahun?: string | null): Promise<number> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return await prisma.bastDocument.count({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
       });
     } catch (error) {
       console.error("[BastRepository] Error in countByUserId:", error);

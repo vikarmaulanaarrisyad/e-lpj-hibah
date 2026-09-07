@@ -10,6 +10,9 @@ import { PesananForm } from "@/components/pesanan/pesanan-form";
 
 import { bastService } from "@/services/bast.service";
 
+import { cookies } from "next/headers";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
+
 export const metadata = {
   title: "Surat Pesanan (SP) Pengadaan Barang | E-LPJ Hibah",
   description: "Formulir & Pratinjau Cetak Surat Pesanan (Purchase Order) Pengadaan Barang Hibah BPKAD & Bakesbangpol",
@@ -22,13 +25,17 @@ export default async function PesananPage() {
     redirect("/login");
   }
 
-  // Fetch DB user profile, institution profile, purchase orders, receipts, and BAST list
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
+  // Fetch DB user profile, institution profile, purchase orders, receipts, and BAST list for active year
   const [dbUser, profileRes, pesananRes, userReceipts, bastRes] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
-    pesananService.getPurchaseOrders(session.sub),
-    receiptRepository.findManyByUserId(session.sub),
-    bastService.getBastList(session.sub),
+    pesananService.getPurchaseOrders(session.sub, activeTahun),
+    receiptRepository.findManyByUserId(session.sub, activeTahun),
+    bastService.getBastList(session.sub, activeTahun),
   ]);
 
   const profile = profileRes.data || null;

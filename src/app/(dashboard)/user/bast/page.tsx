@@ -10,6 +10,9 @@ import { BastForm } from "@/components/bast/bast-form";
 
 import { pesananService } from "@/services/pesanan.service";
 
+import { cookies } from "next/headers";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
+
 export const metadata = {
   title: "Berita Acara Serah Terima (BAST) | E-LPJ Hibah",
   description: "Formulir & Pratinjau Cetak Berita Acara Serah Terima Pengadaan Barang Hibah Fatayat NU",
@@ -22,13 +25,17 @@ export default async function BastPage() {
     redirect("/login");
   }
 
-  // Fetch DB user profile, institution profile, BAST list, receipts, purchase orders (SP), and next auto BAST number
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
+  // Fetch DB user profile, institution profile, BAST list, receipts, purchase orders (SP), and next auto BAST number for active year
   const [dbUser, profileRes, bastRes, userReceipts, pesananRes, nextBastData] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
-    bastService.getBastList(session.sub),
-    receiptRepository.findManyByUserId(session.sub),
-    pesananService.getPurchaseOrders(session.sub),
+    bastService.getBastList(session.sub, activeTahun),
+    receiptRepository.findManyByUserId(session.sub, activeTahun),
+    pesananService.getPurchaseOrders(session.sub, activeTahun),
     bastService.generateNextNomorBast(session.sub),
   ]);
 

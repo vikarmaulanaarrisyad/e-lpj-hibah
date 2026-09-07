@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getYearDateRange } from "@/lib/utils/tahun-anggaran";
 import type { PurchaseOrder, CreatePesananInput } from "@/types";
 
 export class PesananRepository {
@@ -113,12 +114,16 @@ export class PesananRepository {
   }
 
   /**
-   * Mengambil semua daftar Surat Pesanan milik pengguna
+   * Mengambil semua daftar Surat Pesanan milik pengguna, opsional difilter per tahun anggaran
    */
-  async findManyByUserId(userId: string): Promise<PurchaseOrder[]> {
+  async findManyByUserId(userId: string, tahun?: string | null): Promise<PurchaseOrder[]> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return await prisma.purchaseOrder.findMany({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
         include: {
           receipt: {
             select: {
@@ -191,12 +196,16 @@ export class PesananRepository {
   }
 
   /**
-   * Menghitung total dokumen Surat Pesanan milik pengguna
+   * Menghitung total dokumen Surat Pesanan milik pengguna, opsional difilter per tahun anggaran
    */
-  async countByUserId(userId: string): Promise<number> {
+  async countByUserId(userId: string, tahun?: string | null): Promise<number> {
     try {
+      const { startDate, endDate } = getYearDateRange(tahun);
       return await prisma.purchaseOrder.count({
-        where: { userId },
+        where: {
+          userId,
+          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+        },
       });
     } catch (error) {
       console.error("[PesananRepository.countByUserId] Error:", error);

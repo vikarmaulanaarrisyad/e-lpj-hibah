@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { authService } from "@/services/auth.service";
 import { rabService } from "@/services/rab.service";
 import { receiptRepository } from "@/repositories/receipt.repository";
@@ -9,6 +10,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KopSuratButton } from "@/components/kop-surat/kop-surat-button";
+import { DashboardArsipButton } from "@/components/archive/dashboard-arsip-button";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
 import {
   Building2,
   UploadCloud,
@@ -23,6 +26,7 @@ import {
   BookMarked,
   Send,
   Camera,
+  Calendar,
 } from "lucide-react";
 
 export default async function UserDashboardPage() {
@@ -32,13 +36,18 @@ export default async function UserDashboardPage() {
     redirect("/login");
   }
 
-  // Fetch real-time metrics and institution profile from database
+  // Active Tahun Anggaran from cookie
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
+  // Fetch real-time metrics and institution profile from database for active year
   const [rabRes, receiptsCount, bkuRes, bastCount, pesananCount, profileRes] = await Promise.all([
     rabService.getRabStatus(session.sub),
-    receiptRepository.countByUserId(session.sub),
-    bkuService.getBkuLedger(session.sub),
-    bastRepository.countByUserId(session.sub),
-    pesananRepository.countByUserId(session.sub),
+    receiptRepository.countByUserId(session.sub, activeTahun),
+    bkuService.getBkuLedger(session.sub, activeTahun),
+    bastRepository.countByUserId(session.sub, activeTahun),
+    pesananRepository.countByUserId(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
   ]);
 
@@ -104,7 +113,7 @@ export default async function UserDashboardPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
               </span>
-              <span>Lembaga Penerima Terdaftar</span>
+              <span>Lembaga Penerima Terdaftar • {activeTahun === "ALL" ? "Semua Tahun Anggaran" : `Tahun Anggaran ${activeTahun}`}</span>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -153,6 +162,9 @@ export default async function UserDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* 📦 Download Arsip Lengkap (ZIP) Banner */}
+        <DashboardArsipButton currentTahun={activeTahun} />
 
         {/* Real-Time Live Stat Metrics Grid with Dynamic Entrance & Hover Lift */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
