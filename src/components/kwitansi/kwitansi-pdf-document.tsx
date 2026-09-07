@@ -87,8 +87,8 @@ const styles = StyleSheet.create({
   mainSection: {
     width: "79.2%", // ~628 pt
     height: "100%",
-    paddingTop: 36,   // ~4.6cqw
-    paddingBottom: 35, // ~4.4cqw - keeps names cleanly above bottom border
+    paddingTop: 33,   // ~4.2cqw
+    paddingBottom: 31, // ~4.0cqw - keeps names cleanly above bottom border
     paddingLeft: 40,  // ~5.0cqw
     paddingRight: 38, // ~4.8cqw
     flexDirection: "column",
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   topRowsContainer: {
     flexDirection: "column",
-    gap: 3,
+    gap: 2.5,
   },
   rowItem: {
     flexDirection: "row",
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    height: 84,
+    height: 98,
     width: "100%",
   },
   signatoryCol: {
@@ -194,24 +194,30 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   signatoryTitleTop: {
-    fontSize: 8.8,
+    fontSize: 10.5,
     fontWeight: "bold",
     color: "#0f172a",
     textAlign: "center",
     lineHeight: 1.25,
   },
+  signatoryTitleMid: {
+    fontSize: 9.8,
+    color: "#0f172a",
+    textAlign: "center",
+    lineHeight: 1.25,
+  },
   signatoryTitleSub: {
-    fontSize: 8.2,
+    fontSize: 9.6,
     color: "#334155",
     textAlign: "center",
     lineHeight: 1.25,
   },
   signatorySpace: {
     flex: 1,
-    minHeight: 34,
+    minHeight: 44,
   },
   signatoryName: {
-    fontSize: 9.6,
+    fontSize: 11,
     fontWeight: "bold",
     color: "#020617",
     textTransform: "uppercase",
@@ -220,7 +226,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   signatoryDots: {
-    fontSize: 8,
+    fontSize: 9.5,
     color: "#334155",
     textAlign: "center",
     borderBottomWidth: 0.5,
@@ -231,9 +237,9 @@ const styles = StyleSheet.create({
   },
   materaiBox: {
     position: "absolute",
-    top: 20,
-    width: 44,
-    height: 24,
+    top: 24,
+    width: 48,
+    height: 26,
     borderWidth: 0.8,
     borderColor: "#dc2626",
     borderStyle: "dashed",
@@ -392,7 +398,7 @@ export function KwitansiPdfDocument({
                 {/* Column 2: Lunas Dibayar (Bendahara) */}
                 <View style={styles.signatoryCol}>
                   <View style={styles.signatoryTitleContainer}>
-                    <Text style={styles.signatoryTitleSub}>
+                    <Text style={styles.signatoryTitleMid}>
                       Lunas dibayar Tgl :{" "}
                       <Text style={{ fontWeight: "bold", color: "#0f172a" }}>
                         {formatDisplayDate(data.tanggal)}

@@ -198,7 +198,21 @@ export async function exportPesananToPdf(options: ExportPesananOptions = {}): Pr
       cleanNoSp = cleanNoSp.slice(0, -4);
     }
 
-    const filename = `Surat_Pesanan_${cleanNoSp}_F4.pdf`;
+    // Sertakan nama paket/realisasi dalam filename agar mudah diidentifikasi
+    const rawNamaPaket = options.formData?.namaPaket || options.formData?.items?.[0]?.jenisBarang || "";
+    const cleanNamaPaket = rawNamaPaket
+      ? rawNamaPaket
+          .split(/\s+sebanyak\s+/i)[0] // hapus suffix "sebanyak N buah/unit/dst"
+          .trim()
+          .replace(/[/\\?%*:|"<>.]/g, "_")
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_")
+          .slice(0, 50) // batasi panjang nama file
+      : "";
+
+    const filename = cleanNamaPaket
+      ? `SP_${cleanNoSp}_${cleanNamaPaket}.pdf`
+      : `Surat_Pesanan_${cleanNoSp}_F4.pdf`;
     const blobUrl = window.URL.createObjectURL(fileBlob);
 
     // Download otomatis via link anchor

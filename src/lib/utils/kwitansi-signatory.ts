@@ -83,11 +83,20 @@ export function getSignatoryKetuaTitles(
 
   // Default fallback jika data di DB belum ada
   if (!line1) {
-    line1 = "Ketua Pimpinan Ranting Fatayat NU";
+    line1 = "Ketua Pimpinan Ranting Fatayat";
   }
 
   // 3. Tentukan Line 2 (Sub Nama / Desa / Wilayah)
-  const line2 = subNama || "Dawuhan Selatan";
+  let line2 = subNama || "Dawuhan Selatan";
+
+  // Satukan "NU" dengan subNama di baris kedua (contoh: "Ketua Pimpinan Ranting Fatayat" & "NU Dawuhan Selatan")
+  // agar teks proporsional dan tidak terjadi "NU" turun sendiri terpisah dari wilayahnya.
+  if (/\s+NU$/i.test(line1)) {
+    line1 = line1.replace(/\s+NU$/i, "").trim();
+    if (!line2.toLowerCase().startsWith("nu")) {
+      line2 = `NU ${line2}`.trim();
+    }
+  }
 
   return { line1, line2 };
 }

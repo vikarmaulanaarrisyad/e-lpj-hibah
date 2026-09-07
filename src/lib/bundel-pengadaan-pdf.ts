@@ -48,6 +48,7 @@ export interface ExportBundelPengadaanOptions {
   bastElement: HTMLElement;
   nomorSp?: string;
   nomorBast?: string;
+  namaPaket?: string;
 }
 
 /**
@@ -110,9 +111,20 @@ export async function exportBundelPengadaanPdf(
     const bastHeight = Math.min(pageHeight, pageWidth * bastRatio);
     pdf.addImage(bastImgData, "PNG", 0, 0, pageWidth, bastHeight, undefined, "FAST");
 
-    const cleanSp = (nomorSp || "SP").replace(/[/\\?%*:|"<>]/g, "_");
-    const cleanBast = (nomorBast || "BAST").replace(/[/\\?%*:|"<>]/g, "_");
-    const filename = `BUNDEL_PENGADAAN_${cleanSp}_${cleanBast}.pdf`;
+    const cleanSp = (nomorSp || "SP").replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_").replace(/_+/g, "_");
+    const cleanBast = (nomorBast || "BAST").replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_").replace(/_+/g, "_");
+    const cleanNamaPaket = options.namaPaket
+      ? options.namaPaket
+          .split(/\s+sebanyak\s+/i)[0] // ambil bagian sebelum "sebanyak N buah"
+          .trim()
+          .replace(/[/\\?%*:|"<>.]/g, "_")
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_")
+          .slice(0, 50) // batasi panjang agar nama file tidak terlalu panjang
+      : "";
+    const filename = cleanNamaPaket
+      ? `BUNDEL_PENGADAAN_${cleanSp}_${cleanNamaPaket}.pdf`
+      : `BUNDEL_PENGADAAN_${cleanSp}_${cleanBast}.pdf`;
 
     pdf.save(filename);
 

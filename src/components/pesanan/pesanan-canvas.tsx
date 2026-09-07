@@ -51,7 +51,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
   return (
     <div
       id="pesananPrintArea"
-      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-6 sm:pt-8 md:pt-[18mm] pb-6 sm:pb-8 md:pb-[18mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
+      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-5 sm:pt-5 md:pt-[9mm] pb-6 sm:pb-7 md:pb-[12mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
       style={{
         minHeight: "1198px",
       }}
@@ -67,7 +67,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       </div>
 
       {/* ================= KOP SURAT RESMI (DARI DATABASE & CLOUDINARY) ================= */}
-      <div className="flex items-center justify-between pb-3 relative">
+      <div className="flex items-center justify-between pb-2 relative">
         {/* Logo Lambang (Cloudinary Image / Fallback Vektor Hijau Resmi) */}
         <div className="w-16 h-16 sm:w-[88px] sm:h-[88px] shrink-0 flex items-center justify-center">
           {logoUrl ? (
@@ -119,49 +119,49 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
 
         {/* Kop Text Content */}
         <div className="flex-1 text-center px-3 flex flex-col justify-center">
-          <h2 className="text-[17px] sm:text-[18px] leading-[22px] font-bold text-[#006c4e] uppercase tracking-wide">
+          <h2 className="text-[17px] sm:text-[16px] leading-[19px] font-bold text-[#006c4e] uppercase tracking-wide">
             {namaLembaga}
           </h2>
-          <h3 className="text-[16px] sm:text-[17px] leading-[21px] font-bold text-[#006c4e] uppercase">
+          <h3 className="text-[16px] sm:text-[16px] leading-[19px] font-bold text-[#006c4e] uppercase">
             {subNama}
           </h3>
           <h4 className="text-[14px] sm:text-[15px] leading-[19px] font-bold text-[#006c4e] uppercase tracking-normal">
             {instansiInduk}
           </h4>
-          <p className="text-[10.5px] leading-[14px] text-[#006c4e] mt-1 font-medium">
+          <p className="text-[11px] sm:text-[11px] leading-[15px] text-[#006c4e] mt-0 font-medium">
             Alamat : {alamat}
           </p>
-          <p className="text-[10px] leading-[13px] text-[#006c4e]">
+          <p className="text-[10.5px] sm:text-[11px] leading-[14px] text-[#006c4e]">
             Email : <span className="underline">{email}</span> | No. Hp: {noHp}
           </p>
         </div>
       </div>
 
       {/* Formal Kop Dual Border Line */}
-      <div className="w-full flex flex-col gap-[2px] mb-3">
+      <div className="w-full flex flex-col gap-[2px] mb-1">
         <div className="w-full h-[2.5px] bg-[#006c4e]"></div>
         <div className="w-full h-[0.75px] bg-[#006c4e]"></div>
       </div>
 
       {/* ================= TITLE & REGISTER NUMBER ================= */}
-      <div className="text-center mb-3">
-        <h3 className="text-[16px] sm:text-[17px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4">
+      <div className="text-center mb-2">
+        <h3 className="text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4">
           SURAT PESANAN
         </h3>
-        <p className="font-mono text-xs text-black mt-1 font-semibold">
+        <p className="font-mono text-[12px] sm:text-[12px] text-black mt-1 font-semibold">
           Nomor : <span>{data.nomorSp || "02/A/PR.FNU/VIII/2026"}</span>
         </p>
-        <p className="text-xs text-black font-semibold mt-1">
+        <p className="text-[12px] sm:text-[12.5px] text-black font-semibold mt-1">
           Paket Pekerjaan : <span className="font-bold">{cleanTitle(data.namaPaket) || "Pembelian Alat Rebana"}</span>
         </p>
       </div>
 
       {/* ================= SALUTATION & NARRATIVE (PEMESAN & PENYEDIA) ================= */}
-      <div className="text-black text-[11px] sm:text-[11.5px] leading-[17px] mb-3 space-y-2">
+      <div className="text-black text-[12px] sm:text-[12.5px] leading-[18.5px] mb-3 space-y-2">
         {/* Pihak Kesatu: Pemesan */}
         <div>
           <p className="font-semibold text-black mb-0.5">Yang bertanda tangan di bawah ini :</p>
-          <div className="pl-4 grid grid-cols-[80px_10px_1fr] sm:grid-cols-[90px_10px_1fr] gap-y-0.5 text-[11px]">
+          <div className="pl-4 grid grid-cols-[90px_12px_1fr] sm:grid-cols-[100px_12px_1fr] gap-y-0.5 text-[12px] sm:text-[12.5px]">
             <span className="text-slate-700 font-medium">Nama</span>
             <span>:</span>
             <span className="font-bold uppercase text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
@@ -174,7 +174,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <span>:</span>
             <span className="text-black">{data.pihak1Alamat || alamat}</span>
           </div>
-          <p className="text-slate-700 italic mt-0.5 pl-4 text-[10.5px]">
+          <p className="text-slate-700 italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
             Selanjutnya disebut sebagai <strong>Pemesan</strong>
           </p>
         </div>
@@ -182,7 +182,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         {/* Pihak Kedua: Penyedia Barang */}
         <div>
           <p className="font-semibold text-black mb-0.5">Bersama ini memerintahkan :</p>
-          <div className="pl-4 grid grid-cols-[180px_10px_1fr] gap-y-0.5 text-[11px]">
+          <div className="pl-4 grid grid-cols-[190px_12px_1fr] sm:grid-cols-[200px_12px_1fr] gap-y-0.5 text-[12px] sm:text-[12.5px]">
             <span className="text-slate-700 font-medium">Nama</span>
             <span>:</span>
             <span className="font-bold uppercase text-black">{data.pihak2Toko || "ADHUFU"}</span>
@@ -195,7 +195,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <span>:</span>
             <span className="font-bold text-black">{data.pihak2Nama || "ANSHORI"}</span>
           </div>
-          <p className="text-slate-700 italic mt-0.5 pl-4 text-[10.5px]">
+          <p className="text-slate-700 italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
             Selanjutnya disebut sebagai <strong>Penyedia Barang</strong>
           </p>
         </div>
@@ -207,29 +207,29 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
 
       {/* ================= 1) TABEL RINCIAN BARANG ================= */}
       <div className="w-full mb-3">
-        <p className="font-bold text-black text-[11.5px] mb-1">1) Rincian Barang</p>
+        <p className="font-bold text-black text-[12.5px] sm:text-[12px] mb-1.5">1) Rincian Barang</p>
         <table
-          className="w-full text-left text-[11px] sm:text-[11.5px] border-collapse"
+          className="w-full text-left text-[11.5px] sm:text-[12px] border-collapse"
           style={{ border: "1.5px solid #000" }}
         >
           <thead>
             <tr
-              className="bg-[#004532] text-white font-bold uppercase text-center"
+              className="bg-white text-black font-bold uppercase text-center"
               style={{ borderBottom: "1.5px solid #000" }}
             >
-              <th className="p-1.5 w-8 text-center" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 w-8 text-center" style={{ borderRight: "1px solid #000" }}>
                 No
               </th>
-              <th className="p-1.5" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2" style={{ borderRight: "1px solid #000" }}>
                 Jenis Barang
               </th>
-              <th className="p-1.5 w-20 text-center" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 w-20 text-center" style={{ borderRight: "1px solid #000" }}>
                 Jumlah
               </th>
-              <th className="p-1.5 w-28 text-right" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 w-28 text-right" style={{ borderRight: "1px solid #000" }}>
                 Harga Satuan
               </th>
-              <th className="p-1.5 w-32 text-right">
+              <th className="p-1.5 sm:p-2 w-32 text-right">
                 Harga Total
               </th>
             </tr>
@@ -239,32 +239,27 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
               data.items.map((item, index) => (
                 <tr key={item.id || index} style={{ borderBottom: "1px solid #000" }}>
                   <td
-                    className="p-1.5 text-center font-mono align-top"
+                    className="p-1.5 sm:p-2 text-center font-mono align-top"
                     style={{ borderRight: "1px solid #000" }}
                   >
                     {index + 1}
                   </td>
-                  <td className="p-1.5 align-top" style={{ borderRight: "1px solid #000" }}>
+                  <td className="p-1.5 sm:p-2 align-top" style={{ borderRight: "1px solid #000" }}>
                     <span className="font-bold block">{cleanTitle(item.jenisBarang)}</span>
-                    {item.spesifikasi && (
-                      <span className="text-[10px] text-slate-600 block leading-tight">
-                        {item.spesifikasi}
-                      </span>
-                    )}
                   </td>
                   <td
-                    className="p-1.5 text-center font-mono align-top whitespace-nowrap"
+                    className="p-1.5 sm:p-2 text-center font-mono align-top whitespace-nowrap"
                     style={{ borderRight: "1px solid #000" }}
                   >
                     {item.jumlah} {item.satuan || "paket"}
                   </td>
                   <td
-                    className="p-1.5 text-right font-mono align-top whitespace-nowrap"
+                    className="p-1.5 sm:p-2 text-right font-mono align-top whitespace-nowrap"
                     style={{ borderRight: "1px solid #000" }}
                   >
                     Rp {item.hargaSatuan.toLocaleString("id-ID")}
                   </td>
-                  <td className="p-1.5 text-right font-mono font-semibold align-top whitespace-nowrap">
+                  <td className="p-1.5 sm:p-2 text-right font-mono font-semibold align-top whitespace-nowrap">
                     Rp {item.totalHarga.toLocaleString("id-ID")}
                   </td>
                 </tr>
@@ -278,29 +273,29 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             )}
 
             {/* Jumlah Subtotal */}
-            <tr className="bg-slate-50 font-semibold" style={{ borderBottom: "1px solid #000" }}>
+            <tr className="bg-white font-semibold text-[12px] sm:text-[12.5px]" style={{ borderBottom: "1px solid #000" }}>
               <td
-                className="p-1.5 text-right font-sans"
+                className="p-1.5 sm:p-2 text-right font-sans"
                 colSpan={4}
                 style={{ borderRight: "1px solid #000" }}
               >
                 Jumlah
               </td>
-              <td className="p-1.5 text-right font-mono text-black">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-black">
                 Rp {(data.subtotal || totalCalculated).toLocaleString("id-ID")}
               </td>
             </tr>
 
             {/* PPN / Pajak */}
-            <tr className="bg-slate-50 text-[10.5px]" style={{ borderBottom: "1px solid #000" }}>
+            <tr className="bg-white text-[11px] sm:text-[11.5px]" style={{ borderBottom: "1px solid #000" }}>
               <td
-                className="p-1.5 text-right font-sans"
+                className="p-1.5 sm:p-2 text-right font-sans"
                 colSpan={4}
                 style={{ borderRight: "1px solid #000" }}
               >
                 PPN
               </td>
-              <td className="p-1.5 text-right font-mono text-slate-700">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-slate-700">
                 {data.pajak > 0
                   ? `Rp ${data.pajak.toLocaleString("id-ID")}`
                   : "-"}
@@ -308,15 +303,15 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             </tr>
 
             {/* Jumlah Total */}
-            <tr className="bg-emerald-50/80 font-bold text-[11.5px]">
+            <tr className="bg-white font-bold text-[12px] sm:text-[12.5px]">
               <td
-                className="p-1.5 text-right uppercase text-[#004532]"
+                className="p-1.5 sm:p-2 text-right uppercase text-black"
                 colSpan={4}
                 style={{ borderRight: "1px solid #000" }}
               >
                 Jumlah Total
               </td>
-              <td className="p-1.5 text-right font-mono text-[#004532]">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-black">
                 Rp {totalCalculated.toLocaleString("id-ID")}
               </td>
             </tr>
@@ -324,21 +319,21 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         </table>
 
         {/* Terbilang & Catatan Pajak */}
-        <div className="mt-1.5 p-2 bg-slate-50 border border-slate-300 rounded text-[11px] text-black space-y-0.5">
+        <div className="mt-1.5 p-2 bg-slate-50 border border-slate-300 rounded text-[11.5px] sm:text-[12px] text-black space-y-0.5">
           <div>
             <strong>Terbilang : </strong>
             <span className="italic font-semibold text-slate-900">
               {data.terbilang || "Lima Juta Delapan Ratus Ribu Rupiah"}
             </span>
           </div>
-          <p className="text-[10px] text-slate-600 italic">
+          <p className="text-[10.5px] sm:text-[11px] text-slate-600 italic">
             {data.pajakKeterangan || "*harga sudah termasuk pajak"}
           </p>
         </div>
       </div>
 
       {/* ================= KETENTUAN 2 S/D 6 ================= */}
-      <div className="mb-3 text-[10.5px] sm:text-[11px] text-black leading-[16px] space-y-1">
+      <div className="mb-3 text-[11.5px] sm:text-[12px] text-black leading-[18px] space-y-1.5">
         <p>
           <strong>2) Tanggal barang harus sudah diterima :</strong>{" "}
           <span>{formatDateIndo(data.batasWaktu || "2026-08-04")}</span>
@@ -373,8 +368,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       </div>
 
       {/* ================= TANDA TANGAN BILATERAL RESMI ================= */}
-      <div className="pt-1 text-[11.5px] text-black mt-auto">
-        <div className="flex justify-end mb-1">
+      <div className="pt-1 text-[12px] sm:text-[12.5px] text-black mt-1">
+        <div className="flex justify-end mb-1 pr-[5rem]">
           <p className="font-semibold text-slate-800">
             {namaTempat}, {formatDateIndo(data.tanggal || "2026-08-01")}
           </p>
@@ -393,7 +388,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak2Nama || "ANSHORI"}
             </p>
-            <p className="text-[10px] text-slate-700">Pimpinan Penyedia barang</p>
+            <p className="text-[10.5px] sm:text-[11px] text-slate-700">Pimpinan Penyedia barang</p>
           </div>
 
           {/* Kolom Kanan: Pemesan (Fatayat NU Dawuhan Selatan) */}
@@ -410,7 +405,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak1Nama || "HENI FUJIATI"}
             </p>
-            <p className="text-[10px] text-slate-700">{data.pihak1Jabatan || "Ketua"}</p>
+            <p className="text-[10.5px] sm:text-[11px] text-slate-700">{data.pihak1Jabatan || "Ketua"}</p>
           </div>
         </div>
       </div>

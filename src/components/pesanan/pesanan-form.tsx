@@ -570,6 +570,7 @@ export function PesananForm({
         bastElement: bastEl,
         nomorSp: formData.nomorSp,
         nomorBast: companionBastData.nomorBast,
+        namaPaket: formData.namaPaket,
       });
     } finally {
       setIsExportingBundle(false);
