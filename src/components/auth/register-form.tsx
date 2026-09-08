@@ -20,7 +20,6 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
   UserCheck,
   FileText,
   BadgeCheck,
@@ -105,20 +104,6 @@ export function RegisterForm() {
         setServerError("Terjadi gangguan jaringan saat memproses pendaftaran. Silakan coba beberapa saat lagi.");
       }
     });
-  };
-
-  // Helper to fill sample organization data for testing
-  const fillSampleOrganization = () => {
-    setServerError(null);
-    setServerSuccess(null);
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    setValue("institution", "PR Fatayat NU Dawuhan Selatan", { shouldValidate: true });
-    setValue("leaderName", "Heni Fujiati", { shouldValidate: true });
-    setValue("name", "Nur Alimah", { shouldValidate: true });
-    setValue("email", `fatayat.dawuhan${randomSuffix}@hibah.id`, { shouldValidate: true });
-    setValue("nip", `NPHD-2026/HBH/0${randomSuffix}`, { shouldValidate: true });
-    setValue("password", "FatayatNU2026!", { shouldValidate: true });
-    setValue("confirmPassword", "FatayatNU2026!", { shouldValidate: true });
   };
 
   return (
@@ -208,28 +193,14 @@ export function RegisterForm() {
           {/* Top Decorative Gradient Line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-500" />
 
-          {/* Form Header with Demo Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Formulir Pendaftaran
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Lengkapi seluruh formulir di bawah ini dengan data yang sah.
-              </p>
-            </div>
-
-            {/* Tombol 1-Klik Isi Contoh Demo */}
-            <button
-              type="button"
-              onClick={fillSampleOrganization}
-              disabled={isPending}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
-              title="Mengisi otomatis formulir dengan data sampel organisasi untuk uji coba instan"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Contoh Demo (1-Klik)</span>
-            </button>
+          {/* Form Header */}
+          <div className="mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Formulir Pendaftaran
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Lengkapi seluruh formulir di bawah ini dengan data yang sah.
+            </p>
           </div>
 
           {/* Server Error / Success Banners */}

@@ -24,7 +24,7 @@ interface DokumentasiTableProps {
   onSelect: (id: string) => void;
   onDelete: (id: string) => Promise<void>;
   onNew: () => void;
-  onLoadPreset: () => void;
+  onLoadPreset?: () => void;
 }
 
 export function DokumentasiTable({
@@ -33,7 +33,6 @@ export function DokumentasiTable({
   onSelect,
   onDelete,
   onNew,
-  onLoadPreset,
 }: DokumentasiTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [layoutFilter, setLayoutFilter] = useState<string>("ALL");
@@ -116,15 +115,6 @@ export function DokumentasiTable({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={onLoadPreset}
-            className="px-3 py-1.5 rounded-xl bg-amber-950/60 border border-amber-700/60 text-amber-300 hover:bg-amber-900/60 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
-            title="Muat contoh preset demo lengkap dengan gambar dan keterangan"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Muat Contoh Demo</span>
-          </button>
-          <button
-            type="button"
             onClick={onNew}
             className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
             title="Buat lembar dokumentasi kegiatan baru"
@@ -193,7 +183,7 @@ export function DokumentasiTable({
                     <p className="text-[11px] text-slate-500">
                       {searchTerm || layoutFilter !== "ALL"
                         ? "Coba sesuaikan kata kunci pencarian atau filter format layout."
-                        : "Gunakan tombol 'Muat Contoh Demo' atau 'Tambah Dokumentasi Baru' di atas untuk memulai."}
+                        : "Gunakan tombol 'Tambah Dokumentasi Baru' di atas untuk memulai pembuatan berkas."}
                     </p>
                   </div>
                 </td>

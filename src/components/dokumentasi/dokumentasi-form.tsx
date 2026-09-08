@@ -759,13 +759,6 @@ export function DokumentasiForm({
                     Reset Form
                   </button>
                 )}
-                <button
-                  onClick={handleLoadSamplePreset}
-                  type="button"
-                  className="text-[11px] px-2.5 py-1 rounded bg-amber-950/60 border border-amber-700/50 text-amber-300 font-semibold hover:bg-amber-900/60 transition-colors"
-                >
-                  Muat Contoh Demo
-                </button>
               </div>
             </div>
 

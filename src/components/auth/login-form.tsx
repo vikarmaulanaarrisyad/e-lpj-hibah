@@ -19,12 +19,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Building2,
-  UserCheck,
   ArrowRight,
   Calculator,
   FileCheck,
   BadgeCheck,
-  Sparkles,
   HelpCircle,
 } from "lucide-react";
 
@@ -34,7 +32,6 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverSuccess, setServerSuccess] = useState<string | null>(null);
-  const [activeDemo, setActiveDemo] = useState<"ADMIN" | "USER" | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -94,21 +91,6 @@ export function LoginForm() {
     });
   };
 
-  // Helper to autofill demo credentials with visual feedback
-  const fillDemoAccount = (role: "ADMIN" | "USER") => {
-    setServerError(null);
-    setServerSuccess(null);
-    setActiveDemo(role);
-
-    if (role === "ADMIN") {
-      setValue("email", "superadmin@hibah.internal", { shouldValidate: true });
-      setValue("password", "Admin123!", { shouldValidate: true });
-    } else {
-      setValue("email", "user@hibah.internal", { shouldValidate: true });
-      setValue("password", "User123!", { shouldValidate: true });
-    }
-  };
-
   // Modal bantuan pemulihan sandi yang profesional
   const handleForgotPassword = () => {
     Swal.fire({
@@ -125,7 +107,6 @@ export function LoginForm() {
             <p class="text-slate-300">📞 Helpdesk: <span class="text-white font-mono">0856-4271-9869 (WhatsApp / Telp)</span></p>
             <p class="text-slate-400 text-[11px]">🕒 Jam Layanan: Senin - Jumat (08.00 - 16.00 WIB)</p>
           </div>
-          <p class="text-slate-400 text-xs">Atau gunakan akun uji coba dengan menekan tombol <b>Uji Coba Akun Demo</b> pada formulir.</p>
         </div>
       `,
       confirmButtonText: "Mengerti",
@@ -255,69 +236,6 @@ export function LoginForm() {
               <div className="flex-1 font-medium leading-relaxed">{serverSuccess}</div>
             </div>
           )}
-
-          {/* Quick Demo Accounts Selection */}
-          <div className="mb-6 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                Uji Coba Akun Demo (1-Klik)
-              </span>
-              <span className="text-[10px] text-slate-500">Pilih Role</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {/* Button Demo Super Admin */}
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => fillDemoAccount("ADMIN")}
-                className={`p-2.5 rounded-xl border text-left transition-all duration-200 group flex flex-col justify-between ${
-                  activeDemo === "ADMIN"
-                    ? "bg-emerald-950/70 border-emerald-500 text-white shadow-sm"
-                    : "bg-slate-900/90 border-slate-800 hover:border-emerald-600/50 text-slate-300 hover:bg-slate-800/50"
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Super Admin
-                  </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
-                    Auditor
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1 truncate">
-                  superadmin@hibah.internal
-                </p>
-              </button>
-
-              {/* Button Demo Penerima Hibah */}
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => fillDemoAccount("USER")}
-                className={`p-2.5 rounded-xl border text-left transition-all duration-200 group flex flex-col justify-between ${
-                  activeDemo === "USER"
-                    ? "bg-amber-950/70 border-amber-500 text-white shadow-sm"
-                    : "bg-slate-900/90 border-slate-800 hover:border-amber-600/50 text-slate-300 hover:bg-slate-800/50"
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5" />
-                    Penerima Hibah
-                  </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">
-                    Lembaga
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1 truncate">
-                  user@hibah.internal
-                </p>
-              </button>
-            </div>
-          </div>
 
           {/* Form Login */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
