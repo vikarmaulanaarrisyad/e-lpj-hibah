@@ -6,7 +6,6 @@ import { receiptRepository } from "@/repositories/receipt.repository";
 import { bastRepository } from "@/repositories/bast.repository";
 import { pesananRepository } from "@/repositories/pesanan.repository";
 import { dokumentasiRepository } from "@/repositories/dokumentasi.repository";
-import { userRepository } from "@/repositories/user.repository";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { ArsipDashboard } from "@/components/arsip/arsip-dashboard";
 import { cookies } from "next/headers";
@@ -23,8 +22,7 @@ export default async function ArsipPage() {
 
   const activeTahun = normalizeTahunAnggaran(cookies().get(COOKIE_TAHUN_ANGGARAN)?.value);
 
-  const [dbUser, profileRes, receipts, bastDocs, pesananDocs, dokumentasiDocs] = await Promise.all([
-    userRepository.findById(session.sub),
+  const [profileRes, receipts, bastDocs, pesananDocs, dokumentasiDocs] = await Promise.all([
     institutionService.getProfile(session.sub),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
     bastRepository.findManyByUserId(session.sub, activeTahun),
@@ -35,20 +33,20 @@ export default async function ArsipPage() {
   const profile = profileRes.data || null;
   const institution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : dbUser?.institution || session.institution || "PR Fatayat NU";
+    : session.institution || "PR Fatayat NU";
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col">
       <KwitansiHeader
         institution={institution}
-        userName={dbUser?.name || session.name}
+        userName={session.name}
         registrationNumber={profile?.noRegistrasi}
         initialProfile={profile}
       />
       <main className="flex-1 pb-16">
         <ArsipDashboard
           institution={institution}
-          userName={dbUser?.name || session.name}
+          userName={session.name}
           profile={profile}
           activeTahun={activeTahun}
           receipts={receipts}

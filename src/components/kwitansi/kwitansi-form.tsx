@@ -60,7 +60,6 @@ import {
   swalWorkflowPrompt,
   swalProcurementWorkflowPrompt,
 } from "@/lib/swal";
-import { exportKwitansiToPdf } from "@/lib/kwitansi-pdf";
 import { KwitansiCanvas } from "./kwitansi-canvas";
 import { KwitansiPhotoUploader } from "./kwitansi-photo-uploader";
 import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
@@ -709,6 +708,7 @@ export function KwitansiForm({
     if (isExportingPdf) return;
     try {
       setIsExportingPdf(true);
+      const { exportKwitansiToPdf } = await import("@/lib/kwitansi-pdf");
       await exportKwitansiToPdf({
         elementId: "kwitansiCanvas",
         nomorBukti: formData.nomorBukti,

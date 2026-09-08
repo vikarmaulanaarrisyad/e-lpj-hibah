@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { authService } from "@/services/auth.service";
-import { userRepository } from "@/repositories/user.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { rabService } from "@/services/rab.service";
 import { institutionService } from "@/services/institution.service";
@@ -27,9 +26,8 @@ export default async function UserRabPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Preload user profile, RAB status, receipts, and institution profile from database
-  const [user, rabRes, receipts, profileRes] = await Promise.all([
-    userRepository.findById(session.sub),
+  // Preload RAB status, receipts, and institution profile from database
+  const [rabRes, receipts, profileRes] = await Promise.all([
     rabService.getRabStatus(session.sub, activeTahun),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
@@ -38,8 +36,8 @@ export default async function UserRabPage() {
   const profile = profileRes.data || null;
   const institution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : user?.institution || session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
-  const userName = user?.name || session.name || "NUR ALIMAH";
+    : session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
+  const userName = session.name || "NUR ALIMAH";
 
   const summary = rabRes.data || {
     totalAnggaran: 0,
@@ -67,7 +65,7 @@ export default async function UserRabPage() {
           receipts={receipts}
           institutionName={institution}
           userName={userName}
-          leaderName={profile?.namaKetua || user?.leaderName || "HENI FUJIATI"}
+          leaderName={profile?.namaKetua || session.leaderName || "HENI FUJIATI"}
           treasurerName={profile?.namaBendahara || userName || "NUR ALIMAH"}
           profile={profile}
         />

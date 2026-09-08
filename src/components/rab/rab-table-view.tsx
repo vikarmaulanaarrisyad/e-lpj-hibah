@@ -27,7 +27,6 @@ import type {
   UpdateRabDetailRowInput,
   InstitutionProfile,
 } from "@/types";
-import { exportRabToPdf } from "@/lib/rab-pdf";
 import { formatProperCase } from "@/lib/utils/title-case";
 import { RabCanvas } from "./rab-canvas";
 import {
@@ -521,6 +520,7 @@ export function RabTableView({
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
     try {
+      const { exportRabToPdf } = await import("@/lib/rab-pdf");
       await exportRabToPdf({
         elementId: "rabPrintCanvas",
         summary,

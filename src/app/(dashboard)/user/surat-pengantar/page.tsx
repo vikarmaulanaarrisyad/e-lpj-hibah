@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { institutionService } from "@/services/institution.service";
-import { userRepository } from "@/repositories/user.repository";
 import { rabService } from "@/services/rab.service";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { SuratPengantarForm } from "@/components/surat-pengantar/surat-pengantar-form";
@@ -19,9 +18,8 @@ export default async function SuratPengantarPage() {
     redirect("/login");
   }
 
-  // Ambil profil user, profil lembaga, dan ringkasan RAB jika ada
-  const [dbUser, profileRes, rabRes] = await Promise.all([
-    userRepository.findById(session.sub),
+  // Ambil profil lembaga dan ringkasan RAB jika ada
+  const [profileRes, rabRes] = await Promise.all([
     institutionService.getProfile(session.sub),
     rabService.getRabStatus(session.sub),
   ]);
@@ -29,7 +27,7 @@ export default async function SuratPengantarPage() {
   const profile = profileRes.data || null;
   const fullInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : dbUser?.institution || session.institution;
+    : session.institution;
 
   const totalAnggaran = rabRes.data?.totalAnggaran || 100000000;
 
@@ -37,7 +35,7 @@ export default async function SuratPengantarPage() {
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased">
       {/* Universal Top Header */}
       <KwitansiHeader
-        userName={dbUser?.name || session.name}
+        userName={session.name}
         institution={fullInstitution}
         registrationNumber={profile?.noRegistrasi}
         initialProfile={profile}
@@ -55,8 +53,8 @@ export default async function SuratPengantarPage() {
           <SuratPengantarForm
             initialProfile={profile}
             userProfile={{
-              name: dbUser?.name || session.name,
-              leaderName: dbUser?.leaderName || profile?.namaKetua,
+              name: session.name,
+              leaderName: profile?.namaKetua || session.leaderName,
               institution: fullInstitution,
             }}
             defaultAnggaran={totalAnggaran}

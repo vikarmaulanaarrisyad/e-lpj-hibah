@@ -40,7 +40,6 @@ import {
   deleteDokumentasiAction,
   deleteDokumentasiPhotoAction,
 } from "@/app/actions/dokumentasi.action";
-import { exportDokumentasiPdf } from "@/lib/dokumentasi-pdf";
 import { swalError, swalSuccess, swalLoading, swalConfirmDelete } from "@/lib/swal";
 import {
   determineDokumentasiTitle,
@@ -759,6 +758,7 @@ export function DokumentasiForm({
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
     try {
+      const { exportDokumentasiPdf } = await import("@/lib/dokumentasi-pdf");
       await exportDokumentasiPdf({
         containerId: "dokumentasiPrintArea",
         formData,

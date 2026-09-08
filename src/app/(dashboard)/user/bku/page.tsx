@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { authService } from "@/services/auth.service";
-import { userRepository } from "@/repositories/user.repository";
 import { bkuService } from "@/services/bku.service";
 import { institutionService } from "@/services/institution.service";
 import { redirect } from "next/navigation";
@@ -27,9 +26,8 @@ export default async function BkuPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Preload user profile, ledger entries for active year, and institution profile concurrently
-  const [user, ledgerRes, profileRes] = await Promise.all([
-    userRepository.findById(session.sub),
+  // Preload ledger entries for active year and institution profile concurrently
+  const [ledgerRes, profileRes] = await Promise.all([
     bkuService.getBkuLedger(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
   ]);
@@ -37,9 +35,9 @@ export default async function BkuPage() {
   const profile = profileRes.data || null;
   const institution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : user?.institution || session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
-  const userName = user?.name || session.name || "NUR ALIMAH";
-  const leaderName = profile?.namaKetua || user?.leaderName || "HENI FUJIATI";
+    : session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
+  const userName = session.name || "NUR ALIMAH";
+  const leaderName = profile?.namaKetua || session.leaderName || "HENI FUJIATI";
 
   const entries = ledgerRes.data?.entries || [];
   const summary = ledgerRes.data?.summary || {

@@ -4,7 +4,6 @@ import { authService } from "@/services/auth.service";
 import { pesananService } from "@/services/pesanan.service";
 import { institutionService } from "@/services/institution.service";
 import { receiptRepository } from "@/repositories/receipt.repository";
-import { userRepository } from "@/repositories/user.repository";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { PesananForm } from "@/components/pesanan/pesanan-form";
 
@@ -30,9 +29,8 @@ export default async function PesananPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Fetch DB user profile, institution profile, purchase orders, receipts, BAST list, vendors, and next auto SP number for active year
-  const [dbUser, profileRes, pesananRes, userReceipts, bastRes, nextSpData, vendorsRes] = await Promise.all([
-    userRepository.findById(session.sub),
+  // Fetch institution profile, purchase orders, receipts, BAST list, vendors, and next auto SP number for active year
+  const [profileRes, pesananRes, userReceipts, bastRes, nextSpData, vendorsRes] = await Promise.all([
     institutionService.getProfile(session.sub),
     pesananService.getPurchaseOrders(session.sub, activeTahun),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
@@ -47,13 +45,13 @@ export default async function PesananPage() {
   const vendors = vendorsRes.data || [];
   const fullInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : dbUser?.institution || session.institution;
+    : session.institution;
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased">
       {/* Universal Top Header */}
       <KwitansiHeader
-        userName={dbUser?.name || session.name}
+        userName={session.name}
         institution={fullInstitution}
         registrationNumber={profile?.noRegistrasi}
         initialProfile={profile}
@@ -70,8 +68,8 @@ export default async function PesananPage() {
             initialNextNomorSp={nextSpData}
             initialVendors={vendors}
             userProfile={{
-              name: dbUser?.name || session.name,
-              leaderName: profile?.namaKetua || dbUser?.leaderName || session.leaderName,
+              name: session.name,
+              leaderName: profile?.namaKetua || session.leaderName,
               institution: fullInstitution,
             }}
           />

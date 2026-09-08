@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { institutionService } from "@/services/institution.service";
-import { userRepository } from "@/repositories/user.repository";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { CoverForm } from "@/components/cover/cover-form";
 
@@ -18,22 +17,19 @@ export default async function CoverPage() {
     redirect("/login");
   }
 
-  // Fetch DB user profile and institution profile
-  const [dbUser, profileRes] = await Promise.all([
-    userRepository.findById(session.sub),
-    institutionService.getProfile(session.sub),
-  ]);
+  // Fetch institution profile
+  const profileRes = await institutionService.getProfile(session.sub);
 
   const profile = profileRes.data || null;
   const fullInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : dbUser?.institution || session.institution;
+    : session.institution;
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased">
       {/* Universal Top Header */}
       <KwitansiHeader
-        userName={dbUser?.name || session.name}
+        userName={session.name}
         institution={fullInstitution}
         registrationNumber={profile?.noRegistrasi}
         initialProfile={profile}
@@ -45,8 +41,8 @@ export default async function CoverPage() {
           <CoverForm
             initialProfile={profile}
             userProfile={{
-              name: dbUser?.name || session.name,
-              leaderName: dbUser?.leaderName || profile?.namaKetua,
+              name: session.name,
+              leaderName: profile?.namaKetua || session.leaderName,
               institution: fullInstitution,
             }}
           />

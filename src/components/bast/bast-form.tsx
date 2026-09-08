@@ -38,10 +38,8 @@ import {
   AlertTriangle,
   BookmarkPlus,
 } from "lucide-react";
-import { exportBastToPdf } from "@/lib/bast-pdf";
 import { BastCanvas } from "./bast-canvas";
 import { PesananCanvas } from "@/components/pesanan/pesanan-canvas";
-import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { saveBastAction, deleteBastAction, getNextNomorBastAction } from "@/app/actions/bast.action";
@@ -424,6 +422,7 @@ export function BastForm({
     }
     setIsExportingBundle(true);
     try {
+      const { exportBundelPengadaanPdf } = await import("@/lib/bundel-pengadaan-pdf");
       await exportBundelPengadaanPdf({
         pesananElement: spEl,
         bastElement: bastEl,
@@ -789,6 +788,7 @@ export function BastForm({
     if (isExportingPdf) return;
     try {
       setIsExportingPdf(true);
+      const { exportBastToPdf } = await import("@/lib/bast-pdf");
       await exportBastToPdf({
         elementId: "bastPrintArea",
         nomorBast: formData.nomorBast,

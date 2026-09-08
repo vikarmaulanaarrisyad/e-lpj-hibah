@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Info,
 } from "lucide-react";
-import { exportSuratPengantarToPdf } from "@/lib/surat-pengantar-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { SuratPengantarCanvas } from "./surat-pengantar-canvas";
 import { angkaKeTerbilang, formatRupiahNumber } from "@/lib/utils/terbilang";
@@ -100,6 +99,7 @@ export function SuratPengantarForm({
   const handleExportPdf = async () => {
     try {
       setIsExportingPdf(true);
+      const { exportSuratPengantarToPdf } = await import("@/lib/surat-pengantar-pdf");
       await exportSuratPengantarToPdf({
         elementId: "suratPengantarPrintArea",
         formData,

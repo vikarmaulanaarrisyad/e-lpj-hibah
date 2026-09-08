@@ -15,9 +15,7 @@ import {
   ArrowLeft,
   Settings,
   Image as ImageIcon,
-  CheckCircle2,
 } from "lucide-react";
-import { exportCoverToPdf } from "@/lib/cover-pdf";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { CoverCanvas } from "./cover-canvas";
 import type { CoverFormData, CoverBorderStyle, InstitutionProfile } from "@/types";
@@ -89,6 +87,7 @@ export function CoverForm({ initialProfile, userProfile }: CoverFormProps) {
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
     try {
+      const { exportCoverToPdf } = await import("@/lib/cover-pdf");
       await exportCoverToPdf({
         elementId: "coverPrintArea",
         formData,

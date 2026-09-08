@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { authService } from "@/services/auth.service";
-import { userRepository } from "@/repositories/user.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { receiptService } from "@/services/receipt.service";
 import { rabService } from "@/services/rab.service";
@@ -29,9 +28,8 @@ export default async function KwitansiPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Fetch full user profile, saved receipts for active year, RAB budget status, institution profile, and next unique nomor bukti from database
-  const [userProfile, profileRes, savedReceipts, rabStatusRes, nextNomorBukti] = await Promise.all([
-    userRepository.findById(session.sub),
+  // Fetch saved receipts for active year, RAB budget status, institution profile, and next unique nomor bukti from database
+  const [profileRes, savedReceipts, rabStatusRes, nextNomorBukti] = await Promise.all([
     institutionService.getProfile(session.sub),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
     rabService.getRabStatus(session.sub),
@@ -41,9 +39,9 @@ export default async function KwitansiPage() {
   const profile = profileRes.data || null;
   const institution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : userProfile?.institution || session.institution || "PR Fatayat NU Dawuhan Selatan";
-  const userName = userProfile?.name || session.name;
-  const leaderName = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
+    : session.institution || "PR Fatayat NU Dawuhan Selatan";
+  const userName = session.name;
+  const leaderName = profile?.namaKetua || session.leaderName || "HENI FUJIATI";
   const initialRabSummary = rabStatusRes.data;
 
   return (

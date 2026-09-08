@@ -5,7 +5,6 @@ import { loggerService } from "@/services/logger.service";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { ActivityLogTable } from "@/components/riwayat/activity-log-table";
 import { institutionService } from "@/services/institution.service";
-import { userRepository } from "@/repositories/user.repository";
 import { Activity, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -21,8 +20,7 @@ export default async function RiwayatPage() {
     redirect("/login");
   }
 
-  const [dbUser, profileRes, initialLogs] = await Promise.all([
-    userRepository.findById(session.sub),
+  const [profileRes, initialLogs] = await Promise.all([
     institutionService.getProfile(session.sub),
     loggerService.getLogsByUserId(session.sub, { limit: 25, offset: 0 }),
   ]);
@@ -30,13 +28,13 @@ export default async function RiwayatPage() {
   const profile = profileRes.data || null;
   const institution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : dbUser?.institution || session.institution || "PR Fatayat NU";
+    : session.institution || "PR Fatayat NU";
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col">
       <KwitansiHeader
         institution={institution}
-        userName={dbUser?.name || session.name}
+        userName={session.name}
         registrationNumber={profile?.noRegistrasi}
         initialProfile={profile}
       />

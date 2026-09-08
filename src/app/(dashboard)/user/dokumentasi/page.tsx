@@ -4,7 +4,6 @@ import { authService } from "@/services/auth.service";
 import { bastService } from "@/services/bast.service";
 import { pesananService } from "@/services/pesanan.service";
 import { institutionService } from "@/services/institution.service";
-import { userRepository } from "@/repositories/user.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { dokumentasiService } from "@/services/dokumentasi.service";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
@@ -30,9 +29,8 @@ export default async function DokumentasiPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Ambil profil user, profil lembaga, arsip BAST, SP, Kwitansi, dan dokumentasi tersimpan untuk tahun aktif
-  const [dbUser, profileRes, bastRes, pesananRes, userReceipts, savedDocsRes] = await Promise.all([
-    userRepository.findById(session.sub),
+  // Ambil profil lembaga, arsip BAST, SP, Kwitansi, dan dokumentasi tersimpan untuk tahun aktif
+  const [profileRes, bastRes, pesananRes, userReceipts, savedDocsRes] = await Promise.all([
     institutionService.getProfile(session.sub),
     bastService.getBastList(session.sub, activeTahun),
     pesananService.getPurchaseOrders(session.sub, activeTahun),
@@ -43,7 +41,7 @@ export default async function DokumentasiPage() {
   const profile = profileRes.data || null;
   const fullInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
-    : dbUser?.institution || session.institution;
+    : session.institution;
 
   const bastOptions = (bastRes.data || []).map((b) => ({
     id: b.id,
@@ -76,7 +74,7 @@ export default async function DokumentasiPage() {
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased">
       {/* Universal Top Header */}
       <KwitansiHeader
-        userName={dbUser?.name || session.name}
+        userName={session.name}
         institution={fullInstitution}
         registrationNumber={profile?.noRegistrasi}
         initialProfile={profile}
@@ -99,8 +97,8 @@ export default async function DokumentasiPage() {
           <DokumentasiForm
             initialProfile={profile}
             userProfile={{
-              name: dbUser?.name || session.name,
-              leaderName: dbUser?.leaderName || profile?.namaKetua,
+              name: session.name,
+              leaderName: profile?.namaKetua || session.leaderName,
               institution: fullInstitution,
             }}
             bastOptions={bastOptions}

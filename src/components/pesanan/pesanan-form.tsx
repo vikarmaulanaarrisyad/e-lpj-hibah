@@ -34,8 +34,6 @@ import {
   BookmarkPlus,
   UserCheck,
 } from "lucide-react";
-import { exportPesananToPdf } from "@/lib/pesanan-pdf";
-import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
 import { formatTanggalTerbilang } from "@/services/bast.service";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
 import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
@@ -716,6 +714,7 @@ export function PesananForm({
     }
     setIsExportingBundle(true);
     try {
+      const { exportBundelPengadaanPdf } = await import("@/lib/bundel-pengadaan-pdf");
       await exportBundelPengadaanPdf({
         pesananElement: spEl,
         bastElement: bastEl,
@@ -733,6 +732,7 @@ export function PesananForm({
     if (isExportingPdf) return;
     try {
       setIsExportingPdf(true);
+      const { exportPesananToPdf } = await import("@/lib/pesanan-pdf");
       await exportPesananToPdf({
         elementId: "pesananPrintArea",
         nomorSp: formData.nomorSp,
