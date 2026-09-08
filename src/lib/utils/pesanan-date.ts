@@ -465,3 +465,102 @@ export function formatPihak2Jabatan(
   return `${role} ${shop}`;
 }
 
+/**
+ * Menentukan judul lembar dokumentasi resmi yang pas berdasarkan uraian belanja dan kategori pos RAB.
+ * Contoh:
+ * - Konsumsi / Snack / Makan / Minum -> "LEMBAR DOKUMENTASI KONSUMSI & SNACK"
+ * - Hadroh / Sound / Alat / Laptop / Barang / Sarana / Kafan -> "LEMBAR DOKUMENTASI PENGADAAN BARANG"
+ * - Banner / Spanduk / ATK / Modul / Penggandaan / Percetakan -> "LEMBAR DOKUMENTASI ATK & PUBLIKASI"
+ * - Pelatihan / Rapat / Kader / Sosialisasi / Transport / Honor / Kegiatan -> "LEMBAR DOKUMENTASI PELAKSANAAN KEGIATAN"
+ * - Sewa Gedung / Sewa Sound / Sewa LCD -> "LEMBAR DOKUMENTASI SEWA & OPERASIONAL"
+ * - Default -> "LEMBAR DOKUMENTASI REALISASI BELANJA"
+ */
+export function determineDokumentasiTitle(
+  uraian?: string | null,
+  kategoriRab?: string | null
+): string {
+  const combined = `${uraian || ""} ${kategoriRab || ""}`.toLowerCase();
+
+  // 1. Konsumsi / Snack / Makan Minum
+  if (
+    combined.includes("snack") ||
+    combined.includes("konsumsi") ||
+    combined.includes("makan") ||
+    combined.includes("minum") ||
+    combined.includes("katering") ||
+    combined.includes("prasmanan") ||
+    combined.includes("roti") ||
+    combined.includes("kue")
+  ) {
+    return "LEMBAR DOKUMENTASI KONSUMSI & SNACK";
+  }
+
+  // 2. Banner / Spanduk / ATK / Modul / Publikasi
+  if (
+    combined.includes("banner") ||
+    combined.includes("spanduk") ||
+    combined.includes("baliho") ||
+    combined.includes("atk") ||
+    combined.includes("alat tulis") ||
+    combined.includes("modul") ||
+    combined.includes("penggandaan") ||
+    combined.includes("fotokopi") ||
+    combined.includes("percetakan") ||
+    combined.includes("cetak")
+  ) {
+    return "LEMBAR DOKUMENTASI ATK & PUBLIKASI";
+  }
+
+  // 3. Sewa Gedung / Sewa LCD / Sewa Tempat / Peralatan
+  if (
+    combined.includes("sewa gedung") ||
+    combined.includes("sewa tempat") ||
+    combined.includes("sewa lcd") ||
+    combined.includes("sewa sound") ||
+    combined.includes("sewa")
+  ) {
+    return "LEMBAR DOKUMENTASI SEWA & OPERASIONAL";
+  }
+
+  // 4. Pengadaan Barang / Sarana Fisik / Peralatan / Hadroh / Kain Kafan / dll
+  if (
+    combined.includes("hadroh") ||
+    combined.includes("rebana") ||
+    combined.includes("alat") ||
+    combined.includes("barang") ||
+    combined.includes("sarana") ||
+    combined.includes("sound") ||
+    combined.includes("inventaris") ||
+    combined.includes("kafan") ||
+    combined.includes("seragam") ||
+    combined.includes("laptop") ||
+    combined.includes("komputer") ||
+    combined.includes("printer") ||
+    combined.includes("meja") ||
+    combined.includes("kursi") ||
+    combined.includes("tenda") ||
+    combined.includes("pengadaan")
+  ) {
+    return "LEMBAR DOKUMENTASI PENGADAAN BARANG";
+  }
+
+  // 5. Kegiatan / Pelatihan / Peringatan / Rapat / Acara / Honor / Transport
+  if (
+    combined.includes("pelatihan") ||
+    combined.includes("kegiatan") ||
+    combined.includes("acara") ||
+    combined.includes("rapat") ||
+    combined.includes("sosialisasi") ||
+    combined.includes("peringatan") ||
+    combined.includes("kader") ||
+    combined.includes("mars") ||
+    combined.includes("honor") ||
+    combined.includes("transport")
+  ) {
+    return "LEMBAR DOKUMENTASI PELAKSANAAN KEGIATAN";
+  }
+
+  return "LEMBAR DOKUMENTASI REALISASI BELANJA";
+}
+
+

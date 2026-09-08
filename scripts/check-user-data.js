@@ -32,6 +32,10 @@ async function main() {
   const vendors = await prisma.vendor.findMany({ where: { userId: user.id } });
   console.log('=== VENDORS (' + vendors.length + ') ===');
   vendors.forEach(v => console.log(JSON.stringify(v, null, 2)));
+
+  const rabs = await prisma.rabItem.findMany({ where: { userId: user.id } });
+  console.log('=== RAB (' + rabs.length + ') ===');
+  rabs.forEach(r => console.log(JSON.stringify({ kode: r.kode, nama: r.nama, anggaran: r.anggaran, rincian: r.keterangan ? JSON.parse(r.keterangan) : [] }, null, 2)));
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

@@ -41,6 +41,7 @@ import {
 } from "@/app/actions/dokumentasi.action";
 import { exportDokumentasiPdf } from "@/lib/dokumentasi-pdf";
 import { swalError, swalSuccess } from "@/lib/swal";
+import { determineDokumentasiTitle } from "@/lib/utils/pesanan-date";
 import type {
   DokumentasiFormData,
   DokumentasiPhoto,
@@ -166,7 +167,7 @@ export function DokumentasiForm({
   const urlBastNo = searchParams.get("bastNo");
 
   const [formData, setFormData] = useState<DokumentasiFormData>({
-    judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+    judulDokumentasi: "LEMBAR DOKUMENTASI REALISASI BELANJA",
     subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
     namaKegiatan: "",
     nomorReferensi: "",
@@ -451,7 +452,7 @@ export function DokumentasiForm({
   const handleNewDocumentation = () => {
     setFormData({
       id: undefined,
-      judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+      judulDokumentasi: "LEMBAR DOKUMENTASI REALISASI BELANJA",
       subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
       namaKegiatan: "",
       nomorReferensi: "",
@@ -489,7 +490,7 @@ export function DokumentasiForm({
   const handleLoadSamplePreset = () => {
     setFormData({
       id: undefined,
-      judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+      judulDokumentasi: "LEMBAR DOKUMENTASI PENGADAAN BARANG",
       subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
       namaKegiatan: "Pengadaan Sarana Sound System & Perlengkapan Organisasi",
       nomorReferensi: "014/BAST-HB/FTY/VII/2026",
@@ -545,6 +546,7 @@ export function DokumentasiForm({
       if (selected) {
         setFormData((prev) => ({
           ...prev,
+          judulDokumentasi: determineDokumentasiTitle(selected.nama),
           namaKegiatan: cleanTitle(selected.nama) || prev.namaKegiatan,
           nomorReferensi: selected.nomor || prev.nomorReferensi,
           tanggalKegiatan: selected.tanggal
@@ -567,6 +569,7 @@ export function DokumentasiForm({
       if (selected) {
         setFormData((prev) => ({
           ...prev,
+          judulDokumentasi: determineDokumentasiTitle(selected.nama),
           namaKegiatan: cleanTitle(selected.nama) || prev.namaKegiatan,
           nomorReferensi: selected.nomor || prev.nomorReferensi,
           tanggalKegiatan: selected.tanggal
@@ -589,6 +592,7 @@ export function DokumentasiForm({
       if (selected) {
         setFormData((prev) => ({
           ...prev,
+          judulDokumentasi: determineDokumentasiTitle(selected.nama),
           namaKegiatan: cleanTitle(selected.nama) || prev.namaKegiatan,
           nomorReferensi: selected.nomor || prev.nomorReferensi,
           tanggalKegiatan: selected.tanggal
@@ -947,42 +951,45 @@ export function DokumentasiForm({
                     onClick={() =>
                       setFormData((prev) => ({
                         ...prev,
-                        judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+                        judulDokumentasi: determineDokumentasiTitle(prev.namaKegiatan),
                       }))
                     }
-                    className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors"
-                    title="Kembalikan ke judul default"
+                    className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
+                    title="Otomatis sesuaikan judul dari rincian kegiatan / belanja"
                   >
-                    Reset Judul
+                    Otomatisasi Judul
                   </button>
                 </div>
                 <input
                   type="text"
                   value={formData.judulDokumentasi || ""}
                   onChange={(e) => setFormData({ ...formData, judulDokumentasi: e.target.value })}
-                  placeholder="LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA"
+                  placeholder="LEMBAR DOKUMENTASI REALISASI BELANJA"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white uppercase font-bold tracking-wide focus:outline-none focus:border-emerald-500"
                 />
                 {/* Preset Cepat Judul */}
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  <span className="text-[10px] text-slate-500">Pilihan Cepat:</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">Pilihan Cepat Sesuai RAB:</span>
                   {[
-                    "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
-                    "LEMBAR DOKUMENTASI KEGIATAN FISIK",
-                    "LEMBAR DOKUMENTASI SERAH TERIMA BARANG",
-                    "DOKUMENTASI PENYERAHAN BARANG HIBAH",
-                  ].map((preset) => (
+                    { title: "LEMBAR DOKUMENTASI PENGADAAN BARANG", label: "Foto Barang" },
+                    { title: "LEMBAR DOKUMENTASI KONSUMSI & SNACK", label: "Foto Snack / Konsumsi" },
+                    { title: "LEMBAR DOKUMENTASI PELAKSANAAN KEGIATAN", label: "Foto Kegiatan" },
+                    { title: "LEMBAR DOKUMENTASI ATK & PUBLIKASI", label: "Foto ATK / Spanduk" },
+                    { title: "LEMBAR DOKUMENTASI SEWA & OPERASIONAL", label: "Foto Sewa Tempat" },
+                    { title: "LEMBAR DOKUMENTASI REALISASI BELANJA", label: "Umum / Belanja" },
+                  ].map((p) => (
                     <button
-                      key={preset}
+                      key={p.title}
                       type="button"
-                      onClick={() => setFormData({ ...formData, judulDokumentasi: preset })}
-                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
-                        formData.judulDokumentasi === preset
+                      onClick={() => setFormData({ ...formData, judulDokumentasi: p.title })}
+                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                        formData.judulDokumentasi === p.title
                           ? "bg-emerald-950/80 border-emerald-500 text-emerald-300 font-bold"
                           : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-300"
                       }`}
+                      title={p.title}
                     >
-                      {preset.replace("LEMBAR DOKUMENTASI ", "").replace("DOKUMENTASI ", "")}
+                      {p.label}
                     </button>
                   ))}
                 </div>

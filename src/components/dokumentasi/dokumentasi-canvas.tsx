@@ -166,14 +166,14 @@ export function DokumentasiCanvas({
                   </div>
 
                   {/* Formal Kop Dual Border Line */}
-                  <div className="w-full flex flex-col gap-[2px] mb-2">
-                    <div className="w-full h-[2.5px] bg-[#006c4e]"></div>
+                  <div className="w-full flex flex-col gap-[2px] mb-1.5">
+                    <div className="w-full h-[2px] bg-[#006c4e]"></div>
                     <div className="w-full h-[0.75px] bg-[#006c4e]"></div>
                   </div>
 
                   {/* ================= TITLE & SUBTITLE (BISA DIEDIT LANGSUNG) ================= */}
-                  <div className="text-center mb-2.5 relative group">
-                    <div className="relative inline-block max-w-full">
+                  <div className="text-center mt-1 mb-2 relative group flex flex-col items-center justify-center gap-0.5">
+                    <div className="relative inline-flex items-center justify-center max-w-full m-0 p-0 leading-none">
                       <h3
                         contentEditable={Boolean(onUpdateTitle)}
                         suppressContentEditableWarning
@@ -194,13 +194,14 @@ export function DokumentasiCanvas({
                             ? "Klik untuk mengubah / mengedit judul langsung di kertas"
                             : undefined
                         }
-                        className={`text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4 transition-all my-0 leading-tight ${
+                        className={`text-[13.5px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-[2px] m-0 p-0 leading-snug transition-all ${
                           onUpdateTitle
                             ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
                             : ""
                         }`}
+                        style={{ margin: 0 }}
                       >
-                        {data.judulDokumentasi || "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA"}
+                        {data.judulDokumentasi || "LEMBAR DOKUMENTASI REALISASI BELANJA"}
                       </h3>
                       {onUpdateTitle && (
                         <span className="no-print print:hidden hidden sm:inline-block text-[10px] text-emerald-700 font-normal ml-1.5 align-middle select-none opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 border border-emerald-300 rounded px-1.5 py-0.5 shadow-xs">
@@ -208,44 +209,49 @@ export function DokumentasiCanvas({
                         </span>
                       )}
                     </div>
-                    <div>
-                      <p
-                        contentEditable={Boolean(onUpdateSubJudul)}
-                        suppressContentEditableWarning
-                        onBlur={(e) => {
-                          const text = e.currentTarget.textContent?.trim();
-                          if (text && text !== data.subJudul) {
-                            onUpdateSubJudul?.(text);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            e.currentTarget.blur();
-                          }
-                        }}
-                        title={
-                          onUpdateSubJudul
-                            ? "Klik untuk mengubah / mengedit subjudul langsung di kertas"
-                            : undefined
+                    <p
+                      contentEditable={Boolean(onUpdateSubJudul)}
+                      suppressContentEditableWarning
+                      onBlur={(e) => {
+                        const text = e.currentTarget.textContent?.trim();
+                        if (text && text !== data.subJudul) {
+                          onUpdateSubJudul?.(text);
                         }
-                        className={`font-mono text-[12px] sm:text-[12px] text-black mt-0.5 font-semibold inline-block transition-all ${
-                          onUpdateSubJudul
-                            ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
-                            : ""
-                        }`}
-                      >
-                        {data.subJudul || "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026"}
-                      </p>
-                    </div>
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      title={
+                        onUpdateSubJudul
+                          ? "Klik untuk mengubah / mengedit subjudul langsung di kertas"
+                          : undefined
+                      }
+                      className={`font-mono text-[11px] sm:text-[11.5px] text-black m-0 p-0 mt-0.5 font-semibold leading-snug inline-block transition-all ${
+                        onUpdateSubJudul
+                          ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
+                          : ""
+                      }`}
+                      style={{ margin: 0, marginTop: "2px" }}
+                    >
+                      {data.subJudul || "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026"}
+                    </p>
                   </div>
 
                   {/* ================= KOTAK INFORMASI KEGIATAN ================= */}
-                  <div className="w-full border border-slate-300 rounded-sm bg-slate-50/70 p-2.5 mb-4 text-xs">
+                  <div className="w-full border border-slate-300 rounded-sm bg-slate-50/70 p-2.5 mb-3.5 text-xs">
                     <table className="w-full border-collapse">
                       <tbody>
                         <tr className="leading-relaxed">
-                          <td className="w-32 font-semibold text-black align-top py-0.5">Nama Kegiatan</td>
+                          <td className="w-40 font-semibold text-black align-top py-0.5">
+                            {data.judulDokumentasi?.includes("KONSUMSI") || data.judulDokumentasi?.includes("SNACK")
+                              ? "Uraian Konsumsi / Snack"
+                              : data.judulDokumentasi?.includes("BARANG") || data.judulDokumentasi?.includes("PENGADAAN")
+                              ? "Uraian Pengadaan Barang"
+                              : "Uraian Belanja / Kegiatan"}
+                          </td>
                           <td className="w-3 text-black align-top py-0.5">:</td>
                           <td className="font-bold text-black align-top py-0.5">
                             {cleanTitle(data.namaKegiatan) || "Pengadaan Sarana & Prasarana Organisasi"}
@@ -267,7 +273,15 @@ export function DokumentasiCanvas({
                         </tr>
                         {data.nomorReferensi && (
                           <tr className="leading-relaxed">
-                            <td className="font-semibold text-black align-top py-0.5">No. BAST / SP</td>
+                            <td className="font-semibold text-black align-top py-0.5">
+                              {data.nomorReferensi.includes("/KW/")
+                                ? "No. Bukti Kwitansi"
+                                : data.nomorReferensi.includes("/SP/")
+                                ? "No. Surat Pesanan (SP)"
+                                : data.nomorReferensi.includes("/BA/")
+                                ? "No. Berita Acara (BAST)"
+                                : "No. Bukti / Referensi"}
+                            </td>
                             <td className="text-black align-top py-0.5">:</td>
                             <td className="font-mono font-semibold text-black align-top py-0.5">
                               {data.nomorReferensi}

@@ -41,7 +41,7 @@ import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib/utils/terbilang";
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
-import { getRomanMonth, syncNomorDokumenBulanTahun } from "@/lib/utils/pesanan-date";
+import { getRomanMonth, syncNomorDokumenBulanTahun, determineDokumentasiTitle } from "@/lib/utils/pesanan-date";
 import { formatUraianBelanja } from "@/lib/utils/title-case";
 import {
   saveReceiptAction,
@@ -939,7 +939,7 @@ export function KwitansiForm({
       // Otomatis sinkronkan foto bukti ke modul Dokumentasi Kegiatan di Database
       if (kwitansiPhotos.length > 0) {
         saveDokumentasiAction({
-          judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+          judulDokumentasi: determineDokumentasiTitle(formData.uraian, formData.kategoriRab),
           subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
           namaKegiatan: formData.uraian || "Belanja Pengadaan Barang / Jasa",
           nomorReferensi: savedDoc.nomorBukti,
