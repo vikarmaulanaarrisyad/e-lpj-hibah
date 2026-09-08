@@ -279,3 +279,21 @@ model Vendor {
   @@index([userId])
   @@map("vendors")
 }
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  level     String   @default("ERROR") // ERROR | WARN | INFO
+  action    String   // e.g. "AUTH_ERROR", "RUNTIME_EXCEPTION", "DB_ERROR", "USER_REGISTERED"
+  message   String
+  details   String?  // Stack trace, payload, or context JSON
+  endpoint  String?  // Route / Server Action
+  userId    String?  // User who experienced/triggered event
+  userEmail String?  // User email for quick view
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([action])
+  @@index([createdAt])
+  @@map("system_logs")
+}

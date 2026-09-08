@@ -4,41 +4,77 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Inisialisasi seeding pengguna E-LPJ Hibah...");
+  console.log("🌱 Memulai seeding akun Super Admin & Pengawas Sistem E-LPJ Hibah...");
 
-  const adminPassword = await bcrypt.hash("Admin123!", 10);
-  const userPassword = await bcrypt.hash("User123!", 10);
+  const superAdminPassword = await bcrypt.hash("Admin123!", 10);
 
-  // 1. Super Admin / Verifikator
-  const admin = await prisma.user.upsert({
+  // 1. Akun Utama Super Admin Monitoring & Error Tracking
+  const superAdmin = await prisma.user.upsert({
+    where: { email: "superadmin@hibah.internal" },
+    update: {
+      name: "Super Admin Sistem & Monitoring",
+      role: Role.ADMIN,
+      institution: "Inspektorat / BPKAD Pengawasan Hibah Daerah",
+      nip: "198203152006041002",
+    },
+    create: {
+      email: "superadmin@hibah.internal",
+      name: "Super Admin Sistem & Monitoring",
+      password: superAdminPassword,
+      role: Role.ADMIN,
+      institution: "Inspektorat / BPKAD Pengawasan Hibah Daerah",
+      nip: "198203152006041002",
+      leaderName: "Koordinator Pengawasan & Verifikasi Sistem",
+    },
+  });
+  console.log("✅ Super Admin Utama berhasil di-seed:", superAdmin.email);
+
+  // 2. Akun Alias Admin Verifikator (kompatibilitas tombol demo)
+  const adminVerifikator = await prisma.user.upsert({
     where: { email: "admin@hibah.internal" },
-    update: {},
+    update: {
+      name: "Super Admin Verifikator",
+      role: Role.ADMIN,
+      institution: "Biro Kesejahteraan Rakyat / BPKAD",
+    },
     create: {
       email: "admin@hibah.internal",
       name: "Super Admin Verifikator",
-      password: adminPassword,
+      password: superAdminPassword,
       role: Role.ADMIN,
       institution: "Biro Kesejahteraan Rakyat / BPKAD",
       nip: "198501152010011005",
+      leaderName: "Tim Verifikasi LPJ Hibah",
     },
   });
-  console.log("✅ Super Admin berhasil di-seed:", admin.email);
+  console.log("✅ Admin Verifikator berhasil di-seed:", adminVerifikator.email);
 
-  // 2. Grant Recipient / Penerima Hibah
-  const user = await prisma.user.upsert({
-    where: { email: "user@hibah.internal" },
-    update: {},
-    create: {
-      email: "user@hibah.internal",
-      name: "Pengurus Yayasan Harapan Bangsa",
-      password: userPassword,
-      role: Role.USER,
-      institution: "Yayasan Pendidikan & Sosial Harapan Bangsa",
+  // 3. Catat Log Inisialisasi Sistem
+  await prisma.systemLog.create({
+    data: {
+      level: "INFO",
+      action: "SYSTEM_INITIALIZED",
+      message: "Seeding akun Super Admin & inisialisasi modul monitoring sistem berhasil diselesaikan.",
+      endpoint: "prisma/seed.ts",
+      userEmail: superAdmin.email,
+      userId: superAdmin.id,
+      details: JSON.stringify({
+        superAdminEmail: superAdmin.email,
+        role: superAdmin.role,
+        institution: superAdmin.institution,
+        timestamp: new Date().toISOString(),
+      }),
     },
   });
-  console.log("✅ Penerima Hibah berhasil di-seed:", user.email);
+  console.log("✅ Catatan log sistem perdana berhasil dibuat di tabel system_logs");
 
-  console.log("🚀 Seeding selesai!");
+  console.log("\n==================================================");
+  console.log("🚀 SEEDING SUPER ADMIN BERHASIL!");
+  console.log("📧 Email    : superadmin@hibah.internal (atau admin@hibah.internal)");
+  console.log("🔑 Password : Admin123!");
+  console.log("🛡️ Role     : ADMIN (Super Admin)");
+  console.log("📊 Fitur    : Monitoring Error/Bug, Registrasi User, Transaksi");
+  console.log("==================================================\n");
 }
 
 main()

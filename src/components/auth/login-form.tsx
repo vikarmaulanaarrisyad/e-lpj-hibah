@@ -74,7 +74,7 @@ export function LoginForm() {
     setServerError(null);
     setServerSuccess(null);
     if (role === "ADMIN") {
-      setValue("email", "admin@hibah.internal", { shouldValidate: true });
+      setValue("email", "superadmin@hibah.internal", { shouldValidate: true });
       setValue("password", "Admin123!", { shouldValidate: true });
     } else {
       setValue("email", "user@hibah.internal", { shouldValidate: true });
@@ -257,7 +257,7 @@ export function LoginForm() {
                 Super Admin
               </div>
               <p className="text-[11px] text-slate-400 mt-1 truncate">
-                admin@hibah.internal
+                superadmin@hibah.internal
               </p>
               <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                 Pass: Admin123!

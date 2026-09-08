@@ -2,6 +2,7 @@
 
 import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from "@/lib/validations/auth";
 import { authService } from "@/services/auth.service";
+import { loggerService } from "@/services/logger.service";
 import type { ActionResponse, LoginResultData, RegisterResultData } from "@/types";
 
 export type { ActionResponse };
@@ -33,9 +34,38 @@ export async function registerAction(
 
     // 2. Delegate to Service Layer
     const result = await authService.register(validationResult.data);
+    if (result.success && result.data) {
+      // Catat event registrasi user ke SystemLog
+      await loggerService.log({
+        level: "INFO",
+        action: "USER_REGISTERED",
+        message: `Pendaftaran pengguna baru: ${result.data.user.name} (${result.data.user.email}) - Lembaga: ${result.data.user.institution || "-"}`,
+        endpoint: "/register",
+        userId: result.data.user.sub,
+        userEmail: result.data.user.email,
+        details: JSON.stringify({
+          name: result.data.user.name,
+          institution: result.data.user.institution,
+          role: result.data.user.role,
+        }),
+      });
+    } else {
+      await loggerService.log({
+        level: "WARN",
+        action: "REGISTRATION_REJECTED",
+        message: `Pendaftaran ditolak untuk email ${validationResult.data.email}: ${result.message}`,
+        endpoint: "/register",
+        userEmail: validationResult.data.email,
+      });
+    }
+
     return result;
   } catch (error) {
     console.error("[registerAction] Unexpected error:", error);
+    await loggerService.logError("REGISTRATION_UNCAUGHT_ERROR", error, {
+      endpoint: "/register",
+      userEmail: data.email,
+    });
     return {
       success: false,
       message: "Terjadi gangguan sistem saat memproses pendaftaran. Silakan coba beberapa saat lagi.",
@@ -71,9 +101,22 @@ export async function loginAction(
 
     // 2. Delegate to Service Layer
     const result = await authService.login(validationResult.data);
+    if (!result.success) {
+      await loggerService.log({
+        level: "WARN",
+        action: "AUTH_LOGIN_FAILED",
+        message: `Gagal login untuk ${validationResult.data.email}: ${result.message}`,
+        endpoint: "/login",
+        userEmail: validationResult.data.email,
+      });
+    }
     return result;
   } catch (error) {
     console.error("[loginAction] Unexpected error:", error);
+    await loggerService.logError("AUTH_LOGIN_UNCAUGHT_ERROR", error, {
+      endpoint: "/login",
+      userEmail: data.email,
+    });
     return {
       success: false,
       message: "Terjadi gangguan sistem internal. Silakan coba beberapa saat lagi.",
