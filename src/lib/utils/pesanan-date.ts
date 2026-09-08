@@ -354,3 +354,37 @@ export function extractNamaTempat(
 
   return fallback;
 }
+
+/**
+ * Membersihkan jabatan penandatangan agar tidak tercampur nama lembaga yang panjang.
+ * Contoh:
+ * - "Ketua PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN" -> "Ketua"
+ * - "Kepala Madrasah" -> "Kepala Madrasah"
+ * - "Ketua Yayasan" -> "Ketua Yayasan"
+ */
+export function cleanPihakJabatan(
+  jabatan?: string | null,
+  institutionName?: string | null,
+  fallback = "Ketua"
+): string {
+  if (!jabatan || !jabatan.trim()) return fallback;
+  let clean = jabatan.trim();
+
+  // 1. Jika jabatan memuat nama lembaga (contoh: "Ketua PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN")
+  if (institutionName && institutionName.trim()) {
+    const inst = institutionName.trim();
+    const escapedInst = inst.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    clean = clean.replace(new RegExp(escapedInst, "gi"), "").trim();
+  }
+
+  // 2. Jika masih tersisa pola "Ketua Pimpinan Ranting...", "Ketua PR Fatayat...", dll.
+  if (/^Ketua\s+(Pimpinan|PR|Ranting|Fatayat|Muslimat|Ansor|IPNU|IPPNU|Lembaga|Desa)/i.test(clean)) {
+    clean = "Ketua";
+  }
+
+  // 3. Bersihkan tanda baca aneh di ujung (misal: "Ketua -" atau "Ketua ,")
+  clean = clean.replace(/^[-\s,.:/]+|[-\s,.:/]+$/g, "").trim();
+
+  return clean || fallback;
+}
+

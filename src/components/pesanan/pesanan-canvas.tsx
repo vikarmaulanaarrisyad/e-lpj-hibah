@@ -1,7 +1,7 @@
 "use client";
 
 import type { PesananFormData, InstitutionProfile } from "@/types";
-import { extractNamaTempat } from "@/lib/utils/pesanan-date";
+import { extractNamaTempat, cleanPihakJabatan } from "@/lib/utils/pesanan-date";
 
 interface PesananCanvasProps {
   data: PesananFormData;
@@ -46,6 +46,9 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
   const noRegistrasi = profile?.noRegistrasi || "HBH-2026-NU-0428";
   const logoUrl = profile?.logoUrl;
   const namaTempat = extractNamaTempat(profile, "Dawuhan");
+
+  const rawJabatan = data.pihak1Jabatan || profile?.jabatanKetua || "Ketua";
+  const cleanJabatan = cleanPihakJabatan(rawJabatan, cleanLembaga || namaLembaga, profile?.jabatanKetua || "Ketua");
 
   const totalCalculated =
     data.totalHarga > 0
@@ -172,7 +175,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
 
             <span className="text-black font-medium">Jabatan</span>
             <span>:</span>
-            <span className="font-semibold text-black">{data.pihak1Jabatan || "Ketua"}</span>
+            <span className="font-semibold text-black">{cleanJabatan}</span>
 
             <span className="text-black font-medium">Alamat</span>
             <span>:</span>
@@ -409,7 +412,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-bold text-black uppercase underline decoration-1">
               {data.pihak1Nama || "HENI FUJIATI"}
             </p>
-            <p className="text-[10.5px] sm:text-[11px] text-black">{data.pihak1Jabatan || "Ketua"}</p>
+            <p className="text-[10.5px] sm:text-[11px] text-black">{cleanJabatan}</p>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { BastFormData, InstitutionProfile } from "@/types";
+import { cleanPihakJabatan } from "@/lib/utils/pesanan-date";
 
 interface BastCanvasProps {
   data: BastFormData;
@@ -70,6 +71,10 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
   const logoUrl = profile?.logoUrl;
 
   const pembuka = getPembukaBast(data.hariTanggal, data.tanggalTerbilang);
+
+  const cleanLembaga = (namaLembaga || "").replace(/^Ketua\s+/i, "").trim();
+  const rawJabatan = data.pihak1Jabatan || profile?.jabatanKetua || "Ketua";
+  const cleanJabatan = cleanPihakJabatan(rawJabatan, cleanLembaga || namaLembaga, profile?.jabatanKetua || "Ketua");
 
   return (
     <div
@@ -199,7 +204,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
           <span className="col-span-2 font-medium">Jabatan</span>
-          <span className="col-span-9">: {data.pihak1Jabatan || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan"}</span>
+          <span className="col-span-9">: {cleanJabatan}</span>
         </div>
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
@@ -346,7 +351,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           <div className="h-24 w-full my-1" />
 
           <span className="font-bold underline uppercase tracking-wide text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
-          <span className="text-[10.5px] text-black font-mono">Ketua Ranting</span>
+          <span className="text-[10.5px] text-black font-mono">{cleanJabatan}</span>
         </div>
       </div>
     </div>

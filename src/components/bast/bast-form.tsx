@@ -54,6 +54,7 @@ import {
   buildFormattedDocumentNumber,
   deconstructDocumentNumber,
   syncNomorDokumenBulanTahun,
+  cleanPihakJabatan,
 } from "@/lib/utils/pesanan-date";
 import type {
   BastDocument,
@@ -193,7 +194,7 @@ export function BastForm({
         tanggalSpk: toDateInputValue(b.tanggalSpk),
         namaKegiatan: b.namaKegiatan,
         pihak1Nama: b.pihak1Nama,
-        pihak1Jabatan: b.pihak1Jabatan,
+        pihak1Jabatan: cleanPihakJabatan(b.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
         pihak2Nama: b.pihak2Nama,
         pihak2Toko: b.pihak2Toko,
         items: parsedItems.length > 0 ? parsedItems : [
@@ -226,7 +227,7 @@ export function BastForm({
       tanggalSpk: "2026-07-17",
       namaKegiatan: "Pengadaan Sarana Sound Aktif & Alat Hadroh Fatayat NU",
       pihak1Nama: defaultChairman,
-      pihak1Jabatan: `Ketua ${defaultInstitution}`,
+      pihak1Jabatan: profile?.jabatanKetua || "Ketua",
       pihak2Nama: "ANSHORI",
       pihak2Toko: "SURYA MAS (Pemilik / Rekanan)",
       items: [
@@ -285,7 +286,7 @@ export function BastForm({
       tanggalSpk: tglIso,
       namaKegiatan: po.namaPaket ? po.namaPaket.split(/\s+sebanyak\s+/i)[0].trim() : prev.namaKegiatan,
       pihak1Nama: po.pihak1Nama || prev.pihak1Nama,
-      pihak1Jabatan: po.pihak1Jabatan || prev.pihak1Jabatan,
+      pihak1Jabatan: cleanPihakJabatan(po.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || prev.pihak1Jabatan),
       pihak2Nama: po.pihak2Nama || prev.pihak2Nama,
       pihak2Toko: po.pihak2Toko || prev.pihak2Toko,
       receiptId: po.receiptId || prev.receiptId,
@@ -479,7 +480,7 @@ export function BastForm({
       tanggalSpk: toDateInputValue(b.tanggalSpk),
       namaKegiatan: b.namaKegiatan,
       pihak1Nama: b.pihak1Nama,
-      pihak1Jabatan: b.pihak1Jabatan,
+      pihak1Jabatan: cleanPihakJabatan(b.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
       pihak2Nama: b.pihak2Nama,
       pihak2Toko: b.pihak2Toko,
       items: parsedItems.length > 0 ? parsedItems : [
@@ -908,7 +909,7 @@ export function BastForm({
       tanggalSpk: todayStr,
       namaKegiatan: "Pengadaan Sarana & Prasarana Fatayat NU",
       pihak1Nama: defaultChairman,
-      pihak1Jabatan: `Ketua ${defaultInstitution}`,
+      pihak1Jabatan: profile?.jabatanKetua || "Ketua",
       pihak2Nama: "SURYA MAS",
       pihak2Toko: "SURYA MAS (Pemilik / Rekanan)",
       items: [
@@ -1523,17 +1524,38 @@ export function BastForm({
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">
-                        Jabatan
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] text-slate-400 block">
+                          Jabatan Penandatangan
+                        </label>
+                        <span className="text-[10px] text-slate-400">Pilih Cepat:</span>
+                      </div>
                       <input
                         type="text"
                         value={formData.pihak1Jabatan}
                         onChange={(e) =>
                           setFormData({ ...formData, pihak1Jabatan: e.target.value })
                         }
-                        className="w-full text-xs bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-300 focus:outline-none focus:border-emerald-500"
+                        placeholder="Contoh: Ketua, Kepala Madrasah, Pimpinan"
+                        className="w-full text-xs bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 font-semibold focus:outline-none focus:border-emerald-500"
                       />
+                      {/* Preset Chips */}
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {["Ketua", "Kepala Madrasah", "Kepala Sekolah", "Ketua Yayasan", "Pimpinan"].map((jab) => (
+                          <button
+                            key={jab}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, pihak1Jabatan: jab })}
+                            className={`px-2 py-0.5 rounded text-[10px] transition-colors border cursor-pointer ${
+                              (formData.pihak1Jabatan || "").trim().toLowerCase() === jab.toLowerCase()
+                                ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/50 font-semibold shadow-xs"
+                                : "bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
+                            }`}
+                          >
+                            {jab}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 

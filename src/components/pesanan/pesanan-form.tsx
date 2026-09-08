@@ -32,6 +32,7 @@ import {
   Settings,
   Store,
   BookmarkPlus,
+  UserCheck,
 } from "lucide-react";
 import { exportPesananToPdf } from "@/lib/pesanan-pdf";
 import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
@@ -49,6 +50,7 @@ import {
   buildFormattedDocumentNumber,
   deconstructDocumentNumber,
   extractNamaTempat,
+  cleanPihakJabatan,
 } from "@/lib/utils/pesanan-date";
 import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
@@ -175,7 +177,7 @@ export function PesananForm({
         tanggal: p.tanggal ? new Date(p.tanggal).toISOString().split("T")[0] : todayStr,
         namaPaket: p.namaPaket,
         pihak1Nama: p.pihak1Nama,
-        pihak1Jabatan: p.pihak1Jabatan,
+        pihak1Jabatan: cleanPihakJabatan(p.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
         pihak1Alamat: p.pihak1Alamat || undefined,
         pihak2Toko: p.pihak2Toko,
         pihak2Nama: p.pihak2Nama,
@@ -499,7 +501,7 @@ export function PesananForm({
       tanggal: tglIso,
       namaPaket: p.namaPaket,
       pihak1Nama: p.pihak1Nama,
-      pihak1Jabatan: p.pihak1Jabatan,
+      pihak1Jabatan: cleanPihakJabatan(p.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
       pihak1Alamat: p.pihak1Alamat || undefined,
       pihak2Toko: p.pihak2Toko,
       pihak2Nama: p.pihak2Nama,
@@ -846,7 +848,7 @@ export function PesananForm({
       tanggal: todayStr,
       namaPaket: "Pengadaan Sarana Sound Aktif & Alat Hadroh",
       pihak1Nama: defaultChairman,
-      pihak1Jabatan: `Ketua ${defaultInstitution}`,
+      pihak1Jabatan: profile?.jabatanKetua || "Ketua",
       pihak1Alamat: profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06",
       pihak2Toko: "SURYA MAS",
       pihak2Nama: "ANSHORI",
@@ -1333,6 +1335,89 @@ export function PesananForm({
                     placeholder="Contoh: Pengadaan Sarana Sound Aktif & Alat Hadroh"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
+                </div>
+
+                {/* Data Pemesan (Pihak Kesatu) */}
+                <div className="bg-slate-900/80 border border-emerald-800/40 p-3.5 rounded-xl flex flex-col gap-3 mt-1 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Data Pemesan (Pihak Kesatu)</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Tercantum di identitas &amp; tanda tangan
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Nama Lengkap Pemesan */}
+                    <div>
+                      <label className="text-[11px] text-slate-300 font-medium block mb-1">
+                        Nama Lengkap Pemesan
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.pihak1Nama}
+                        onChange={(e) =>
+                          setFormData({ ...formData, pihak1Nama: e.target.value })
+                        }
+                        placeholder="Contoh: HENI FUJIATI"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white uppercase font-bold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* Jabatan Pemesan */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] text-slate-300 font-medium">
+                          Jabatan Pemesan
+                        </label>
+                        <span className="text-[10px] text-slate-400">Pilih Cepat:</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.pihak1Jabatan}
+                        onChange={(e) =>
+                          setFormData({ ...formData, pihak1Jabatan: e.target.value })
+                        }
+                        placeholder="Contoh: Ketua, Kepala Madrasah, Ketua Yayasan"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-emerald-300 font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                      {/* Preset Chips */}
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {["Ketua", "Kepala Madrasah", "Kepala Sekolah", "Ketua Yayasan", "Pimpinan"].map((jab) => (
+                          <button
+                            key={jab}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, pihak1Jabatan: jab })}
+                            className={`px-2 py-0.5 rounded text-[10px] transition-colors border cursor-pointer ${
+                              (formData.pihak1Jabatan || "").trim().toLowerCase() === jab.toLowerCase()
+                                ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/50 font-semibold shadow-xs"
+                                : "bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
+                            }`}
+                          >
+                            {jab}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Alamat Pemesan */}
+                  <div>
+                    <label className="text-[11px] text-slate-300 font-medium block mb-1">
+                      Alamat Pemesan
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.pihak1Alamat || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, pihak1Alamat: e.target.value })
+                      }
+                      placeholder={profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06"}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
               </div>
 
