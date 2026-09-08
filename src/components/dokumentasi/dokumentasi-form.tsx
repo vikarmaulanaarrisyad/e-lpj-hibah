@@ -831,6 +831,74 @@ export function DokumentasiForm({
               </div>
             )}
 
+            {/* Judul & Subjudul Lembar Dokumentasi (Dapat diedit langsung) */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-2.5">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Judul Lembar Dokumentasi:</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+                      }))
+                    }
+                    className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors"
+                    title="Kembalikan ke judul default"
+                  >
+                    Reset Judul
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={formData.judulDokumentasi || ""}
+                  onChange={(e) => setFormData({ ...formData, judulDokumentasi: e.target.value })}
+                  placeholder="LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white uppercase font-bold tracking-wide focus:outline-none focus:border-emerald-500"
+                />
+                {/* Preset Cepat Judul */}
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-500">Pilihan Cepat:</span>
+                  {[
+                    "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+                    "LEMBAR DOKUMENTASI KEGIATAN FISIK",
+                    "LEMBAR DOKUMENTASI SERAH TERIMA BARANG",
+                    "DOKUMENTASI PENYERAHAN BARANG HIBAH",
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, judulDokumentasi: preset })}
+                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                        formData.judulDokumentasi === preset
+                          ? "bg-emerald-950/80 border-emerald-500 text-emerald-300 font-bold"
+                          : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-300"
+                      }`}
+                    >
+                      {preset.replace("LEMBAR DOKUMENTASI ", "").replace("DOKUMENTASI ", "")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Subjudul / Program Anggaran:
+                </label>
+                <input
+                  type="text"
+                  value={formData.subJudul || ""}
+                  onChange={(e) => setFormData({ ...formData, subJudul: e.target.value })}
+                  placeholder="PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
                 Nama Kegiatan / Rincian Pengadaan:
@@ -1188,7 +1256,16 @@ export function DokumentasiForm({
               }}
               className="origin-top"
             >
-              <DokumentasiCanvas data={formData} profile={profile} />
+              <DokumentasiCanvas
+                data={formData}
+                profile={profile}
+                onUpdateTitle={(newTitle) =>
+                  setFormData((prev) => ({ ...prev, judulDokumentasi: newTitle }))
+                }
+                onUpdateSubJudul={(newSub) =>
+                  setFormData((prev) => ({ ...prev, subJudul: newSub }))
+                }
+              />
             </div>
           </div>
         </div>

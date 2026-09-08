@@ -6,6 +6,8 @@ import { extractNamaTempat } from "@/lib/utils/pesanan-date";
 interface DokumentasiCanvasProps {
   data: DokumentasiFormData;
   profile?: InstitutionProfile | null;
+  onUpdateTitle?: (judul: string) => void;
+  onUpdateSubJudul?: (subJudul: string) => void;
 }
 
 function formatDateIndo(dateStr?: string | null): string {
@@ -33,7 +35,12 @@ function cleanTitle(text?: string | null): string {
   return clean;
 }
 
-export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
+export function DokumentasiCanvas({
+  data,
+  profile,
+  onUpdateTitle,
+  onUpdateSubJudul,
+}: DokumentasiCanvasProps) {
   const namaLembaga = profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU";
   const subNama = profile?.subNama || "DAWUHAN SELATAN";
   const cleanLembaga = (namaLembaga || "").replace(/^Ketua\s+/i, "").trim();
@@ -164,14 +171,73 @@ export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
                     <div className="w-full h-[0.75px] bg-[#006c4e]"></div>
                   </div>
 
-                  {/* ================= TITLE & SUBTITLE ================= */}
-                  <div className="text-center mb-2.5">
-                    <h3 className="text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4">
-                      {data.judulDokumentasi || "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA"}
-                    </h3>
-                    <p className="font-mono text-[12px] sm:text-[12px] text-black mt-1 font-semibold">
-                      {data.subJudul || "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026"}
-                    </p>
+                  {/* ================= TITLE & SUBTITLE (BISA DIEDIT LANGSUNG) ================= */}
+                  <div className="text-center mb-2.5 relative group">
+                    <div className="relative inline-block max-w-full">
+                      <h3
+                        contentEditable={Boolean(onUpdateTitle)}
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          const text = e.currentTarget.textContent?.trim();
+                          if (text && text !== data.judulDokumentasi) {
+                            onUpdateTitle?.(text);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        title={
+                          onUpdateTitle
+                            ? "Klik untuk mengubah / mengedit judul langsung di kertas"
+                            : undefined
+                        }
+                        className={`text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4 transition-all ${
+                          onUpdateTitle
+                            ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
+                            : ""
+                        }`}
+                      >
+                        {data.judulDokumentasi || "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA"}
+                      </h3>
+                      {onUpdateTitle && (
+                        <span className="no-print print:hidden hidden sm:inline-block text-[10px] text-emerald-700 font-normal ml-1.5 align-middle select-none opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 border border-emerald-300 rounded px-1.5 py-0.5 shadow-xs">
+                          ✏️ Klik edit langsung
+                        </span>
+                      )}
+                    </div>
+                    <div className="block">
+                      <p
+                        contentEditable={Boolean(onUpdateSubJudul)}
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          const text = e.currentTarget.textContent?.trim();
+                          if (text && text !== data.subJudul) {
+                            onUpdateSubJudul?.(text);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        title={
+                          onUpdateSubJudul
+                            ? "Klik untuk mengubah / mengedit subjudul langsung di kertas"
+                            : undefined
+                        }
+                        className={`font-mono text-[12px] sm:text-[12px] text-black mt-1 font-semibold inline-block transition-all ${
+                          onUpdateSubJudul
+                            ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
+                            : ""
+                        }`}
+                      >
+                        {data.subJudul || "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026"}
+                      </p>
+                    </div>
                   </div>
 
                   {/* ================= KOTAK INFORMASI KEGIATAN ================= */}
