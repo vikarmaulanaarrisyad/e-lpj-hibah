@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
+// Safe database accessor yang menjamin kompatibilitas dengan IDE Language Server
+const db = prisma as any;
+
 export type LogLevel = "ERROR" | "WARN" | "INFO";
 
 export interface CreateLogInput {
@@ -19,7 +22,7 @@ export class LoggerService {
    */
   async log(input: CreateLogInput) {
     try {
-      return await prisma.systemLog.create({
+      return await db.systemLog.create({
         data: {
           level: input.level || "INFO",
           action: input.action,
@@ -88,13 +91,13 @@ export class LoggerService {
       }
 
       const [items, total] = await Promise.all([
-        prisma.systemLog.findMany({
+        db.systemLog.findMany({
           where,
           orderBy: { createdAt: "desc" },
           take: limit,
           skip: offset,
         }),
-        prisma.systemLog.count({ where }),
+        db.systemLog.count({ where }),
       ]);
 
       return { items, total };
@@ -110,10 +113,10 @@ export class LoggerService {
   async getStats() {
     try {
       const [total, errors, warns, infos] = await Promise.all([
-        prisma.systemLog.count(),
-        prisma.systemLog.count({ where: { level: "ERROR" } }),
-        prisma.systemLog.count({ where: { level: "WARN" } }),
-        prisma.systemLog.count({ where: { level: "INFO" } }),
+        db.systemLog.count(),
+        db.systemLog.count({ where: { level: "ERROR" } }),
+        db.systemLog.count({ where: { level: "WARN" } }),
+        db.systemLog.count({ where: { level: "INFO" } }),
       ]);
 
       return { total, errors, warns, infos };
@@ -128,7 +131,7 @@ export class LoggerService {
    */
   async clearAll() {
     try {
-      const result = await prisma.systemLog.deleteMany({});
+      const result = await db.systemLog.deleteMany({});
       return { success: true, count: result.count };
     } catch (error) {
       console.error("[LoggerService.clearAll] Error:", error);

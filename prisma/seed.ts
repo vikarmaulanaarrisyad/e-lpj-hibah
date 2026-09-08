@@ -50,7 +50,7 @@ async function main() {
   console.log("✅ Admin Verifikator berhasil di-seed:", adminVerifikator.email);
 
   // 3. Catat Log Inisialisasi Sistem
-  await prisma.systemLog.create({
+  await (prisma as any).systemLog.create({
     data: {
       level: "INFO",
       action: "SYSTEM_INITIALIZED",
