@@ -642,7 +642,42 @@ function createSingleSpPdf(sp: PurchaseOrder, data: LpjArchiveData): Blob {
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8);
   doc.text(`Terbilang: ${sp.terbilang || angkaKeTerbilang(sp.totalHarga)}`, margin, y);
-  y += 15;
+  y += 6;
+
+  // Ketentuan & Klausul Pengadaan
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("INSTRUKSI KEPADA PENYEDIA / KETENTUAN PENGADAAN:", margin, y);
+  y += 4.5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+
+  const tglDiterima = sp.batasWaktu || "-";
+  doc.text(`2) Tanggal barang harus sudah diterima : ${tglDiterima}`, margin, y);
+  y += 4;
+
+  const waktuSelesai = sp.waktuPenyelesaian || "Pekerjaan diselesaikan sesuai jadwal yang telah disepakati.";
+  doc.text(`3) Waktu Penyelesaian selama : ${waktuSelesai}`, margin, y);
+  y += 4;
+
+  const alamatPeriksa = sp.alamatPemeriksaan || data.profile?.alamat || "Sekretariat Lembaga Penerima Hibah";
+  doc.text(`4) Alamat Pemeriksaan barang : ${alamatPeriksa}`, margin, y);
+  y += 4;
+
+  const alamatKirim = sp.alamatPengiriman || sp.pihak2Alamat || "Tempat / Gudang Rekanan Toko";
+  doc.text(`5) Alamat pengiriman barang : ${alamatKirim}`, margin, y);
+  y += 4;
+
+  const dendaClause =
+    sp.dendaKeterlambatan && !sp.dendaKeterlambatan.includes("Denda 1/500 dari nilai")
+      ? sp.dendaKeterlambatan.replace(/^6\s*[\)\.]\s*/i, "").replace(/^Denda\s*:\s*/i, "").replace(/^Denda\s+/i, "")
+      : "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku";
+
+  const fullDendaText = `6) Denda ${dendaClause}`;
+  const splitDenda = doc.splitTextToSize(fullDendaText, pageWidth - margin * 2);
+  doc.text(splitDenda, margin, y);
+  y += splitDenda.length * 3.5 + 8;
 
   // Tanda Tangan SP
   const col1X = margin + 35;

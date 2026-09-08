@@ -15,46 +15,56 @@ import type {
 
 export class RabService {
   /**
-   * Helper untuk memeriksa apakah kategori pada kwitansi cocok dengan kode pos RAB
-   * Contoh: "5.2.1" cocok dengan "5.2.1", "5.2.1 Perlengkapan", "5.2.1 Peralatan"
+   * Helper untuk memeriksa apakah kategori pada kwitansi cocok dengan kode atau nama pos RAB.
+   * Mendukung kode numerik bertingkat (contoh: "5.2.1", "5.2.2") tanpa salah cocok karena pemotongan titik.
    */
-  private isCategoryMatch(receiptCategory: string | null | undefined, rabKode: string): boolean {
-    if (!receiptCategory || !rabKode) return false;
+  private isCategoryMatch(receiptCategory: string | null | undefined, rabKodeOrNama: string): boolean {
+    if (!receiptCategory || !rabKodeOrNama) return false;
     const cleanReceipt = receiptCategory.trim().toLowerCase();
-    const cleanKode = rabKode.trim().toLowerCase();
+    const cleanTarget = rabKodeOrNama.trim().toLowerCase();
 
     // 1. Exact match
-    if (cleanReceipt === cleanKode) return true;
+    if (cleanReceipt === cleanTarget) return true;
 
-    // 2. Exact match on first token before delimiter
-    const receiptToken = cleanReceipt.split(/[\s\-.:]+/)[0];
-    const kodeToken = cleanKode.split(/[\s\-.:]+/)[0];
-    if (receiptToken && kodeToken && receiptToken === kodeToken) return true;
+    // 2. Ekstrak kode numerik bertingkat (misal: "5.2.1", "5.2.2")
+    const receiptCodeMatch = cleanReceipt.match(/^([0-9]+(?:\.[0-9]+)*)/);
+    const targetCodeMatch = cleanTarget.match(/^([0-9]+(?:\.[0-9]+)*)/);
 
-    // 3. Delimited prefix check
-    return (
-      cleanReceipt.startsWith(cleanKode + " ") ||
-      cleanReceipt.startsWith(cleanKode + ".") ||
-      cleanReceipt.startsWith(cleanKode + "-") ||
-      cleanReceipt.startsWith(cleanKode + " -") ||
-      cleanReceipt.startsWith(cleanKode + ":") ||
-      cleanKode.startsWith(cleanReceipt + " ") ||
-      cleanKode.startsWith(cleanReceipt + "-") ||
-      cleanKode.startsWith(cleanReceipt + " -") ||
-      cleanKode.startsWith(cleanReceipt + ":")
-    );
+    // Jika keduanya memiliki kode angka bertingkat di awal, keduanya WAJIB cocok persis!
+    if (receiptCodeMatch && targetCodeMatch) {
+      return receiptCodeMatch[1] === targetCodeMatch[1];
+    }
+
+    // 3. Jika target adalah kode numerik dan kwitansi diawali kode tersebut diikuti spasi/strip/titik dua
+    if (targetCodeMatch) {
+      const code = targetCodeMatch[1];
+      const escaped = code.replace(/\./g, "\\.");
+      const regex = new RegExp(`^${escaped}(?:[\\s\\-:]+|$)`);
+      if (regex.test(cleanReceipt)) return true;
+    }
+
+    // 4. Jika kwitansi diawali kode numerik dan target adalah nama akun teks
+    if (receiptCodeMatch) {
+      const textAfterCode = cleanReceipt.replace(/^[0-9.]+\s*[-:]*\s*/, "").trim();
+      if (textAfterCode && (textAfterCode.includes(cleanTarget) || cleanTarget.includes(textAfterCode))) {
+        return true;
+      }
+    }
+
+    // 5. Pencocokan substring berbasis teks akun
+    return cleanReceipt.includes(cleanTarget) || cleanTarget.includes(cleanReceipt);
   }
 
   /**
    * Mengambil status penyerapan anggaran RAB lengkap per pos rekening & agregat
    */
-  async getRabStatus(userId: string): Promise<ServiceResponse<RabSummary>> {
+  async getRabStatus(userId: string, tahun?: string | null): Promise<ServiceResponse<RabSummary>> {
     try {
       // 1. Pastikan pos RAB bawaan tersedia
       const rabItems = await rabRepository.seedDefaultCategoriesIfEmpty(userId);
 
-      // 2. Ambil semua kwitansi yang tercatat
-      const receipts = await receiptRepository.findManyByUserId(userId);
+      // 2. Ambil kwitansi yang tercatat (opsional difilter per tahun anggaran)
+      const receipts = await receiptRepository.findManyByUserId(userId, tahun);
 
       // 3. Hitung serapan per pos rekening
       let totalAnggaran = 0;
@@ -276,7 +286,8 @@ export class RabService {
     userId: string,
     kodeRab: string,
     nominalBaru: number,
-    excludeReceiptNo?: string
+    excludeReceiptNo?: string,
+    tahun?: string | null
   ): Promise<ServiceResponse<BudgetCeilingCheckResult>> {
     try {
       const rabItems = await rabRepository.seedDefaultCategoriesIfEmpty(userId);
@@ -304,7 +315,7 @@ export class RabService {
       }
 
       // Ambil transaksi yang sudah tersimpan pada pos ini (kecuali kwitansi yang sedang diedit)
-      const receipts = await receiptRepository.findManyByUserId(userId);
+      const receipts = await receiptRepository.findManyByUserId(userId, tahun);
       const matchingReceipts = receipts.filter(
         (r) =>
           this.isCategoryMatch(r.kategoriRab, targetRab.kode) &&

@@ -43,7 +43,7 @@ export default async function UserDashboardPage() {
 
   // Fetch real-time metrics and institution profile from database for active year
   const [rabRes, receiptsCount, bkuRes, bastCount, pesananCount, profileRes] = await Promise.all([
-    rabService.getRabStatus(session.sub),
+    rabService.getRabStatus(session.sub, activeTahun),
     receiptRepository.countByUserId(session.sub, activeTahun),
     bkuService.getBkuLedger(session.sub, activeTahun),
     bastRepository.countByUserId(session.sub, activeTahun),

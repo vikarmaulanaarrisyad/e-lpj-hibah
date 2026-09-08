@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { authService } from "@/services/auth.service";
 import { userRepository } from "@/repositories/user.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
@@ -7,6 +8,7 @@ import { institutionService } from "@/services/institution.service";
 import { redirect } from "next/navigation";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { RabDashboard } from "@/components/rab/rab-dashboard";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
 
 export const metadata: Metadata = {
   title: "Kontrol Pagu RAB & Pencegahan Defisit | E-LPJ Hibah",
@@ -20,11 +22,16 @@ export default async function UserRabPage() {
     redirect("/login");
   }
 
+  // Active Tahun Anggaran from cookie
+  const activeTahun = normalizeTahunAnggaran(
+    cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
+  );
+
   // Preload user profile, RAB status, receipts, and institution profile from database
   const [user, rabRes, receipts, profileRes] = await Promise.all([
     userRepository.findById(session.sub),
-    rabService.getRabStatus(session.sub),
-    receiptRepository.findManyByUserId(session.sub),
+    rabService.getRabStatus(session.sub, activeTahun),
+    receiptRepository.findManyByUserId(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
   ]);
 

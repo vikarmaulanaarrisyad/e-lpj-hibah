@@ -117,6 +117,7 @@ export class BkuRepository {
         },
         orderBy: [
           { tanggal: "asc" },
+          { jenis: "asc" }, // Kas masuk (PENERIMAAN) selalu dibukukan mendahului kas keluar (PENGELUARAN) pada tanggal yang sama
           { createdAt: "asc" },
         ],
       })) as BkuTransactionWithReceipt[];

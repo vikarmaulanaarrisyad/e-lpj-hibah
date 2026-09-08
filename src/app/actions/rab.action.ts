@@ -1,5 +1,7 @@
 "use server";
 
+import { cookies } from "next/headers";
+import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
 import { authService } from "@/services/auth.service";
 import { rabService } from "@/services/rab.service";
 import type {
@@ -16,7 +18,7 @@ import { revalidatePath } from "next/cache";
 /**
  * Server Action: Mengambil status penyerapan anggaran RAB real-time
  */
-export async function getRabStatusAction(): Promise<ServiceResponse<RabSummary>> {
+export async function getRabStatusAction(tahun?: string | null): Promise<ServiceResponse<RabSummary>> {
   try {
     const session = await authService.getSession();
     if (!session || !session.sub) {
@@ -26,7 +28,12 @@ export async function getRabStatusAction(): Promise<ServiceResponse<RabSummary>>
       };
     }
 
-    return await rabService.getRabStatus(session.sub);
+    const activeTahun =
+      tahun !== undefined
+        ? tahun
+        : normalizeTahunAnggaran(cookies().get(COOKIE_TAHUN_ANGGARAN)?.value);
+
+    return await rabService.getRabStatus(session.sub, activeTahun);
   } catch (error) {
     console.error("[getRabStatusAction] Error:", error);
     return {
@@ -42,7 +49,8 @@ export async function getRabStatusAction(): Promise<ServiceResponse<RabSummary>>
 export async function checkBudgetCeilingAction(
   kodeRab: string,
   nominal: number,
-  excludeReceiptNo?: string
+  excludeReceiptNo?: string,
+  tahun?: string | null
 ): Promise<ServiceResponse<BudgetCeilingCheckResult>> {
   try {
     const session = await authService.getSession();
@@ -53,11 +61,17 @@ export async function checkBudgetCeilingAction(
       };
     }
 
+    const activeTahun =
+      tahun !== undefined
+        ? tahun
+        : normalizeTahunAnggaran(cookies().get(COOKIE_TAHUN_ANGGARAN)?.value);
+
     return await rabService.checkBudgetCeiling(
       session.sub,
       kodeRab,
       nominal,
-      excludeReceiptNo
+      excludeReceiptNo,
+      activeTahun
     );
   } catch (error) {
     console.error("[checkBudgetCeilingAction] Error:", error);

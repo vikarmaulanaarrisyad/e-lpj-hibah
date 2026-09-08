@@ -214,20 +214,24 @@ export class BkuService {
   async syncAllUnsyncedReceipts(userId: string): Promise<number> {
     try {
       const unsynced = await bkuRepository.findUnsyncedReceipts(userId);
-      for (const receipt of unsynced) {
-        await bkuRepository.upsertFromReceipt(
-          {
-            nomorBukti: receipt.nomorBukti,
-            tanggal: receipt.tanggal,
-            uraian: receipt.uraian,
-            jenis: "PENGELUARAN",
-            kategoriRab: receipt.kategoriRab,
-            nominal: receipt.nominal,
-            userId: receipt.userId,
-          },
-          receipt.id
-        );
-      }
+      if (unsynced.length === 0) return 0;
+
+      await Promise.all(
+        unsynced.map((receipt) =>
+          bkuRepository.upsertFromReceipt(
+            {
+              nomorBukti: receipt.nomorBukti,
+              tanggal: receipt.tanggal,
+              uraian: receipt.uraian,
+              jenis: "PENGELUARAN",
+              kategoriRab: receipt.kategoriRab,
+              nominal: receipt.nominal,
+              userId: receipt.userId,
+            },
+            receipt.id
+          )
+        )
+      );
       return unsynced.length;
     } catch (error) {
       console.error("[BkuService] Auto-sync receipts error:", error);
