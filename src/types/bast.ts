@@ -2,6 +2,17 @@ import type { BastDocument as PrismaBastDocument } from "@prisma/client";
 
 export type BastDocument = PrismaBastDocument;
 
+export interface BastWithReceipt extends BastDocument {
+  receipt?: {
+    id: string;
+    nomorBukti: string;
+    nominal: number;
+    tanggal: Date;
+    uraian: string;
+    penerima: string;
+  } | null;
+}
+
 export interface BastItem {
   id?: string;
   no: number;

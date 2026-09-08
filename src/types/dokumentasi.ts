@@ -46,3 +46,5 @@ export interface ActivityDocumentationRecord {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type ActivityDocumentation = ActivityDocumentationRecord;

@@ -4,8 +4,10 @@ import { rabService } from "@/services/rab.service";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { bastRepository } from "@/repositories/bast.repository";
 import { pesananRepository } from "@/repositories/pesanan.repository";
+import { dokumentasiRepository } from "@/repositories/dokumentasi.repository";
 import { institutionService } from "@/services/institution.service";
 import { bkuService } from "@/services/bku.service";
+import { LpjReadinessWidget } from "@/components/dashboard/lpj-readiness-widget";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -43,15 +45,28 @@ export default async function UserDashboardPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Fetch real-time metrics and institution profile from database for active year
-  const [rabRes, receiptsCount, bkuRes, bastCount, pesananCount, profileRes] = await Promise.all([
+  // Fetch real-time metrics, documents, and institution profile from database for active year
+  const [
+    rabRes,
+    bkuRes,
+    profileRes,
+    receipts,
+    bastList,
+    purchaseOrders,
+    documentations,
+  ] = await Promise.all([
     rabService.getRabStatus(session.sub, activeTahun),
-    receiptRepository.countByUserId(session.sub, activeTahun),
     bkuService.getBkuLedger(session.sub, activeTahun),
-    bastRepository.countByUserId(session.sub, activeTahun),
-    pesananRepository.countByUserId(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
+    receiptRepository.findManyByUserId(session.sub, activeTahun),
+    bastRepository.findManyByUserId(session.sub, activeTahun),
+    pesananRepository.findManyByUserId(session.sub, activeTahun),
+    dokumentasiRepository.findManyByUserId(session.sub, activeTahun),
   ]);
+
+  const receiptsCount = receipts.length;
+  const bastCount = bastList.length;
+  const pesananCount = purchaseOrders.length;
 
   const profile = profileRes.data || null;
   const rabSummary = rabRes.data;
@@ -222,6 +237,20 @@ export default async function UserDashboardPage() {
             <p className="text-xs text-slate-500 mt-1">Format otentik blanko resmi kas negara</p>
           </div>
         </div>
+
+        {/* 🎯 Widget Interaktif Kelayakan LPJ (0% - 100%) & Checklist Kesiapan Audit */}
+        <LpjReadinessWidget
+          totalAnggaran={totalAnggaran}
+          totalRealisasi={totalRealisasi}
+          totalSisaPagu={totalSisaPagu}
+          persentaseSerapan={persentaseSerapan}
+          receipts={receipts}
+          purchaseOrders={purchaseOrders}
+          bastList={bastList}
+          documentations={documentations}
+          bkuSummary={bkuSummary}
+          activeTahun={activeTahun}
+        />
 
         {/* Action Module Cards with Interactive Micro-Animations */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
