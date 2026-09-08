@@ -256,7 +256,8 @@ export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
                           ) : (
                             <span className="text-xs text-slate-400">Tidak ada gambar</span>
                           )}
-                          <div className="absolute top-2 left-2 bg-slate-900/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                          {/* Badge nomor foto disembunyikan agar tampilan foto resmi bersih tanpa tertutup watermark */}
+                          <div className="hidden absolute top-2 left-2 bg-slate-900/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                             Foto #{globalPhotoNum}
                           </div>
                         </div>
@@ -296,7 +297,8 @@ export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
                           ) : (
                             <span className="text-xs text-slate-400">Tidak ada gambar</span>
                           )}
-                          <div className="absolute top-3 left-3 bg-slate-900/85 text-white font-mono text-xs font-bold px-2 py-1 rounded shadow-xs">
+                          {/* Badge nomor foto disembunyikan agar tampilan foto resmi bersih tanpa tertutup watermark */}
+                          <div className="hidden absolute top-3 left-3 bg-slate-900/85 text-white font-mono text-xs font-bold px-2 py-1 rounded shadow-xs">
                             Foto #{globalPhotoNum} (Utama)
                           </div>
                         </div>
@@ -336,7 +338,8 @@ export function DokumentasiCanvas({ data, profile }: DokumentasiCanvasProps) {
                           ) : (
                             <span className="text-xs text-slate-400">Foto belum diunggah</span>
                           )}
-                          <div className="absolute top-2.5 left-2.5 bg-slate-900/85 text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded shadow-xs">
+                          {/* Badge nomor foto disembunyikan agar tampilan foto resmi bersih tanpa tertutup watermark */}
+                          <div className="hidden absolute top-2.5 left-2.5 bg-slate-900/85 text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded shadow-xs">
                             Dokumentasi #{globalPhotoNum}
                           </div>
                         </div>
