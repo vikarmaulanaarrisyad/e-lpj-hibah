@@ -5,6 +5,7 @@ export type Vendor = PrismaVendor;
 export interface CreateVendorInput {
   namaToko: string;
   namaPemilik?: string | null;
+  jabatan?: string | null;
   alamat?: string | null;
   noHp?: string | null;
   kategori?: string | null;

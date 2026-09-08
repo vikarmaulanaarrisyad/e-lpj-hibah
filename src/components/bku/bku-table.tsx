@@ -85,9 +85,9 @@ export function BkuTable({
 
   const handleDeleteReceipt = async (receiptId: string, nomorBukti: string) => {
     const isConfirmed = await swalConfirmDelete({
-      title: "Hapus Kwitansi LPJ?",
-      text: `Apakah Anda yakin ingin menghapus kwitansi ${nomorBukti}? Dokumen kwitansi beserta pencatatan mutasi kas di BKU akan dihapus, dan plafon anggaran RAB terkait akan dipulihkan secara otomatis.`,
-      confirmText: "Ya, Hapus Kwitansi!",
+      title: "Hapus Transaksi & Dokumen Terkait?",
+      text: `Apakah Anda yakin ingin menghapus kwitansi ${nomorBukti}? Seluruh dokumen terkait (Surat Pesanan/SP, Berita Acara/BAST, Kwitansi, dan catatan BKU) akan ikut terhapus. Pos anggaran RAB tetap aman dan pagunya akan otomatis dipulihkan.`,
+      confirmText: "Ya, Hapus Semua Terkait!",
       cancelText: "Batal",
     });
     if (!isConfirmed) return;

@@ -153,6 +153,14 @@ export function RabDashboard({
   };
 
   const handleDeleteRab = async (item: RabStatusItem) => {
+    if (item.realisasi > 0 || item.jumlahTransaksi > 0) {
+      swalError(
+        "Pos Terkunci",
+        `Pos rekening "${item.kode} - ${item.nama}" sudah memiliki realisasi belanja di BKU (${formatRupiah(item.realisasi)}), sehingga tidak dapat dihapus.`
+      );
+      return;
+    }
+
     const isConfirmed = await swalConfirmDelete({
       title: "Hapus Pos Rekening?",
       text: `Apakah Anda yakin ingin menghapus pos rekening "${item.kode} - ${item.nama}"? Tindakan ini hanya dapat dilakukan jika belum ada kwitansi yang menggunakan pos ini.`,
@@ -192,6 +200,13 @@ export function RabDashboard({
   };
 
   const openEditModal = (item: RabStatusItem) => {
+    if (item.realisasi > 0 || item.jumlahTransaksi > 0) {
+      swalError(
+        "Pos Terkunci",
+        `Pos rekening "${item.kode} - ${item.nama}" sudah memiliki realisasi belanja di BKU sehingga tidak dapat diubah.`
+      );
+      return;
+    }
     setEditingItem(item);
     setEditPaguValue(item.anggaran.toString());
     setEditKeterangan(item.keterangan || "");
@@ -209,6 +224,7 @@ export function RabDashboard({
     swalLoading("Menyimpan Perubahan Pagu...", "Memperbarui pagu penetapan NPHD di sistem...");
     startTransition(async () => {
       const res = await updateRabAllocationAction({
+        id: editingItem.id,
         kode: editingItem.kode,
         nama: editingItem.nama,
         anggaran: num,
@@ -535,7 +551,7 @@ export function RabDashboard({
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {item.jumlahTransaksi === 0 && (
+                        {item.jumlahTransaksi === 0 && item.realisasi === 0 && (
                           <button
                             type="button"
                             onClick={() => handleDeleteRab(item)}
@@ -545,14 +561,28 @@ export function RabDashboard({
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(item)}
-                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-                          title="Ubah Alokasi Pagu"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                        {(() => {
+                          const isItemLocked = item.realisasi > 0 || item.jumlahTransaksi > 0;
+                          return (
+                            <button
+                              type="button"
+                              disabled={isItemLocked}
+                              onClick={() => !isItemLocked && openEditModal(item)}
+                              className={`p-2 rounded-xl border transition-colors ${
+                                isItemLocked
+                                  ? "bg-slate-900/50 text-slate-600 border-slate-800/60 cursor-not-allowed opacity-50"
+                                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                              }`}
+                              title={
+                                isItemLocked
+                                  ? "Pos rekening dikunci karena sudah ada realisasi belanja di BKU"
+                                  : "Ubah Alokasi Pagu"
+                              }
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
 

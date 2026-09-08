@@ -241,6 +241,17 @@ export function RabTableView({
 
   // Open Modal to Edit Rincian Row
   const openEditRowModal = (groupId: string, row: RabDetailRow) => {
+    const rowRealisasi = row.realisasi || 0;
+    const isRowLunas = row.statusSerapan === "LUNAS";
+    const isRowSebagian = row.statusSerapan === "SEBAGIAN";
+    if (rowRealisasi > 0 || isRowLunas || isRowSebagian) {
+      swalError(
+        "Rincian Terkunci",
+        `Item "${row.uraian}" sudah memiliki realisasi belanja di BKU sehingga tidak dapat diubah.`
+      );
+      return;
+    }
+
     setSelectedGroupId(groupId);
     setEditingRow(row);
     setUraian(row.uraian);
@@ -376,6 +387,14 @@ export function RabTableView({
 
   // Open Modal to Edit Kelompok Kegiatan
   const openEditGroupModal = (group: RabStatusItem) => {
+    if (group.realisasi > 0 || group.jumlahTransaksi > 0) {
+      swalError(
+        "Kelompok Terkunci",
+        `Kelompok kegiatan "${group.kode} - ${group.nama}" sudah memiliki realisasi belanja di BKU sehingga tidak dapat diubah.`
+      );
+      return;
+    }
+
     setEditingGroup(group);
     setEditGroupKode(group.kode);
     setEditGroupNama(group.nama);
@@ -446,6 +465,14 @@ export function RabTableView({
 
   // Delete Kelompok Kegiatan (Whole Pos Rekening)
   const handleDeleteGroup = async (group: RabStatusItem) => {
+    if (group.realisasi > 0 || group.jumlahTransaksi > 0) {
+      swalError(
+        "Kelompok Terkunci",
+        `Kelompok kegiatan "${group.kode} - ${group.nama}" sudah memiliki realisasi belanja di Kwitansi/BKU (${formatRupiah(group.realisasi)}), sehingga tidak dapat dihapus.`
+      );
+      return;
+    }
+
     const rincianCount = group.rincian?.length || 0;
     const isConfirmed = await swalConfirmDelete({
       title: "Hapus Kelompok Kegiatan?",
@@ -731,23 +758,48 @@ export function RabTableView({
                             <span>Tambah Rincian</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => openEditGroupModal(group)}
-                            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700 cursor-pointer"
-                            title="Ubah Nama atau Kode Kelompok Kegiatan"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </button>
+                          {(() => {
+                            const isGroupLocked = group.realisasi > 0 || group.jumlahTransaksi > 0;
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={isGroupLocked}
+                                  onClick={() => !isGroupLocked && openEditGroupModal(group)}
+                                  className={`p-1 rounded-lg border transition-colors ${
+                                    isGroupLocked
+                                      ? "bg-slate-900/50 text-slate-600 border-slate-800/60 cursor-not-allowed opacity-50"
+                                      : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700 cursor-pointer"
+                                  }`}
+                                  title={
+                                    isGroupLocked
+                                      ? "Kelompok kegiatan dikunci karena sudah ada realisasi di BKU"
+                                      : "Ubah Nama atau Kode Kelompok Kegiatan"
+                                  }
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteGroup(group)}
-                            className="p-1 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 transition-colors border border-slate-700 cursor-pointer"
-                            title="Hapus Kelompok Kegiatan Ini Beserta Rinciannya"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                                <button
+                                  type="button"
+                                  disabled={isGroupLocked}
+                                  onClick={() => !isGroupLocked && handleDeleteGroup(group)}
+                                  className={`p-1 rounded-lg border transition-colors ${
+                                    isGroupLocked
+                                      ? "bg-slate-900/50 text-slate-600 border-slate-800/60 cursor-not-allowed opacity-50"
+                                      : "bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 border-slate-700 cursor-pointer"
+                                  }`}
+                                  title={
+                                    isGroupLocked
+                                      ? "Kelompok kegiatan tidak dapat dihapus karena sudah ada realisasi di BKU"
+                                      : "Hapus Kelompok Kegiatan Ini Beserta Rinciannya"
+                                  }
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>
@@ -963,25 +1015,49 @@ export function RabTableView({
                                 );
                               })()}
 
-                              {/* Edit Row Button */}
-                              <button
-                                type="button"
-                                onClick={() => openEditRowModal(group.id, row)}
-                                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
-                                title="Edit Rincian"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                              </button>
+                              {/* Edit & Delete Row Buttons */}
+                              {(() => {
+                                const isRowLocked = rowRealisasi > 0 || isRowLunas || isRowSebagian;
+                                return (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isRowLocked}
+                                      onClick={() => !isRowLocked && openEditRowModal(group.id, row)}
+                                      className={`p-1 rounded-lg border transition-colors ${
+                                        isRowLocked
+                                          ? "bg-slate-900/50 text-slate-600 border-slate-800/60 cursor-not-allowed opacity-50"
+                                          : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700 cursor-pointer"
+                                      }`}
+                                      title={
+                                        isRowLocked
+                                          ? "Item rincian dikunci karena sudah ada realisasi belanja di BKU"
+                                          : "Edit Rincian"
+                                      }
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                    </button>
 
-                              {/* Delete Row Button */}
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteRow(group.id, row)}
-                                className="p-1 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 transition-colors border border-slate-700"
-                                title="Hapus Rincian"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                                    <button
+                                      type="button"
+                                      disabled={isRowLocked}
+                                      onClick={() => !isRowLocked && handleDeleteRow(group.id, row)}
+                                      className={`p-1 rounded-lg border transition-colors ${
+                                        isRowLocked
+                                          ? "bg-slate-900/50 text-slate-600 border-slate-800/60 cursor-not-allowed opacity-50"
+                                          : "bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 border-slate-700 cursor-pointer"
+                                      }`}
+                                      title={
+                                        isRowLocked
+                                          ? "Item rincian tidak dapat dihapus karena sudah ada realisasi belanja di BKU"
+                                          : "Hapus Rincian"
+                                      }
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>

@@ -3,6 +3,7 @@ import { jsPDF } from "jspdf";
 import { generateBkuPdf } from "./bku-pdf";
 import { angkaKeTerbilang } from "./utils/terbilang";
 import { formatUraianBelanja, cleanAndFormatTitle } from "./utils/title-case";
+import { cleanPihakJabatan, formatPihak2Jabatan } from "./utils/pesanan-date";
 import type { LpjArchiveData } from "@/app/actions/archive.action";
 import type { Receipt, PurchaseOrder, BastDocument, BastItem, PesananItem } from "@/types";
 
@@ -737,13 +738,13 @@ function createSingleBastPdf(bast: BastDocument, data: LpjArchiveData): Blob {
   doc.setFont("helvetica", "bold");
   doc.text("1. PIHAK KESATU (Penerima):", margin, y);
   doc.setFont("helvetica", "normal");
-  doc.text(`${bast.pihak1Nama} (${bast.pihak1Jabatan})`, margin + 55, y);
+  doc.text(`${bast.pihak1Nama} (${cleanPihakJabatan(bast.pihak1Jabatan)})`, margin + 55, y);
   y += 5;
 
   doc.setFont("helvetica", "bold");
   doc.text("2. PIHAK KEDUA (Penyedia):", margin, y);
   doc.setFont("helvetica", "normal");
-  doc.text(`${bast.pihak2Nama} - ${bast.pihak2Toko}`, margin + 55, y);
+  doc.text(`${bast.pihak2Nama} (${formatPihak2Jabatan(bast.pihak2Jabatan, bast.pihak2Toko)})`, margin + 55, y);
   y += 7;
 
   // Rujukan SPK & Nama Kegiatan
@@ -832,6 +833,11 @@ function createSingleBastPdf(bast: BastDocument, data: LpjArchiveData): Blob {
   doc.setFont("helvetica", "bold");
   doc.text(bast.pihak2Nama.toUpperCase(), col2X, y, { align: "center" });
   doc.text(bast.pihak1Nama.toUpperCase(), col1X, y, { align: "center" });
+  y += 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.text("Penyedia Barang", col2X, y, { align: "center" });
+  doc.text(cleanPihakJabatan(bast.pihak1Jabatan), col1X, y, { align: "center" });
 
   return doc.output("blob");
 }

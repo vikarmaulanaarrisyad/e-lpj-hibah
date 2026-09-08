@@ -2,7 +2,7 @@ import { pesananRepository } from "@/repositories/pesanan.repository";
 import { institutionRepository } from "@/repositories/institution.repository";
 import { purchaseOrderSchema } from "@/lib/validations/pesanan";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
-import { buildFormattedDocumentNumber, deconstructDocumentNumber } from "@/lib/utils/pesanan-date";
+import { buildFormattedDocumentNumber, deconstructDocumentNumber, ensureDocumentPrefix } from "@/lib/utils/pesanan-date";
 import type { PurchaseOrder, CreatePesananInput, ServiceResponse } from "@/types";
 
 export class PesananService {
@@ -158,14 +158,16 @@ export class PesananService {
         dateObj = new Date();
       }
 
-      // Ambil format pola lembaga dari profil akun pengguna
-      let pattern = "/A/PR.FNU/";
+      // Ambil format pola lembaga dari profil akun pengguna dengan prefix /SP/
+      let pattern = "/SP/A/PR.FNU/";
       try {
         const profile = await institutionRepository.findByUserId(userId);
         if (profile?.formatNomorSp && profile.formatNomorSp.trim()) {
-          pattern = profile.formatNomorSp.trim();
+          pattern = ensureDocumentPrefix(profile.formatNomorSp.trim(), "SP");
         } else if (profile?.formatNomorBast && profile.formatNomorBast.trim()) {
-          pattern = profile.formatNomorBast.trim();
+          pattern = ensureDocumentPrefix(profile.formatNomorBast.trim(), "SP");
+        } else if (profile?.formatNomorKwitansi && profile.formatNomorKwitansi.trim()) {
+          pattern = ensureDocumentPrefix(profile.formatNomorKwitansi.trim(), "SP");
         }
       } catch (err) {
         console.warn("[PesananService] Could not load institution profile for SP pattern:", err);
@@ -175,7 +177,7 @@ export class PesananService {
       const allSpNumbers = await pesananRepository.getAllNomorSp(userId);
       const usedSet = new Set(allSpNumbers.map((n) => n.trim().toLowerCase()));
 
-      // Cari nomor urut numerik tertinggi yang pernah ada
+      // Cari nomor urut numerik tertinggi yang pernah ada di SP
       const parsedSeqNumbers: number[] = [];
       for (const numStr of allSpNumbers) {
         const decomp = deconstructDocumentNumber(numStr);
@@ -198,12 +200,12 @@ export class PesananService {
       let nextSeq = Math.max(maxSeq, allSpNumbers.length) + 1;
       if (nextSeq < 1) nextSeq = 1;
 
-      let paddedUrut = String(nextSeq).padStart(nextSeq >= 100 ? 3 : 2, "0");
+      let paddedUrut = String(nextSeq).padStart(3, "0");
       let candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
 
       while (usedSet.has(candidate.toLowerCase())) {
         nextSeq++;
-        paddedUrut = String(nextSeq).padStart(nextSeq >= 100 ? 3 : 2, "0");
+        paddedUrut = String(nextSeq).padStart(3, "0");
         candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
       }
 
@@ -214,8 +216,8 @@ export class PesananService {
     } catch (error) {
       console.error("[PesananService] Error generating next nomor SP:", error);
       const now = new Date();
-      const defaultUrut = "01";
-      const candidate = buildFormattedDocumentNumber(defaultUrut, "/A/PR.FNU/", now);
+      const defaultUrut = "001";
+      const candidate = buildFormattedDocumentNumber(defaultUrut, "/SP/A/PR.FNU/", now);
       return {
         nomorSp: candidate,
         nomorUrut: defaultUrut,

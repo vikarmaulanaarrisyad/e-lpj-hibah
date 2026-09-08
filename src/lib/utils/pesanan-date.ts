@@ -172,11 +172,54 @@ export function calculateTanggalSpDariNota(batasWaktuStr: string, durasiHari: nu
 }
 
 /**
- * Membangun nomor surat / dokumen resmi (SP / BAST) secara otomatis:
- * Menggabungkan: [Nomor Urut] + [Format Kode Instansi] + [Bulan Romawi dari Tanggal] + [Tahun dari Tanggal]
+ * Memastikan pola format penomoran memuat kode jenis dokumen resmi (KW / SP / BA).
  * Contoh:
- *   buildFormattedDocumentNumber("02", "/A/PR.FNU/", "2026-08-01") -> "02/A/PR.FNU/VIII/2026"
- *   buildFormattedDocumentNumber("01", "A/PR.FNU", "2026-09-15")   -> "01/A/PR.FNU/IX/2026"
+ *   ensureDocumentPrefix("/A/PR.FNU/", "KW") -> "/KW/A/PR.FNU/"
+ *   ensureDocumentPrefix("/SP/A/PR.FNU/", "SP") -> "/SP/A/PR.FNU/"
+ *   ensureDocumentPrefix("/BA/A/PR.FNU/", "BA") -> "/BA/A/PR.FNU/"
+ */
+export function ensureDocumentPrefix(
+  formatPattern: string | undefined | null,
+  docType: "KW" | "SP" | "BA"
+): string {
+  if (!formatPattern || !formatPattern.trim()) {
+    return `/${docType}/A/PR.FNU/`;
+  }
+
+  const clean = formatPattern.trim();
+  const trimmed = clean.replace(/^\/+|\/+$/g, "");
+
+  // Cek apakah sudah diawali KW, SP, BA, atau BAST
+  const match = trimmed.match(/^(KW|SP|BA|BAST)(?:[\/\.]|$)/i);
+  if (match) {
+    const after = trimmed.slice(match[0].length).replace(/^\/+/, "");
+    return `/${docType}/${after}/`;
+  }
+
+  return `/${docType}/${trimmed}/`;
+}
+
+/**
+ * Ekstrak nomor urut dari nomor dokumen (contoh: "001/SP/..." -> "001", "02/A/..." -> "002")
+ */
+export function extractDocumentSequence(fullNomor?: string | null): string {
+  if (!fullNomor) return "001";
+  const trimmed = fullNomor.trim();
+  const match = trimmed.match(/^(\d+)/);
+  if (match) {
+    const val = parseInt(match[1], 10);
+    return isNaN(val) ? "001" : String(val).padStart(3, "0");
+  }
+  return "001";
+}
+
+/**
+ * Membangun nomor surat / dokumen resmi (Kwitansi / SP / BAST) secara otomatis:
+ * Menggabungkan: [Nomor Urut 3 Digit] + [Format Kode Instansi] + [Bulan Romawi dari Tanggal] + [Tahun dari Tanggal]
+ * Contoh:
+ *   buildFormattedDocumentNumber("1", "/KW/A/PR.FNU/", "2026-08-01") -> "001/KW/A/PR.FNU/VIII/2026"
+ *   buildFormattedDocumentNumber("001", "/SP/A/PR.FNU/", "2026-08-06") -> "001/SP/A/PR.FNU/VIII/2026"
+ *   buildFormattedDocumentNumber("001", "/BA/A/PR.FNU/", "2026-08-06") -> "001/BA/A/PR.FNU/VIII/2026"
  */
 export function buildFormattedDocumentNumber(
   nomorUrut: string | number,
@@ -210,17 +253,17 @@ export function buildFormattedDocumentNumber(
       .trim()
       .replace(/^\/+|\/+$/g, "");
 
-    // Format nomor urut (contoh: 1 -> "01", 2 -> "02", atau tetap jika sudah 2 digit/lebih)
-    let paddedUrut = String(nomorUrut ?? "01").trim();
-    if (/^\d+$/.test(paddedUrut) && paddedUrut.length === 1) {
-      paddedUrut = paddedUrut.padStart(2, "0");
+    // Format nomor urut minimal 3 digit (contoh: 1 -> "001", 2 -> "002", dst)
+    let paddedUrut = String(nomorUrut ?? "001").trim();
+    if (/^\d+$/.test(paddedUrut)) {
+      paddedUrut = paddedUrut.padStart(3, "0");
     } else if (!paddedUrut) {
-      paddedUrut = "01";
+      paddedUrut = "001";
     }
 
     return `${paddedUrut}/${cleanPattern}/${romanMonth}/${year}`;
   } catch {
-    return String(nomorUrut || "01");
+    return String(nomorUrut || "001");
   }
 }
 
@@ -256,7 +299,7 @@ export function deconstructDocumentNumber(fullNomor: string): {
 
     if (parts.length === 3) {
       return {
-        nomorUrut: parts[0] || "01",
+        nomorUrut: parts[0] || "001",
         formatPattern: `/${parts[1]}/`,
         romanMonth: "VIII",
         year: parts[2] || "2026",
@@ -264,14 +307,14 @@ export function deconstructDocumentNumber(fullNomor: string): {
     }
 
     return {
-      nomorUrut: parts[0] || "01",
+      nomorUrut: parts[0] || "001",
       formatPattern: "/A/PR.FNU/",
       romanMonth: "VIII",
       year: "2026",
     };
   } catch {
     return {
-      nomorUrut: "01",
+      nomorUrut: "001",
       formatPattern: "/A/PR.FNU/",
       romanMonth: "VIII",
       year: "2026",
@@ -370,21 +413,55 @@ export function cleanPihakJabatan(
   if (!jabatan || !jabatan.trim()) return fallback;
   let clean = jabatan.trim();
 
-  // 1. Jika jabatan memuat nama lembaga (contoh: "Ketua PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN")
+  // 1. Jika jabatan diawali kata "Ketua"
+  // User menginginkan jabatan ketua bersih "Ketua" tanpa embel-embel nama lembaga, desa, atau ranting
+  // (contoh: "Ketua Dawuhan Selatan", "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan", "Ketua PR Fatayat..." -> "Ketua")
+  // Kecuali jika jabatan spesifik kepanitiaan/yayasan seperti "Ketua Yayasan" atau "Ketua Panitia"
+  if (/^Ketua\b/i.test(clean)) {
+    if (/^Ketua\s+(?:Yayasan|Panitia)\b/i.test(clean)) {
+      return clean;
+    }
+    return "Ketua";
+  }
+
+  // 2. Jika jabatan memuat nama lembaga
   if (institutionName && institutionName.trim()) {
     const inst = institutionName.trim();
     const escapedInst = inst.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     clean = clean.replace(new RegExp(escapedInst, "gi"), "").trim();
   }
 
-  // 2. Jika masih tersisa pola "Ketua Pimpinan Ranting...", "Ketua PR Fatayat...", dll.
-  if (/^Ketua\s+(Pimpinan|PR|Ranting|Fatayat|Muslimat|Ansor|IPNU|IPPNU|Lembaga|Desa)/i.test(clean)) {
-    clean = "Ketua";
-  }
+  // 3. Bersihkan nama desa / sub-nama seperti Dawuhan, Selatan, dsb
+  clean = clean.replace(/\s*(?:Desa|Kelurahan|Kecamatan|Kabupaten)?\s*Dawuhan(?:\s+Selatan)?/gi, "").trim();
 
-  // 3. Bersihkan tanda baca aneh di ujung (misal: "Ketua -" atau "Ketua ,")
+  // 4. Bersihkan tanda baca aneh di ujung
   clean = clean.replace(/^[-\s,.:/]+|[-\s,.:/]+$/g, "").trim();
 
   return clean || fallback;
+}
+
+/**
+ * Memformat jabatan pihak kedua (penyedia / rekanan) agar otomatis menyertakan nama toko / perusahaan:
+ * Contoh:
+ * - formatPihak2Jabatan("Pemilik", "Surya Mas") -> "Pemilik Surya Mas"
+ * - formatPihak2Jabatan("Karyawan", "Surya Mas") -> "Karyawan Surya Mas"
+ * - formatPihak2Jabatan("Pemilik Surya Mas", "Surya Mas") -> "Pemilik Surya Mas" (tidak duplikasi)
+ * - formatPihak2Jabatan(null, "Surya Mas") -> "Pemilik Surya Mas"
+ */
+export function formatPihak2Jabatan(
+  jabatan?: string | null,
+  toko?: string | null,
+  fallbackRole = "Pemilik"
+): string {
+  const role = (jabatan || "").trim() || fallbackRole;
+  const shop = (toko || "").trim();
+  if (!shop) return role;
+
+  // Jika jabatan sudah memuat nama toko, jangan duplikasi
+  if (role.toLowerCase().includes(shop.toLowerCase())) {
+    return role;
+  }
+
+  return `${role} ${shop}`;
 }
 

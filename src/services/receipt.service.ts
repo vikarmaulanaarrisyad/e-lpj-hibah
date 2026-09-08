@@ -3,7 +3,7 @@ import { receiptRepository } from "@/repositories/receipt.repository";
 import { bkuRepository } from "@/repositories/bku.repository";
 import { institutionRepository } from "@/repositories/institution.repository";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
-import { buildFormattedDocumentNumber, getRomanMonth } from "@/lib/utils/pesanan-date";
+import { buildFormattedDocumentNumber, getRomanMonth, ensureDocumentPrefix } from "@/lib/utils/pesanan-date";
 import type { Receipt, CreateReceiptInput, ServiceResponse } from "@/types";
 
 export class ReceiptService {
@@ -209,11 +209,22 @@ export class ReceiptService {
         };
       }
 
+      // 1. Hapus BAST yang terhubung ke kwitansi ini (jika ada)
+      await prisma.bastDocument.deleteMany({
+        where: { receiptId: id, userId },
+      });
+
+      // 2. Hapus Surat Pesanan (SP) yang terhubung ke kwitansi ini (jika ada)
+      await prisma.purchaseOrder.deleteMany({
+        where: { receiptId: id, userId },
+      });
+
+      // 3. Hapus Kwitansi (secara otomatis cascade menghapus entry transaksi BKU terkait)
       await receiptRepository.delete(id, userId);
 
       return {
         success: true,
-        message: `Kwitansi ${receipt.nomorBukti} berhasil dihapus dari sistem dan Buku Kas Umum!`,
+        message: `Kwitansi ${receipt.nomorBukti} beserta dokumen Surat Pesanan, Berita Acara, dan pencatatan BKU terkait berhasil dihapus!`,
         data: true,
       };
     } catch (error) {
@@ -244,16 +255,16 @@ export class ReceiptService {
       const currentYear = dateObj.getFullYear();
       const romanMonth = getRomanMonth(currentMonth);
 
-      // 2. Resolve institution numbering format (default: "/A/PR.FNU/")
-      let pattern = "/A/PR.FNU/";
+      // 2. Resolve institution numbering format with /KW/ prefix
+      let pattern = "/KW/A/PR.FNU/";
       try {
         const profile = await institutionRepository.findByUserId(userId);
         if (profile?.formatNomorKwitansi && profile.formatNomorKwitansi.trim()) {
-          pattern = profile.formatNomorKwitansi.trim();
+          pattern = ensureDocumentPrefix(profile.formatNomorKwitansi.trim(), "KW");
         } else if (profile?.formatNomorBast && profile.formatNomorBast.trim()) {
-          pattern = profile.formatNomorBast.trim();
+          pattern = ensureDocumentPrefix(profile.formatNomorBast.trim(), "KW");
         } else if (profile?.formatNomorSp && profile.formatNomorSp.trim()) {
-          pattern = profile.formatNomorSp.trim();
+          pattern = ensureDocumentPrefix(profile.formatNomorSp.trim(), "KW");
         }
       } catch (err) {
         console.warn("[ReceiptService] Could not fetch institution profile prefix:", err);
@@ -287,12 +298,12 @@ export class ReceiptService {
       let nextSeq = Math.max(maxSeq, receiptNumbers.length) + 1;
       if (nextSeq < 1) nextSeq = 1;
 
-      // 5. Collision-free verification loop using standard document number builder (e.g. 01/A/PR.FNU/IX/2026)
-      let paddedUrut = String(nextSeq).padStart(2, "0");
+      // 5. Collision-free verification loop using standard document number builder (e.g. 001/KW/A/PR.FNU/IX/2026)
+      let paddedUrut = String(nextSeq).padStart(3, "0");
       let candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
       while (usedSet.has(candidate.toLowerCase())) {
         nextSeq++;
-        paddedUrut = String(nextSeq).padStart(2, "0");
+        paddedUrut = String(nextSeq).padStart(3, "0");
         candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
       }
 
@@ -300,7 +311,7 @@ export class ReceiptService {
     } catch (error) {
       console.error("[ReceiptService] Error generating next nomor bukti:", error);
       const fallbackDate = targetDate || new Date();
-      return buildFormattedDocumentNumber("01", "/A/PR.FNU/", fallbackDate);
+      return buildFormattedDocumentNumber("001", "/KW/A/PR.FNU/", fallbackDate);
     }
   }
 }

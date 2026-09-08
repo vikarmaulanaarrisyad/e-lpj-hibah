@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { bkuRepository } from "@/repositories/bku.repository";
 import { getRomanMonth } from "@/lib/utils/pesanan-date";
 import type {
@@ -175,7 +176,10 @@ export class BkuService {
   }
 
   /**
-   * Delete a manual BKU entry. (Kwitansi-based entries must be deleted via Kwitansi).
+   * Delete a BKU transaction.
+   * - Jika transaksi PENERIMAAN (manual, tidak ada receiptId) → hapus langsung dari BKU.
+   * - Jika transaksi PENGELUARAN (terhubung Kwitansi) → hapus seluruh dokumen terkait:
+   *   BAST (Berita Acara), SP (Surat Pesanan), Kwitansi/Receipt (yang secara cascade juga menghapus entry BKU ini).
    */
   async deleteTransaction(
     id: string,
@@ -184,27 +188,53 @@ export class BkuService {
     try {
       const tx = await bkuRepository.findById(id);
       if (!tx) {
-        return { success: false, message: "Transaksi tidak ditemukan." };
+        return { success: false, message: "Transaksi BKU tidak ditemukan." };
       }
 
-      if (tx.receiptId) {
+      // Transaksi PENERIMAAN manual (tidak terhubung Kwitansi) → hapus langsung
+      if (!tx.receiptId) {
+        const success = await bkuRepository.delete(id, userId);
         return {
-          success: false,
-          message:
-            "Transaksi ini terhubung dengan Kwitansi. Hapus melalui menu Kwitansi untuk menjaga integritas SPJ.",
+          success,
+          message: success
+            ? "Transaksi penerimaan berhasil dihapus dari BKU."
+            : "Gagal menghapus transaksi penerimaan.",
         };
       }
 
-      const success = await bkuRepository.delete(id, userId);
+      // Transaksi PENGELUARAN (terhubung Kwitansi) → cascade hapus semua dokumen terkait
+      const receiptId = tx.receiptId;
+
+      // 1. Hapus BAST yang terhubung ke receipt ini (jika ada)
+      await prisma.bastDocument.deleteMany({
+        where: { receiptId, userId },
+      });
+
+      // 2. Hapus SP/Surat Pesanan yang terhubung ke receipt ini (jika ada)
+      await prisma.purchaseOrder.deleteMany({
+        where: { receiptId, userId },
+      });
+
+      // 3. Hapus Receipt/Kwitansi — ini sekaligus cascade menghapus entry BKU terkait
+      //    (relasi BkuTransaction.receiptId → onDelete: Cascade)
+      const deleted = await prisma.receipt.deleteMany({
+        where: { id: receiptId, userId },
+      });
+
+      if (deleted.count === 0) {
+        return {
+          success: false,
+          message: "Kwitansi terkait tidak ditemukan atau tidak berhak dihapus.",
+        };
+      }
+
       return {
-        success,
-        message: success
-          ? "Transaksi penerimaan berhasil dihapus dari BKU."
-          : "Gagal menghapus transaksi.",
+        success: true,
+        message: "Transaksi BKU beserta Kwitansi, Surat Pesanan, dan Berita Acara terkait berhasil dihapus.",
       };
     } catch (error) {
       console.error("[BkuService] Failed to delete transaction:", error);
-      return { success: false, message: "Terjadi kesalahan saat menghapus transaksi." };
+      return { success: false, message: "Terjadi kesalahan saat menghapus transaksi BKU." };
     }
   }
 

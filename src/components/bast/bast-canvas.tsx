@@ -1,7 +1,7 @@
 "use client";
 
 import type { BastFormData, InstitutionProfile } from "@/types";
-import { cleanPihakJabatan } from "@/lib/utils/pesanan-date";
+import { cleanPihakJabatan, formatPihak2Jabatan } from "@/lib/utils/pesanan-date";
 import { cleanAndFormatTitle } from "@/lib/utils/title-case";
 
 interface BastCanvasProps {
@@ -71,6 +71,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
   const cleanLembaga = (namaLembaga || "").replace(/^Ketua\s+/i, "").trim();
   const rawJabatan = data.pihak1Jabatan || profile?.jabatanKetua || "Ketua";
   const cleanJabatan = cleanPihakJabatan(rawJabatan, cleanLembaga || namaLembaga, profile?.jabatanKetua || "Ketua");
+  const cleanPihak2Jabatan = formatPihak2Jabatan(data.pihak2Jabatan, data.pihak2Toko);
 
   return (
     <div
@@ -178,7 +179,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           BERITA ACARA SERAH TERIMA HASIL PEKERJAAN
         </h1>
         <div className="text-[12.5px] font-semibold text-black mt-0.5">
-          Nomor : <span className="font-mono font-bold">{data.nomorBast || "014/BAST-HB/FTY/VII/2026"}</span>
+          Nomor : <span className="font-mono font-bold">{data.nomorBast || "001/BA/A/PR.FNU/VIII/2026"}</span>
         </div>
       </div>
 
@@ -218,7 +219,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
           <span className="col-span-2 font-medium">Jabatan</span>
-          <span className="col-span-9">: {data.pihak2Jabatan || data.pihak2Toko || "Pemilik SURYA MAS"}</span>
+          <span className="col-span-9">: {cleanPihak2Jabatan}</span>
         </div>
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
@@ -336,7 +337,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           <div className="h-24 w-full my-1" />
 
           <span className="font-bold underline uppercase tracking-wide">{data.pihak2Nama || "ANSHORI"}</span>
-          <span className="text-[10.5px] text-black font-mono">{data.pihak2Jabatan || "Penyedia Barang"}</span>
+          <span className="text-[10.5px] text-black font-mono">Penyedia Barang</span>
         </div>
 
         {/* Sisi Kanan: Pihak Kesatu (Penerima Hasil) */}

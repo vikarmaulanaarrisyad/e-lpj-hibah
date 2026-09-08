@@ -56,7 +56,7 @@ export class BastRepository {
       }
 
       const dataFields = {
-        nomorBast: input.nomorBast?.trim() || "01/A/PR.FNU/IX/2026",
+        nomorBast: input.nomorBast?.trim() || "001/BA/A/PR.FNU/IX/2026",
         tanggal: parsedDate,
         hariTanggal: input.hariTanggal?.trim() || "Senin, 01 September 2026",
         tanggalTerbilang: input.tanggalTerbilang?.trim() || "-",

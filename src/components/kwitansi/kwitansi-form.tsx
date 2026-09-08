@@ -139,6 +139,7 @@ export function KwitansiForm({
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
 
   // Load vendors list on mount
   useEffect(() => {
@@ -151,9 +152,12 @@ export function KwitansiForm({
   }, []);
 
   const handleSelectVendor = (v: Vendor) => {
+    // Penerima diisi dengan nama pemilik/pimpinan toko jika ada, fallback ke nama toko
+    const penerimaName = v.namaPemilik?.trim() || v.namaToko;
+    setSelectedVendorId(v.id);
     setFormData((prev) => ({
       ...prev,
-      penerima: v.namaToko,
+      penerima: penerimaName,
     }));
   };
 
@@ -215,7 +219,7 @@ export function KwitansiForm({
 
       return {
         id: undefined,
-        nomorBukti: initialNextNomorBukti || "01/A/PR.FNU/IX/2026",
+        nomorBukti: initialNextNomorBukti || "001/KW/A/PR.FNU/IX/2026",
         tanggal: toDateInputValue(),
         pemberi: defaultInstitution,
         nominal: formatted,
@@ -317,7 +321,7 @@ export function KwitansiForm({
 
     return {
       id: undefined,
-      nomorBukti: initialNextNomorBukti || "01/A/PR.FNU/IX/2026",
+      nomorBukti: initialNextNomorBukti || "001/KW/A/PR.FNU/IX/2026",
       tanggal: toDateInputValue(),
       pemberi: defaultInstitution,
       nominal: "0",
@@ -546,7 +550,7 @@ export function KwitansiForm({
 
       const activeDate = toDateInputValue();
       getNextNomorBuktiAction(activeDate).then((res) => {
-        const nextNo = res.success && res.data ? res.data : initialNextNomorBukti || "01/A/PR.FNU/IX/2026";
+        const nextNo = res.success && res.data ? res.data : initialNextNomorBukti || "001/KW/A/PR.FNU/IX/2026";
         setFormData((prev) =>
           updateFormWithTax(
             {
@@ -622,9 +626,9 @@ export function KwitansiForm({
     if (!currentReceipt) return;
 
     const isConfirmed = await swalConfirmDelete({
-      title: "Hapus Kwitansi Belanja?",
-      text: `Apakah Anda yakin ingin menghapus kwitansi "${selectedReceiptNo}" senilai Rp ${formatRupiahNumber(currentReceipt.nominal)}? Pengeluaran pada Buku Kas Umum (BKU) dan serapan RAB juga akan disesuaikan kembali.`,
-      confirmText: "Ya, Hapus Kwitansi!",
+      title: "Hapus Kwitansi & Dokumen Terkait?",
+      text: `Apakah Anda yakin ingin menghapus kwitansi "${selectedReceiptNo}" senilai Rp ${formatRupiahNumber(currentReceipt.nominal)}? Dokumen terkait (Surat Pesanan/SP, Berita Acara/BAST, dan catatan kas BKU) akan ikut dihapus. Pos anggaran RAB tetap aman dan pagunya akan dipulihkan secara otomatis.`,
+      confirmText: "Ya, Hapus Semua Terkait!",
       cancelText: "Batal",
     });
 
@@ -657,7 +661,7 @@ export function KwitansiForm({
     startTransition(async () => {
       const activeDate = typeof targetDateStr === "string" ? targetDateStr : toDateInputValue();
       const res = await getNextNomorBuktiAction(activeDate);
-      const nextNo = res.data || initialNextNomorBukti || "01/A/PR.FNU/IX/2026";
+      const nextNo = res.data || initialNextNomorBukti || "001/KW/A/PR.FNU/IX/2026";
       setFormData({
         id: undefined,
         nomorBukti: nextNo,
@@ -692,6 +696,7 @@ export function KwitansiForm({
         keteranganPajak: "",
       });
       setSelectedReceiptNo("NEW");
+      setSelectedVendorId("");
       setKwitansiPhotos([]);
       setSaveSuccessMsg(null);
       setSaveErrorMsg(null);
@@ -1175,7 +1180,7 @@ export function KwitansiForm({
                       onChange={(e) =>
                         setFormData({ ...formData, nomorBukti: e.target.value })
                       }
-                      placeholder="Contoh: 01/A/PR.FNU/IX/2026"
+                      placeholder="Contoh: 001/KW/A/PR.FNU/IX/2026"
                       className={`w-full font-mono text-xs bg-slate-950 border rounded-xl pl-3 pr-24 py-2.5 text-white focus:outline-none focus:ring-1 transition-all ${
                         isDuplicateNoBukti
                           ? "border-amber-500/80 focus:ring-amber-500 text-amber-200"
@@ -1925,20 +1930,17 @@ export function KwitansiForm({
                         <span>Pilih dari Master Toko:</span>
                       </span>
                       <span className="text-[9px] text-slate-400 font-normal">
-                        Otomatis isi nama toko / penerima
+                        Otomatis isi nama pemilik / penerima
                       </span>
                     </label>
                     <select
-                      value={
-                        vendors.find(
-                          (v) =>
-                            v.namaToko.toLowerCase() === (formData.penerima || "").toLowerCase()
-                        )?.id || ""
-                      }
+                      value={selectedVendorId}
                       onChange={(e) => {
                         const selected = vendors.find((v) => v.id === e.target.value);
                         if (selected) {
                           handleSelectVendor(selected);
+                        } else {
+                          setSelectedVendorId("");
                         }
                       }}
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-500 font-medium"
@@ -1946,12 +1948,30 @@ export function KwitansiForm({
                       <option value="">-- Pilih Toko Langganan ({vendors.length} Toko) --</option>
                       {vendors.map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.namaToko} {v.namaPemilik ? `(Pemilik: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
+                          {v.namaToko}
+                          {v.namaPemilik ? ` — ${v.namaPemilik}` : ""}
+                          {v.jabatan ? ` (${v.jabatan})` : ""}
+                          {v.kategori ? ` • ${v.kategori}` : ""}
                         </option>
                       ))}
                     </select>
+                    {/* Info chip: tampilkan toko yang dipilih jika penerima diisi dari nama pemilik */}
+                    {selectedVendorId && (() => {
+                      const sv = vendors.find((v) => v.id === selectedVendorId);
+                      return sv ? (
+                        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400">
+                          <Building2 className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span>
+                            Toko: <strong className="text-amber-300">{sv.namaToko}</strong>
+                            {sv.namaPemilik && (
+                              <> · Pemilik: <strong className="text-white">{sv.namaPemilik}</strong></>
+                            )}
+                            {sv.jabatan && <> ({sv.jabatan})</>}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
-
                   <div className="flex items-center gap-2">
                     <input
                       type="text"

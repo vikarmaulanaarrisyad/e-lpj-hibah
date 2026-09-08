@@ -129,7 +129,7 @@ export async function getNextNomorBuktiAction(dateString?: string): Promise<Acti
     return {
       success: true,
       message: "Nomor bukti default.",
-      data: "01/A/PR.FNU/IX/2026",
+      data: "001/KW/A/PR.FNU/IX/2026",
     };
   }
 }
@@ -153,6 +153,9 @@ export async function deleteReceiptAction(id: string): Promise<ActionResponse<bo
       revalidatePath("/user/kwitansi");
       revalidatePath("/user/bku");
       revalidatePath("/user/rab");
+      revalidatePath("/user/pesanan");
+      revalidatePath("/user/berita-acara");
+      revalidatePath("/user/arsip-dokumen");
       revalidatePath("/user");
       await loggerService.log({
         level: "WARN",

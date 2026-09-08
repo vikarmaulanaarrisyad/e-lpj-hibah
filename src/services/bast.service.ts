@@ -2,7 +2,7 @@ import { bastRepository, type BastWithReceipt } from "@/repositories/bast.reposi
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { institutionRepository } from "@/repositories/institution.repository";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
-import { buildFormattedDocumentNumber, deconstructDocumentNumber } from "@/lib/utils/pesanan-date";
+import { buildFormattedDocumentNumber, deconstructDocumentNumber, ensureDocumentPrefix, extractDocumentSequence } from "@/lib/utils/pesanan-date";
 import type { BastDocument, CreateBastInput, BastItem, ServiceResponse } from "@/types";
 
 const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -148,7 +148,7 @@ export class BastService {
   async saveBast(input: CreateBastInput, userId: string): Promise<ServiceResponse<BastDocument>> {
     try {
       if (!input.nomorBast || !input.nomorBast.trim()) {
-        const nextGenerated = await this.generateNextNomorBast(userId, input.tanggal);
+        const nextGenerated = await this.generateNextNomorBast(userId, input.tanggal, input.nomorSpk);
         input.nomorBast = nextGenerated.nomorBast;
       }
 
@@ -216,11 +216,13 @@ export class BastService {
 
   /**
    * Menghasilkan nomor register BAST berikutnya yang urut, otomatis, dan anti-double.
+   * Jika spNomor disertakan, BAST otomatis diselaraskan dengan nomor urut SP tersebut.
    * Mengembalikan objek { nomorBast: string, nomorUrut: string }
    */
   async generateNextNomorBast(
     userId: string,
-    targetDate?: Date | string
+    targetDate?: Date | string,
+    spNomor?: string
   ): Promise<{ nomorBast: string; nomorUrut: string }> {
     try {
       let dateObj = targetDate ? new Date(targetDate) : new Date();
@@ -228,12 +230,16 @@ export class BastService {
         dateObj = new Date();
       }
 
-      // Ambil format pola lembaga dari profil akun
-      let pattern = "/A/PR.FNU/";
+      // Ambil format pola lembaga dari profil akun dengan prefix /BA/
+      let pattern = "/BA/A/PR.FNU/";
       try {
         const profile = await institutionRepository.findByUserId(userId);
         if (profile?.formatNomorBast && profile.formatNomorBast.trim()) {
-          pattern = profile.formatNomorBast.trim();
+          pattern = ensureDocumentPrefix(profile.formatNomorBast.trim(), "BA");
+        } else if (profile?.formatNomorSp && profile.formatNomorSp.trim()) {
+          pattern = ensureDocumentPrefix(profile.formatNomorSp.trim(), "BA");
+        } else if (profile?.formatNomorKwitansi && profile.formatNomorKwitansi.trim()) {
+          pattern = ensureDocumentPrefix(profile.formatNomorKwitansi.trim(), "BA");
         }
       } catch (err) {
         console.warn("[BastService] Could not load institution profile for BAST pattern:", err);
@@ -242,6 +248,16 @@ export class BastService {
       // Ambil seluruh nomor BAST yang sudah pernah digunakan oleh pengguna
       const allBastNumbers = await bastRepository.getAllNomorBast(userId);
       const usedSet = new Set(allBastNumbers.map((n) => n.trim().toLowerCase()));
+
+      // Jika ada nomor SP terkait, selaraskan nomor urut BAST dengan nomor urut SP tersebut
+      if (spNomor && spNomor.trim()) {
+        const spSeq = extractDocumentSequence(spNomor);
+        const candidate = buildFormattedDocumentNumber(spSeq, pattern, dateObj);
+        return {
+          nomorBast: candidate,
+          nomorUrut: spSeq,
+        };
+      }
 
       // Cari nomor urut numerik tertinggi yang pernah ada
       const parsedSeqNumbers: number[] = [];
@@ -266,12 +282,12 @@ export class BastService {
       let nextSeq = Math.max(maxSeq, allBastNumbers.length) + 1;
       if (nextSeq < 1) nextSeq = 1;
 
-      let paddedUrut = String(nextSeq).padStart(nextSeq >= 100 ? 3 : 2, "0");
+      let paddedUrut = String(nextSeq).padStart(3, "0");
       let candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
 
       while (usedSet.has(candidate.toLowerCase())) {
         nextSeq++;
-        paddedUrut = String(nextSeq).padStart(nextSeq >= 100 ? 3 : 2, "0");
+        paddedUrut = String(nextSeq).padStart(3, "0");
         candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
       }
 
@@ -282,8 +298,8 @@ export class BastService {
     } catch (error) {
       console.error("[BastService] Error generating next nomor BAST:", error);
       const now = new Date();
-      const defaultUrut = "01";
-      const candidate = buildFormattedDocumentNumber(defaultUrut, "/A/PR.FNU/", now);
+      const defaultUrut = "001";
+      const candidate = buildFormattedDocumentNumber(defaultUrut, "/BA/A/PR.FNU/", now);
       return {
         nomorBast: candidate,
         nomorUrut: defaultUrut,

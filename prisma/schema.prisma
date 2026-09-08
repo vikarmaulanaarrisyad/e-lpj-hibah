@@ -178,7 +178,7 @@ model InstitutionProfile {
 
   // Pejabat Lembaga
   namaKetua     String?  @default("HENI FUJIATI")
-  jabatanKetua  String?  @default("Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan")
+  jabatanKetua  String?  @default("Ketua")
   namaBendahara String?  @default("NUR ALIMAH")
 
   // Format Penomoran Dokumen Otomatis per Akun / Lembaga

@@ -75,6 +75,12 @@ export async function deleteBkuTransactionAction(
     const result = await bkuService.deleteTransaction(id, session.sub);
     if (result.success) {
       revalidatePath("/user/bku");
+      revalidatePath("/user/kwitansi");
+      revalidatePath("/user/pesanan");
+      revalidatePath("/user/berita-acara");
+      revalidatePath("/user/arsip-dokumen");
+      revalidatePath("/user/rab");
+      revalidatePath("/user");
     }
     return result;
   } catch (error) {

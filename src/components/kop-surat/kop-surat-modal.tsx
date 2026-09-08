@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { swalLoading, swalSuccess, swalError } from "@/lib/swal";
-import { buildFormattedDocumentNumber, getRomanMonth } from "@/lib/utils/pesanan-date";
+import { buildFormattedDocumentNumber, getRomanMonth, ensureDocumentPrefix } from "@/lib/utils/pesanan-date";
 import type { InstitutionProfile } from "@/types";
 
 interface KopSuratModalProps {
@@ -51,7 +51,7 @@ export function KopSuratModal({
     noHp: initialProfile?.noHp || "085642719869",
     noRegistrasi: initialProfile?.noRegistrasi || "HBH-2026-NU-0428",
     namaKetua: initialProfile?.namaKetua || "HENI FUJIATI",
-    jabatanKetua: initialProfile?.jabatanKetua || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
+    jabatanKetua: initialProfile?.jabatanKetua || "Ketua",
     namaBendahara: initialProfile?.namaBendahara || "NUR ALIMAH",
     logoBase64OrUrl: initialProfile?.logoUrl || "",
     formatNomorSp: initialProfile?.formatNomorSp || "/A/PR.FNU/",
@@ -77,7 +77,7 @@ export function KopSuratModal({
         noHp: initialProfile.noHp || "085642719869",
         noRegistrasi: initialProfile.noRegistrasi || "HBH-2026-NU-0428",
         namaKetua: initialProfile.namaKetua || "HENI FUJIATI",
-        jabatanKetua: initialProfile.jabatanKetua || "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
+        jabatanKetua: initialProfile.jabatanKetua || "Ketua",
         namaBendahara: initialProfile.namaBendahara || "NUR ALIMAH",
         logoBase64OrUrl: initialProfile.logoUrl || "",
         formatNomorSp: initialProfile.formatNomorSp || "/A/PR.FNU/",
@@ -530,7 +530,7 @@ export function KopSuratModal({
                   <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
                     <span className="text-slate-400">Pratinjau Kas:</span>
                     <span className="font-mono font-bold text-amber-400">
-                      {buildFormattedDocumentNumber("01", formData.formatNomorKwitansi || "/A/PR.FNU/", new Date())}
+                      {buildFormattedDocumentNumber("01", ensureDocumentPrefix(formData.formatNomorKwitansi || "/A/PR.FNU/", "KW"), new Date())}
                     </span>
                   </div>
                 </div>
@@ -553,7 +553,7 @@ export function KopSuratModal({
                   <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
                     <span className="text-slate-400">Pratinjau SP:</span>
                     <span className="font-mono font-bold text-emerald-400">
-                      {buildFormattedDocumentNumber("01", formData.formatNomorSp || "/A/PR.FNU/", new Date())}
+                      {buildFormattedDocumentNumber("01", ensureDocumentPrefix(formData.formatNomorSp || "/A/PR.FNU/", "SP"), new Date())}
                     </span>
                   </div>
                 </div>
@@ -576,7 +576,7 @@ export function KopSuratModal({
                   <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] flex items-center justify-between">
                     <span className="text-slate-400">Pratinjau BAST:</span>
                     <span className="font-mono font-bold text-teal-400">
-                      {buildFormattedDocumentNumber("01", formData.formatNomorBast || "/A/PR.FNU/", new Date())}
+                      {buildFormattedDocumentNumber("01", ensureDocumentPrefix(formData.formatNomorBast || "/A/PR.FNU/", "BA"), new Date())}
                     </span>
                   </div>
                 </div>

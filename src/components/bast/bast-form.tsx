@@ -55,6 +55,9 @@ import {
   deconstructDocumentNumber,
   syncNomorDokumenBulanTahun,
   cleanPihakJabatan,
+  ensureDocumentPrefix,
+  extractDocumentSequence,
+  formatPihak2Jabatan,
 } from "@/lib/utils/pesanan-date";
 import { cleanAndFormatTitle } from "@/lib/utils/title-case";
 import type {
@@ -135,7 +138,7 @@ export function BastForm({
       ...prev,
       pihak2Toko: v.namaToko,
       pihak2Nama: v.namaPemilik || prev.pihak2Nama,
-      pihak2Jabatan: (v as any).jabatan || prev.pihak2Jabatan,
+      pihak2Jabatan: formatPihak2Jabatan(v.jabatan || "Pemilik", v.namaToko),
     }));
   };
 
@@ -149,6 +152,7 @@ export function BastForm({
     const res = await quickSaveVendorAction({
       namaToko: formData.pihak2Toko,
       namaPemilik: formData.pihak2Nama,
+      jabatan: formData.pihak2Jabatan,
       kategori: "Penyedia Pengadaan",
     });
 
@@ -204,23 +208,25 @@ export function BastForm({
           {
             id: "1",
             no: 1,
-            jenisBarang: "Sound Aktif Portable Professional 15 Inch",
+            jenisBarang: "",
             pesanan: "1 unit",
             realisasi: "1 unit",
             kondisi: "Baik",
           },
         ],
-        catatanUji: b.catatanUji || "Barang telah dihidupkan, dites keluaran audio, baterai & mic nirkabel berfungsi normal 100%.",
+        catatanUji: b.catatanUji || "Kondisi fisik utuh, kelengkapan aksesoris lengkap, fungsi operasional normal 100%.",
         statusUji: b.statusUji || "Lulus Uji Coba",
-        fotoFisikNama: b.fotoFisikNama || "IMG_BAST_014_2026.jpg",
-        geoTag: "Talang, Tegal (-6.9402, 109.1384)",
+        fotoFisikNama: b.fotoFisikNama || "",
+        geoTag: (b as any).geoTag || "",
         receiptId: b.receiptId || null,
-        linkedReceiptNominal: 3000000,
-        linkedReceiptNomor: "014/KWT-HB/2026",
+        linkedReceiptNominal: (b as any).receipt?.nominal || initialReceipts.find((r) => r.id === b.receiptId)?.nominal || undefined,
+        linkedReceiptNomor: (b as any).receipt?.nomorBukti || initialReceipts.find((r) => r.id === b.receiptId)?.nomorBukti || undefined,
       };
     }
 
-    const defaultBastNo = initialNextBast?.nomorBast || "01/A/PR.FNU/IX/2026";
+    const defaultBastNo =
+      initialNextBast?.nomorBast ||
+      buildFormattedDocumentNumber("001", ensureDocumentPrefix(profile?.formatNomorBast || "/A/PR.FNU/", "BA"), todayStr);
     return {
       nomorBast: defaultBastNo,
       tanggal: todayStr,
@@ -266,9 +272,18 @@ export function BastForm({
     const tglIso = po.tanggal ? new Date(po.tanggal).toISOString().split("T")[0] : todayStr;
     const poDate = po.tanggal ? new Date(po.tanggal) : new Date();
     const { hariTanggal: spHariTanggal, terbilangResmi: spTerbilang } = formatTanggalTerbilang(poDate);
+
+    // Pastikan format pattern BAST memiliki prefix /BA/
+    const targetPatternBast = ensureDocumentPrefix(formatPatternBast, "BA");
+    const spSeq = extractDocumentSequence(po.nomorSp);
+
+    // Sinkronkan nomor urut BAST dengan nomor urut SP terpilih
+    setNomorUrutBast(spSeq);
+    setFormatPatternBast(targetPatternBast);
+
     const updatedBastNo = isManualNomorBast
       ? syncNomorDokumenBulanTahun(formData.nomorBast, tglIso)
-      : buildFormattedDocumentNumber(nomorUrutBast, formatPatternBast, tglIso);
+      : buildFormattedDocumentNumber(spSeq, targetPatternBast, tglIso);
 
     const mappedItems: BastItem[] = parsedItems.map((it, idx) => ({
       id: String(idx + 1),
@@ -279,6 +294,14 @@ export function BastForm({
       realisasi: `${it.jumlah} ${it.satuan || "unit"}`,
       kondisi: "Baik",
     }));
+
+    // Cari receipt terkait untuk nominal & nomor kwitansi
+    const matchedReceipt = initialReceipts.find(
+      (r) => r.id === po.receiptId || (po as any).receipt?.id === r.id
+    );
+    const poTotal = parsedItems.reduce((acc, it) => acc + (Number(it.totalHarga) || 0), 0) || po.totalHarga || 0;
+    const resolvedNominal = matchedReceipt?.nominal || (po as any).receipt?.nominal || (poTotal > 0 ? poTotal : undefined);
+    const resolvedNomorBukti = matchedReceipt?.nomorBukti || (po as any).receipt?.nomorBukti || undefined;
 
     setFormData((prev) => ({
       ...prev,
@@ -292,9 +315,11 @@ export function BastForm({
       pihak1Nama: po.pihak1Nama || prev.pihak1Nama,
       pihak1Jabatan: cleanPihakJabatan(po.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || prev.pihak1Jabatan),
       pihak2Nama: po.pihak2Nama || prev.pihak2Nama,
-      pihak2Jabatan: (po as any).pihak2Jabatan || prev.pihak2Jabatan,
+      pihak2Jabatan: formatPihak2Jabatan((po as any).pihak2Jabatan || prev.pihak2Jabatan, po.pihak2Toko || prev.pihak2Toko),
       pihak2Toko: po.pihak2Toko || prev.pihak2Toko,
       receiptId: po.receiptId || prev.receiptId,
+      linkedReceiptNominal: resolvedNominal !== undefined ? resolvedNominal : prev.linkedReceiptNominal,
+      linkedReceiptNomor: resolvedNomorBukti || prev.linkedReceiptNomor,
       items: mappedItems.length > 0 ? mappedItems : prev.items,
     }));
   };
@@ -352,7 +377,7 @@ export function BastForm({
     }
 
     return {
-      nomorSp: formData.nomorSpk || "01/SP/2026",
+      nomorSp: formData.nomorSpk || "",
       tanggal: formData.tanggalSpk || todayStr,
       namaPaket: formData.namaKegiatan,
       pihak1Nama: formData.pihak1Nama,
@@ -496,13 +521,13 @@ export function BastForm({
       pihak1Nama: b.pihak1Nama,
       pihak1Jabatan: cleanPihakJabatan(b.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
       pihak2Nama: b.pihak2Nama,
-      pihak2Jabatan: (b as any).pihak2Jabatan || undefined,
+      pihak2Jabatan: formatPihak2Jabatan((b as any).pihak2Jabatan, b.pihak2Toko),
       pihak2Toko: b.pihak2Toko,
       items: parsedItems.length > 0 ? parsedItems : [
         {
           id: "1",
           no: 1,
-          jenisBarang: "Barang Pengadaan Hibah",
+          jenisBarang: "",
           pesanan: "1 unit",
           realisasi: "1 unit",
           kondisi: "Baik",
@@ -510,37 +535,44 @@ export function BastForm({
       ],
       catatanUji: b.catatanUji || "",
       statusUji: b.statusUji || "Lulus Uji Coba",
-      fotoFisikNama: b.fotoFisikNama || "IMG_SERAHTERIMA.jpg",
-      geoTag: "Talang, Tegal (-6.9402, 109.1384)",
+      fotoFisikNama: b.fotoFisikNama || "",
+      geoTag: (b as any).geoTag || "",
       receiptId: b.receiptId || null,
-      linkedReceiptNominal: 3000000,
-      linkedReceiptNomor: undefined,
+      linkedReceiptNominal:
+        (b as any).receipt?.nominal ||
+        initialReceipts.find((r) => r.id === b.receiptId)?.nominal ||
+        pesananList.find((p) => p.nomorSp === b.nomorSpk)?.totalHarga ||
+        undefined,
+      linkedReceiptNomor:
+        (b as any).receipt?.nomorBukti ||
+        initialReceipts.find((r) => r.id === b.receiptId)?.nomorBukti ||
+        undefined,
     });
 
     // Sinkronisasi komponen nomor urut dan format penomoran BAST
     const decomp = deconstructDocumentNumber(b.nomorBast);
     setNomorUrutBast(decomp.nomorUrut);
-    setFormatPatternBast(decomp.formatPattern);
+    setFormatPatternBast(ensureDocumentPrefix(decomp.formatPattern, "BA"));
 
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
   };
 
-  // Parameter Otomatisasi Format Penomoran BAST (Contoh: /A/PR.FNU/ atau /BAST-HB/FTY/)
+  // Parameter Otomatisasi Format Penomoran BAST (Contoh: /BA/A/PR.FNU/ atau /BAST-HB/FTY/)
   const initBastDecomp = deconstructDocumentNumber(formData.nomorBast);
   const [formatPatternBast, setFormatPatternBast] = useState<string>(() => {
-    if (profile?.formatNomorBast) return profile.formatNomorBast;
+    if (profile?.formatNomorBast) return ensureDocumentPrefix(profile.formatNomorBast, "BA");
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("bast_format_pattern");
-      if (saved) return saved;
+      if (saved) return ensureDocumentPrefix(saved, "BA");
     }
-    return initBastDecomp.formatPattern || "/A/PR.FNU/";
+    return ensureDocumentPrefix(initBastDecomp.formatPattern || "/A/PR.FNU/", "BA");
   });
   const [nomorUrutBast, setNomorUrutBast] = useState<string>(() => {
     if (initialBastList.length > 0) {
-      return initBastDecomp.nomorUrut || "01";
+      return initBastDecomp.nomorUrut || "001";
     }
-    return initialNextBast?.nomorUrut || initBastDecomp.nomorUrut || "01";
+    return initialNextBast?.nomorUrut || initBastDecomp.nomorUrut || "001";
   });
   const [isManualNomorBast, setIsManualNomorBast] = useState<boolean>(false);
   const [isSavingPattern, startSavePattern] = useTransition();
@@ -560,7 +592,7 @@ export function BastForm({
     setIsGeneratingNo(true);
     try {
       const dateToUse = targetDateStr || formData.tanggal || todayStr;
-      const res = await getNextNomorBastAction(dateToUse);
+      const res = await getNextNomorBastAction(dateToUse, formData.nomorSpk);
       if (res.success && res.data) {
         setNomorUrutBast(res.data.nomorUrut);
         setFormData((prev) => ({
@@ -909,9 +941,9 @@ export function BastForm({
     const { hariTanggal, terbilangResmi } = formatTanggalTerbilang(new Date());
 
     // Otomatis cari nomor urut berikutnya yang belum pernah dipakai di DB
-    const res = await getNextNomorBastAction(todayStr);
-    const nextUrut = res.success && res.data ? res.data.nomorUrut : "01";
-    const nextNo = res.success && res.data ? res.data.nomorBast : buildFormattedDocumentNumber("01", formatPatternBast, todayStr);
+    const res = await getNextNomorBastAction(todayStr, formData.nomorSpk);
+    const nextUrut = res.success && res.data ? res.data.nomorUrut : "001";
+    const nextNo = res.success && res.data ? res.data.nomorBast : buildFormattedDocumentNumber("001", ensureDocumentPrefix(formatPatternBast, "BA"), todayStr);
 
     setNomorUrutBast(nextUrut);
     setIsManualNomorBast(false);
@@ -1643,7 +1675,7 @@ export function BastForm({
                         <option value="">-- Pilih Rekanan Langganan ({vendors.length} Toko) --</option>
                         {vendors.map((v) => (
                           <option key={v.id} value={v.id}>
-                            {v.namaToko} {v.namaPemilik ? `(Pemilik: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
+                            {v.namaToko} {v.namaPemilik ? `(${v.jabatan || "Pemilik"}: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
                           </option>
                         ))}
                       </select>
@@ -1965,7 +1997,7 @@ export function BastForm({
                     Nilai Total Kwitansi Terkait
                   </span>
                   <span className="text-lg font-bold font-mono text-emerald-400">
-                    Rp {(formData.linkedReceiptNominal || 3000000).toLocaleString("id-ID")},-
+                    {formData.linkedReceiptNominal ? `Rp ${formData.linkedReceiptNominal.toLocaleString("id-ID")},-` : "Rp 0,-"}
                   </span>
                 </div>
               </div>
@@ -2249,7 +2281,7 @@ export function BastForm({
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Nota resmi bermaterai bercap basah toko rekanan senilai{" "}
                   <strong className="text-slate-200">
-                    Rp {(formData.linkedReceiptNominal || 3000000).toLocaleString("id-ID")},-
+                    {formData.linkedReceiptNominal ? `Rp ${formData.linkedReceiptNominal.toLocaleString("id-ID")},-` : "-"}
                   </strong>{" "}
                   lunas bayar.
                 </p>
@@ -2277,7 +2309,7 @@ export function BastForm({
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Kwitansi kas pengeluaran bertandatangan Ketua & Bendahara{" "}
                   <strong className="text-slate-200">
-                    {formData.linkedReceiptNomor || "014/KWT-HB/2026"}
+                    {formData.linkedReceiptNomor || "Otomatis Sesuai SP/BKU"}
                   </strong>
                   .
                 </p>

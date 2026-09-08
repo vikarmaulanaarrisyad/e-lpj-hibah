@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { rabRepository } from "@/repositories/rab.repository";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import type {
@@ -412,10 +413,44 @@ export class RabService {
         };
       }
 
+      let target: RabItem | null = null;
+      if (input.id) {
+        target = await rabRepository.findById(input.id);
+      } else if (input.kode) {
+        target = await rabRepository.findByUserIdAndKode(userId, input.kode.trim());
+      }
+
+      if (target) {
+        if (target.userId !== userId) {
+          return { success: false, message: "Pos rekening RAB tidak ditemukan." };
+        }
+
+        // Guardrail: Pastikan tidak ada transaksi BKU atau kwitansi yang menggunakan pos ini
+        const receipts = await receiptRepository.findManyByUserId(userId);
+        const matchingReceipts = receipts.filter((r) =>
+          this.isCategoryMatch(r.kategoriRab, target!.kode)
+        );
+
+        const bkuTx = await prisma.bkuTransaction.findMany({
+          where: {
+            userId,
+            uraian: {
+              contains: target.nama,
+            },
+          },
+        });
+
+        if (matchingReceipts.length > 0 || bkuTx.length > 0) {
+          return {
+            success: false,
+            message: `Pos rekening "${target.kode} - ${target.nama}" tidak dapat diubah karena sudah memiliki transaksi/realisasi belanja di BKU.`,
+          };
+        }
+      }
+
       let updated: RabItem;
       if (input.id) {
-        const target = await rabRepository.findById(input.id);
-        if (!target || target.userId !== userId) {
+        if (!target) {
           return { success: false, message: "Pos rekening RAB tidak ditemukan." };
         }
 
@@ -528,7 +563,10 @@ export class RabService {
   }
 
   /**
-   * Menghapus pos rekening RAB
+   * Menghapus pos rekening RAB.
+   * DIBLOKIR jika sudah ada transaksi di BKU (pengeluaran kwitansi maupun penerimaan)
+   * yang kategorinya cocok dengan pos rekening ini.
+   * RAB hanya bisa dihapus jika belum ada satu pun data di BKU yang merujuknya.
    */
   async deleteRabItem(
     userId: string,
@@ -544,16 +582,36 @@ export class RabService {
         };
       }
 
-      // Pastikan tidak ada kwitansi yang menggunakan pos rekening ini
+      // Cek 1: Kwitansi/Receipt yang menggunakan pos rekening ini
       const receipts = await receiptRepository.findManyByUserId(userId);
-      const hasTransactions = receipts.some((r) =>
-        this.isCategoryMatch(r.kategoriRab, target.kode)
+      const hasReceiptTransactions = receipts.some((r) =>
+        this.isCategoryMatch(r.kategoriRab, target.kode) ||
+        this.isCategoryMatch(r.kategoriRab, target.nama)
       );
 
-      if (hasTransactions) {
+      if (hasReceiptTransactions) {
         return {
           success: false,
-          message: `Tidak dapat menghapus pos rekening ${target.kode} (${target.nama}) karena sudah memiliki riwayat transaksi kwitansi belanja tersimpan.`,
+          message: `Tidak dapat menghapus pos rekening "${target.kode} - ${target.nama}" karena sudah ada ${receipts.filter((r) => this.isCategoryMatch(r.kategoriRab, target.kode) || this.isCategoryMatch(r.kategoriRab, target.nama)).length} kwitansi belanja yang tercatat. Hapus kwitansi terkait terlebih dahulu melalui BKU atau menu Kwitansi.`,
+        };
+      }
+
+      // Cek 2: Transaksi BKU yang kategorinya merujuk pos rekening ini (termasuk PENERIMAAN manual)
+      const bkuTransactions = await prisma.bkuTransaction.findMany({
+        where: { userId },
+        select: { id: true, nomorBukti: true, jenis: true, kategoriRab: true },
+      });
+
+      const matchingBku = bkuTransactions.filter((tx) =>
+        this.isCategoryMatch(tx.kategoriRab, target.kode) ||
+        this.isCategoryMatch(tx.kategoriRab, target.nama)
+      );
+
+      if (matchingBku.length > 0) {
+        const jenisInfo = matchingBku.map((tx) => tx.nomorBukti).slice(0, 3).join(", ");
+        return {
+          success: false,
+          message: `Tidak dapat menghapus pos rekening "${target.kode} - ${target.nama}" karena sudah ada ${matchingBku.length} transaksi di Buku Kas Umum (BKU) yang merujuknya (${jenisInfo}${matchingBku.length > 3 ? ", ..." : ""}). Hapus transaksi BKU terkait terlebih dahulu.`,
         };
       }
 
@@ -669,6 +727,22 @@ export class RabService {
         return { success: false, message: "Kelompok kegiatan RAB tidak ditemukan." };
       }
 
+      // Guardrail: Cek apakah item rincian sudah memiliki realisasi di BKU
+      const statusRes = await this.getRabStatus(userId);
+      const targetGroup = statusRes.data?.items.find((i) => i.id === rabItemId);
+      const targetRow = targetGroup?.rincian?.find((r) => r.id === input.id);
+      if (
+        targetRow &&
+        ((targetRow.realisasi || 0) > 0 ||
+          targetRow.statusSerapan === "LUNAS" ||
+          targetRow.statusSerapan === "SEBAGIAN")
+      ) {
+        return {
+          success: false,
+          message: `Item rincian "${targetRow.uraian}" tidak dapat diubah karena sudah memiliki realisasi belanja di BKU.`,
+        };
+      }
+
       let existingRows: RabDetailRow[] = [];
       let isLegacy = true;
       if (target.keterangan) {
@@ -755,6 +829,22 @@ export class RabService {
       const target = await rabRepository.findById(rabItemId);
       if (!target || target.userId !== userId) {
         return { success: false, message: "Kelompok kegiatan RAB tidak ditemukan." };
+      }
+
+      // Guardrail: Cek apakah item rincian sudah memiliki realisasi di BKU
+      const statusRes = await this.getRabStatus(userId);
+      const targetGroup = statusRes.data?.items.find((i) => i.id === rabItemId);
+      const targetRow = targetGroup?.rincian?.find((r) => r.id === rowId);
+      if (
+        targetRow &&
+        ((targetRow.realisasi || 0) > 0 ||
+          targetRow.statusSerapan === "LUNAS" ||
+          targetRow.statusSerapan === "SEBAGIAN")
+      ) {
+        return {
+          success: false,
+          message: `Item rincian "${targetRow.uraian}" tidak dapat dihapus karena sudah memiliki realisasi belanja di BKU.`,
+        };
       }
 
       let existingRows: RabDetailRow[] = [];

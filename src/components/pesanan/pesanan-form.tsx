@@ -51,6 +51,8 @@ import {
   deconstructDocumentNumber,
   extractNamaTempat,
   cleanPihakJabatan,
+  ensureDocumentPrefix,
+  extractDocumentSequence,
 } from "@/lib/utils/pesanan-date";
 import { savePurchaseOrderAction, deletePurchaseOrderAction, getNextNomorSpAction } from "@/app/actions/pesanan.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
@@ -136,7 +138,7 @@ export function PesananForm({
       ...prev,
       pihak2Toko: v.namaToko,
       pihak2Nama: v.namaPemilik || prev.pihak2Nama,
-      pihak2Jabatan: (v as any).jabatan || prev.pihak2Jabatan,
+      pihak2Jabatan: v.jabatan || prev.pihak2Jabatan,
       pihak2Alamat: v.alamat || prev.pihak2Alamat,
     }));
   };
@@ -151,6 +153,7 @@ export function PesananForm({
     const res = await quickSaveVendorAction({
       namaToko: formData.pihak2Toko,
       namaPemilik: formData.pihak2Nama,
+      jabatan: formData.pihak2Jabatan,
       alamat: formData.pihak2Alamat,
       kategori: "Penyedia Pengadaan",
     });
@@ -201,12 +204,12 @@ export function PesananForm({
           {
             id: "1",
             no: 1,
-            jenisBarang: "Sound Aktif Portable Professional 15 Inch",
-            spesifikasi: "Kelengkapan: Mic Wireless 2 buah, Bluetooth, Aki Kering",
+            jenisBarang: "",
+            spesifikasi: "",
             jumlah: 1,
             satuan: "unit",
-            hargaSatuan: 3000000,
-            totalHarga: 3000000,
+            hargaSatuan: 0,
+            totalHarga: 0,
           },
         ],
         subtotal: p.subtotal,
@@ -228,7 +231,7 @@ export function PesananForm({
 
     const defaultSpNo =
       initialNextNomorSp?.nomorSp ||
-      buildFormattedDocumentNumber("01", profile?.formatNomorSp || "/A/PR.FNU/", todayStr);
+      buildFormattedDocumentNumber("001", ensureDocumentPrefix(profile?.formatNomorSp || "/A/PR.FNU/", "SP"), todayStr);
 
     return {
       nomorSp: defaultSpNo,
@@ -275,18 +278,18 @@ export function PesananForm({
     return 4;
   });
 
-  // Parameter Otomatisasi Format Penomoran SP (Contoh: /A/PR.FNU/)
+  // Parameter Otomatisasi Format Penomoran SP (Contoh: /SP/A/PR.FNU/)
   const initDecompSp = deconstructDocumentNumber(formData.nomorSp);
   const [formatPatternSp, setFormatPatternSp] = useState<string>(() => {
-    if (profile?.formatNomorSp) return profile.formatNomorSp;
+    if (profile?.formatNomorSp) return ensureDocumentPrefix(profile.formatNomorSp, "SP");
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sp_format_pattern");
-      if (saved) return saved;
+      if (saved) return ensureDocumentPrefix(saved, "SP");
     }
-    return initDecompSp.formatPattern || "/A/PR.FNU/";
+    return ensureDocumentPrefix(initDecompSp.formatPattern || "/A/PR.FNU/", "SP");
   });
   const [nomorUrutSp, setNomorUrutSp] = useState<string>(
-    initDecompSp.nomorUrut || initialNextNomorSp?.nomorUrut || "01"
+    initDecompSp.nomorUrut || initialNextNomorSp?.nomorUrut || "001"
   );
   const [isManualNomorSp, setIsManualNomorSp] = useState<boolean>(false);
   const [isSavingPattern, startSavePattern] = useTransition();
@@ -470,11 +473,13 @@ export function PesananForm({
       ? syncNomorDokumenBulanTahun(formData.nomorSp, nextTanggalSp)
       : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, nextTanggalSp);
 
-    // Cek apakah penerima pada kwitansi cocok dengan Master Toko
+    // Cek apakah penerima pada kwitansi cocok dengan Master Toko (cocokkan nama pemilik maupun nama toko)
     const matchedVendor = vendors.find(
       (v) =>
-        v.namaToko.toLowerCase() === (r.penerima || "").toLowerCase() ||
-        (r.penerima || "").toLowerCase().includes(v.namaToko.toLowerCase())
+        (r.penerima && v.namaPemilik && v.namaPemilik.trim().toLowerCase() === r.penerima.trim().toLowerCase()) ||
+        (r.penerima && v.namaToko.trim().toLowerCase() === r.penerima.trim().toLowerCase()) ||
+        (r.penerima && (r.penerima.toLowerCase().includes(v.namaToko.toLowerCase()) || v.namaToko.toLowerCase().includes(r.penerima.toLowerCase()))) ||
+        (r.penerima && v.namaPemilik && (r.penerima.toLowerCase().includes(v.namaPemilik.toLowerCase()) || v.namaPemilik.toLowerCase().includes(r.penerima.toLowerCase())))
     );
 
     setFormData((prev) => ({
@@ -483,6 +488,7 @@ export function PesananForm({
       namaPaket: cleanUraian,
       pihak2Toko: matchedVendor?.namaToko || r.penerima || prev.pihak2Toko,
       pihak2Nama: matchedVendor?.namaPemilik || r.penerima || prev.pihak2Nama,
+      pihak2Jabatan: matchedVendor?.jabatan || prev.pihak2Jabatan || "Pemilik",
       pihak2Alamat: matchedVendor?.alamat || prev.pihak2Alamat,
       subtotal,
       totalHarga,
@@ -536,12 +542,12 @@ export function PesananForm({
         {
           id: "1",
           no: 1,
-          jenisBarang: "Barang Pengadaan Hibah",
+          jenisBarang: "",
           spesifikasi: "",
           jumlah: 1,
           satuan: "unit",
-          hargaSatuan: p.totalHarga,
-          totalHarga: p.totalHarga,
+          hargaSatuan: 0,
+          totalHarga: 0,
         },
       ],
       subtotal: p.subtotal,
@@ -563,7 +569,7 @@ export function PesananForm({
     // Sinkronisasi komponen penomoran otomatis
     const decomp = deconstructDocumentNumber(p.nomorSp);
     setNomorUrutSp(decomp.nomorUrut);
-    setFormatPatternSp(decomp.formatPattern);
+    setFormatPatternSp(ensureDocumentPrefix(decomp.formatPattern, "SP"));
 
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
@@ -619,11 +625,13 @@ export function PesananForm({
     const bastDate = formData.batasWaktu ? new Date(formData.batasWaktu) : (formData.tanggal ? new Date(formData.tanggal) : new Date());
     const { hariTanggal, terbilangResmi } = formatTanggalTerbilang(bastDate);
 
-    // Derivasi nomor BAST dari nomor SP jika memungkinkan
-    const derivedBastNo = formData.nomorSp.replace(/\/SP\//i, "/BAST-HB/").replace(/\/A\//i, "/BAST-HB/");
+    // Derivasi nomor BAST dari nomor SP (selaraskan nomor urut SP dengan prefix /BA/)
+    const bastPattern = ensureDocumentPrefix(profile?.formatNomorBast || "/BA/A/PR.FNU/", "BA");
+    const spSeq = extractDocumentSequence(formData.nomorSp);
+    const derivedBastNo = buildFormattedDocumentNumber(spSeq, bastPattern, bastDate);
 
     return {
-      nomorBast: derivedBastNo !== formData.nomorSp ? derivedBastNo : `01/BAST-HB/FTY/VII/2026`,
+      nomorBast: derivedBastNo,
       tanggal: formData.batasWaktu || formData.tanggal || todayStr,
       hariTanggal,
       tanggalTerbilang: terbilangResmi,
@@ -867,8 +875,8 @@ export function PesananForm({
   };
 
   const handleCreateNew = async () => {
-    let nextNomor = buildFormattedDocumentNumber("01", formatPatternSp, todayStr);
-    let nextUrut = "01";
+    let nextNomor = buildFormattedDocumentNumber("001", ensureDocumentPrefix(formatPatternSp, "SP"), todayStr);
+    let nextUrut = "001";
 
     try {
       const res = await getNextNomorSpAction(todayStr);
@@ -878,9 +886,9 @@ export function PesananForm({
       }
     } catch (err) {
       console.warn("[PesananForm] Error fetching next nomor SP:", err);
-      const calculatedUrut = String(pesananList.length + 1).padStart(2, "0");
+      const calculatedUrut = String(pesananList.length + 1).padStart(3, "0");
       nextUrut = calculatedUrut;
-      nextNomor = buildFormattedDocumentNumber(calculatedUrut, formatPatternSp, todayStr);
+      nextNomor = buildFormattedDocumentNumber(calculatedUrut, ensureDocumentPrefix(formatPatternSp, "SP"), todayStr);
     }
 
     setNomorUrutSp(nextUrut);
@@ -1532,7 +1540,7 @@ export function PesananForm({
                     <option value="">-- Pilih Toko Langganan ({vendors.length} Toko Tersimpan) --</option>
                     {vendors.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.namaToko} {v.namaPemilik ? `(Pemilik: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
+                        {v.namaToko} {v.namaPemilik ? `(${v.jabatan || "Pemilik"}: ${v.namaPemilik})` : ""} {v.kategori ? `• ${v.kategori}` : ""}
                       </option>
                     ))}
                   </select>

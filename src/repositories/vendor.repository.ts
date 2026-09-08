@@ -61,6 +61,7 @@ export class VendorRepository {
         data: {
           namaToko: input.namaToko.trim(),
           namaPemilik: input.namaPemilik?.trim() || null,
+          jabatan: input.jabatan?.trim() || null,
           alamat: input.alamat?.trim() || null,
           noHp: input.noHp?.trim() || null,
           kategori: input.kategori?.trim() || null,
@@ -88,6 +89,7 @@ export class VendorRepository {
         data: {
           ...(input.namaToko !== undefined && { namaToko: input.namaToko.trim() }),
           ...(input.namaPemilik !== undefined && { namaPemilik: input.namaPemilik?.trim() || null }),
+          ...(input.jabatan !== undefined && { jabatan: input.jabatan?.trim() || null }),
           ...(input.alamat !== undefined && { alamat: input.alamat?.trim() || null }),
           ...(input.noHp !== undefined && { noHp: input.noHp?.trim() || null }),
           ...(input.kategori !== undefined && { kategori: input.kategori?.trim() || null }),
@@ -132,6 +134,7 @@ export class VendorRepository {
           where: { id: existing.id },
           data: {
             namaPemilik: input.namaPemilik?.trim() || existing.namaPemilik,
+            jabatan: input.jabatan?.trim() || existing.jabatan,
             alamat: input.alamat?.trim() || existing.alamat,
             noHp: input.noHp?.trim() || existing.noHp,
             kategori: input.kategori?.trim() || existing.kategori,

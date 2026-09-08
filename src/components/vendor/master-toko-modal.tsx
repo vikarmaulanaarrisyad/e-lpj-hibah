@@ -58,6 +58,7 @@ export function MasterTokoModal({
   const [formInput, setFormInput] = useState<CreateVendorInput>({
     namaToko: "",
     namaPemilik: "",
+    jabatan: "",
     alamat: "",
     noHp: "",
     kategori: "Elektronik & Sound System",
@@ -108,6 +109,7 @@ export function MasterTokoModal({
     const matchQuery =
       v.namaToko.toLowerCase().includes(query) ||
       (v.namaPemilik && v.namaPemilik.toLowerCase().includes(query)) ||
+      (v.jabatan && v.jabatan.toLowerCase().includes(query)) ||
       (v.alamat && v.alamat.toLowerCase().includes(query)) ||
       (v.noHp && v.noHp.includes(query));
 
@@ -122,6 +124,7 @@ export function MasterTokoModal({
     setFormInput({
       namaToko: "",
       namaPemilik: "",
+      jabatan: "",
       alamat: "",
       noHp: "",
       kategori: "Elektronik & Sound System",
@@ -134,6 +137,7 @@ export function MasterTokoModal({
     setFormInput({
       namaToko: v.namaToko,
       namaPemilik: v.namaPemilik || "",
+      jabatan: v.jabatan || "",
       alamat: v.alamat || "",
       noHp: v.noHp || "",
       kategori: v.kategori || "Lainnya / Umum",
@@ -153,6 +157,7 @@ export function MasterTokoModal({
         id: editingId || undefined,
         namaToko: formInput.namaToko,
         namaPemilik: formInput.namaPemilik,
+        jabatan: formInput.jabatan,
         alamat: formInput.alamat,
         noHp: formInput.noHp,
         kategori: formInput.kategori,
@@ -302,7 +307,7 @@ export function MasterTokoModal({
                             {v.namaPemilik && (
                               <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
                                 <User className="w-3 h-3 text-amber-400 shrink-0" />
-                                <span>Pemilik / Pimpinan: <strong>{v.namaPemilik}</strong></span>
+                                <span>{v.jabatan || "Pemilik / Pimpinan"}: <strong>{v.namaPemilik}</strong></span>
                               </p>
                             )}
                           </div>
@@ -428,6 +433,21 @@ export function MasterTokoModal({
                     value={formInput.namaPemilik || ""}
                     onChange={(e) => setFormInput({ ...formInput, namaPemilik: e.target.value })}
                     placeholder="Contoh: Anshori"
+                    className="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Jabatan Pemilik / Pimpinan */}
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-200 font-semibold flex items-center justify-between">
+                    <span>Jabatan Pimpinan / Pemilik</span>
+                    <span className="text-[10px] text-amber-400 font-normal">Cth: Pemilik, Pimpinan, Direktur</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formInput.jabatan || ""}
+                    onChange={(e) => setFormInput({ ...formInput, jabatan: e.target.value })}
+                    placeholder="Contoh: Pemilik / Pimpinan Toko"
                     className="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>

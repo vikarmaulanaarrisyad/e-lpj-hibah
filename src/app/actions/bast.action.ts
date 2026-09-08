@@ -109,12 +109,13 @@ export async function deleteBastAction(id: string): Promise<ServiceResponse<bool
  * Server Action: Mendapatkan nomor register BAST dan No. Urut berikutnya secara otomatis
  */
 export async function getNextNomorBastAction(
-  dateString?: string
+  dateString?: string,
+  spNo?: string
 ): Promise<ServiceResponse<{ nomorBast: string; nomorUrut: string }>> {
   try {
     const session = await authService.getSession();
     const userId = session?.sub || "default";
-    const nextData = await bastService.generateNextNomorBast(userId, dateString);
+    const nextData = await bastService.generateNextNomorBast(userId, dateString, spNo);
     return { success: true, message: "Nomor BAST dibuat otomatis.", data: nextData };
   } catch (error) {
     console.error("[getNextNomorBastAction] Error:", error);
@@ -122,8 +123,8 @@ export async function getNextNomorBastAction(
       success: true,
       message: "Nomor default.",
       data: {
-        nomorBast: "01/A/PR.FNU/IX/2026",
-        nomorUrut: "01",
+        nomorBast: "001/BA/A/PR.FNU/IX/2026",
+        nomorUrut: "001",
       },
     };
   }

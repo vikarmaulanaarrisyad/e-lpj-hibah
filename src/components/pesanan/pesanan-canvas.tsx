@@ -333,9 +333,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
               <td className="p-1.5 sm:p-2 text-right font-mono text-black">
                 {data.pajak > 0
                   ? `Rp ${data.pajak.toLocaleString("id-ID")}`
-                  : (data.pajakKeterangan && data.pajakKeterangan !== "- (Sudah Termasuk)"
-                      ? data.pajakKeterangan
-                      : "(Sudah Termasuk PPN)")}
+                  : "-"}
               </td>
             </tr>
 
@@ -364,8 +362,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             </span>
           </div>
           <p className="text-[10.5px] sm:text-[11px] text-black italic">
-            {(data.pajakKeterangan && data.pajakKeterangan !== "- (Sudah Termasuk)")
-              ? data.pajakKeterangan
+            {(data.pajakKeterangan && data.pajakKeterangan !== "- (Sudah Termasuk)" && data.pajakKeterangan !== "-")
+              ? (data.pajakKeterangan.startsWith("(") ? data.pajakKeterangan : `(${data.pajakKeterangan})`)
               : "(Sudah Termasuk PPN)"}
           </p>
         </div>

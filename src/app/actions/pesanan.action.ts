@@ -113,8 +113,8 @@ export async function getNextNomorSpAction(
       success: true,
       message: "Nomor default.",
       data: {
-        nomorSp: "01/A/PR.FNU/IX/2026",
-        nomorUrut: "01",
+        nomorSp: "001/SP/A/PR.FNU/IX/2026",
+        nomorUrut: "001",
       },
     };
   }

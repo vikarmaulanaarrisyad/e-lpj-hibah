@@ -129,10 +129,10 @@ export class VendorService {
       // 1. Cek dari PurchaseOrder user
       const poList = await prisma.purchaseOrder.findMany({
         where: { userId },
-        select: { pihak2Toko: true, pihak2Nama: true, pihak2Alamat: true },
+        select: { pihak2Toko: true, pihak2Nama: true, pihak2Jabatan: true, pihak2Alamat: true },
       });
 
-      const knownShops = new Map<string, { namaToko: string; namaPemilik?: string | null; alamat?: string | null }>();
+      const knownShops = new Map<string, { namaToko: string; namaPemilik?: string | null; jabatan?: string | null; alamat?: string | null }>();
 
       for (const po of poList) {
         if (po.pihak2Toko && po.pihak2Toko.trim()) {
@@ -141,6 +141,7 @@ export class VendorService {
             knownShops.set(cleanName.toLowerCase(), {
               namaToko: cleanName,
               namaPemilik: po.pihak2Nama?.trim() || null,
+              jabatan: po.pihak2Jabatan?.trim() || null,
               alamat: po.pihak2Alamat?.trim() || null,
             });
           }
@@ -153,6 +154,7 @@ export class VendorService {
           await vendorRepository.create(userId, {
             namaToko: v.namaToko,
             namaPemilik: v.namaPemilik,
+            jabatan: v.jabatan,
             alamat: v.alamat,
             kategori: "Penyedia Pengadaan",
           });
