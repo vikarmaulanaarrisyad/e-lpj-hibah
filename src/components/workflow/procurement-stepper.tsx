@@ -10,10 +10,11 @@ import {
   CheckCircle2,
   Sparkles,
   ExternalLink,
+  Camera,
 } from "lucide-react";
 
 export interface ProcurementStepperProps {
-  currentStep: 1 | 2 | 3 | 4;
+  currentStep: 1 | 2 | 3 | 4 | 5;
   relatedReceiptNo?: string | null;
   relatedReceiptId?: string | null;
   relatedSpNo?: string | null;
@@ -48,7 +49,7 @@ export function ProcurementStepper({
       step: 2,
       name: "Kwitansi Belanja Kas",
       shortName: "2. Realisasi Kwitansi",
-      desc: "Pencatatan Transaksi & Kas BKU",
+      desc: "Pencatatan Transaksi & Foto Bukti",
       icon: Receipt,
       isOptional: false,
       href: relatedReceiptNo
@@ -88,6 +89,18 @@ export function ProcurementStepper({
         : "/user/bast",
       docNo: relatedBastNo || null,
     },
+    {
+      step: 5,
+      name: "Dokumentasi & Foto Fisik",
+      shortName: "5. Dokumentasi Foto",
+      desc: "Foto Bukti, Nota & Lembar F4",
+      icon: Camera,
+      isOptional: true,
+      href: relatedReceiptNo
+        ? `/user/dokumentasi?receiptNo=${encodeURIComponent(relatedReceiptNo)}`
+        : "/user/dokumentasi",
+      docNo: null,
+    },
   ];
 
   return (
@@ -102,13 +115,14 @@ export function ProcurementStepper({
             <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
               <span>Alur Pengadaan Terpadu Hibah</span>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-normal">
-                Workflow Step {currentStep} of 4
+                Workflow Step {currentStep} of 5
               </span>
             </h3>
             <p className="text-[11px] text-slate-400">
-              Pagu RAB <span className="text-emerald-400 font-semibold">➔</span> Realisasi Kwitansi Kas{" "}
+              Pagu RAB <span className="text-emerald-400 font-semibold">➔</span> Realisasi Kwitansi Kas (+Bukti){" "}
               <span className="text-emerald-400 font-semibold">➔</span> Surat Pesanan (SP)*{" "}
-              <span className="text-emerald-400 font-semibold">➔</span> Berita Acara (BAST)*
+              <span className="text-emerald-400 font-semibold">➔</span> Berita Acara (BAST)*{" "}
+              <span className="text-emerald-400 font-semibold">➔</span> Dokumentasi Foto F4
             </p>
           </div>
         </div>
@@ -139,7 +153,7 @@ export function ProcurementStepper({
       </div>
 
       {/* Stepper Steps Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
         {steps.map((st) => {
           const isActive = currentStep === st.step;
           const isCompleted = currentStep > st.step || Boolean(st.docNo);
@@ -254,12 +268,17 @@ export function ProcurementStepper({
             )}
             {currentStep === 4 && (
               <span>
-                Setelah BAST selesai, seluruh dokumen pengadaan belanja telah lengkap dan siap dibundel ke LPJ.
+                Setelah BAST selesai, seluruh dokumen pengadaan belanja telah lengkap dan siap dilampirkan foto fisik.
+              </span>
+            )}
+            {currentStep === 5 && (
+              <span>
+                Susun foto nota dan bukti fisik kegiatan dalam format lembar cetak F4 resmi untuk lampiran LPJ.
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {currentStep === 2 && relatedReceiptNo && (
               <>
                 <Link
@@ -280,6 +299,14 @@ export function ProcurementStepper({
                   <span>Lanjut Buat BAST</span>
                   <ArrowRight className="w-3 h-3" />
                 </Link>
+                <Link
+                  href={`/user/dokumentasi?receiptNo=${encodeURIComponent(relatedReceiptNo)}`}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/60 hover:border-emerald-500 text-emerald-300 hover:text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1"
+                >
+                  <Camera className="w-3 h-3 text-emerald-400" />
+                  <span>Dokumentasi Foto</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
               </>
             )}
 
@@ -293,6 +320,17 @@ export function ProcurementStepper({
                 className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/60 hover:border-emerald-500 text-emerald-300 hover:text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1"
               >
                 <span>Lanjut Buat BAST</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
+
+            {currentStep === 4 && (relatedBastNo || relatedReceiptNo) && (
+              <Link
+                href={`/user/dokumentasi?receiptNo=${encodeURIComponent(relatedReceiptNo || relatedBastNo || "")}`}
+                className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/60 hover:border-emerald-500 text-emerald-300 hover:text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1"
+              >
+                <Camera className="w-3 h-3 text-emerald-400" />
+                <span>Lanjut Dokumentasi Foto</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             )}

@@ -49,6 +49,19 @@ export class DokumentasiRepository {
       }
     }
 
+    // Jika nomorReferensi diberikan dan belum ada id, cek apakah sudah ada dokumentasi untuk referensi ini
+    if (!formData.id && formData.nomorReferensi) {
+      const existingByRef = await this.model.findFirst({
+        where: { nomorReferensi: formData.nomorReferensi, userId },
+      });
+      if (existingByRef) {
+        return await this.model.update({
+          where: { id: existingByRef.id },
+          data: dataFields,
+        });
+      }
+    }
+
     return await this.model.create({
       data: {
         ...dataFields,
@@ -77,6 +90,19 @@ export class DokumentasiRepository {
   async findById(id: string, userId: string): Promise<ActivityDocumentationRecord | null> {
     return await this.model.findFirst({
       where: { id, userId },
+    });
+  }
+
+  /**
+   * Mengambil satu dokumentasi kegiatan berdasarkan nomor referensi (misal: nomor bukti kwitansi/BAST/SP)
+   */
+  async findByNomorReferensi(
+    nomorReferensi: string,
+    userId: string
+  ): Promise<ActivityDocumentationRecord | null> {
+    return await this.model.findFirst({
+      where: { nomorReferensi, userId },
+      orderBy: { updatedAt: "desc" },
     });
   }
 

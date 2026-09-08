@@ -219,5 +219,87 @@ export const swalWorkflowPrompt = async (options: {
   return "cancel";
 };
 
+// 8. SWAL ALUR PENGADAAN TERPADU DENGAN DOKUMENTASI (4 Opsi: SP, BAST, Dokumentasi, atau Tetap)
+export const swalProcurementWorkflowPrompt = async (options: {
+  nomorBukti: string;
+  nominal: number;
+  hasPhotos?: boolean;
+}): Promise<"sp" | "bast" | "dokumentasi" | "stay"> => {
+  return new Promise((resolve) => {
+    Swal.fire({
+      icon: "success",
+      title: "Kwitansi Berhasil Disimpan ke BKU!",
+      html: `
+        <div class="space-y-3 text-left">
+          <p class="text-xs sm:text-sm text-slate-200">
+            Transaksi bukti kas <strong>${options.nomorBukti}</strong> senilai <strong>Rp ${options.nominal.toLocaleString("id-ID")}</strong> telah resmi tercatat di Buku Kas Umum (BKU).
+          </p>
+          <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
+            <strong class="text-emerald-400 block font-semibold text-xs">
+              Langkah Selanjutnya dalam Alur Pengadaan Terpadu:
+            </strong>
+            <p class="text-[11px] text-slate-400 leading-snug">
+              Pilih tindakan lanjutan untuk melengkapi berkas pengadaan atau menyusun lembar foto fisik LPJ:
+            </p>
+            <div class="grid grid-cols-1 gap-2 pt-1">
+              <button id="swalBtnSp" type="button" class="w-full text-left p-2.5 rounded-xl bg-slate-800 hover:bg-sky-950 border border-slate-700 hover:border-sky-500 text-slate-200 hover:text-white transition-all flex items-center justify-between group cursor-pointer shadow-xs">
+                <div>
+                  <span class="text-xs font-bold text-sky-400 block">📝 Step 3: Buat Surat Pesanan (SP)</span>
+                  <span class="text-[10.5px] text-slate-400">Pemesanan resmi spesifikasi barang ke toko / rekanan</span>
+                </div>
+                <span class="text-xs text-sky-400 font-bold group-hover:translate-x-1 transition-transform ml-2">➔</span>
+              </button>
+              <button id="swalBtnBast" type="button" class="w-full text-left p-2.5 rounded-xl bg-slate-800 hover:bg-emerald-950 border border-slate-700 hover:border-emerald-500 text-slate-200 hover:text-white transition-all flex items-center justify-between group cursor-pointer shadow-xs">
+                <div>
+                  <span class="text-xs font-bold text-emerald-400 block">📦 Step 4: Berita Acara Serah Terima (BAST)</span>
+                  <span class="text-[10.5px] text-slate-400">Pemeriksaan &amp; serah terima fisik barang dari penyedia</span>
+                </div>
+                <span class="text-xs text-emerald-400 font-bold group-hover:translate-x-1 transition-transform ml-2">➔</span>
+              </button>
+              <button id="swalBtnDokumentasi" type="button" class="w-full text-left p-2.5 rounded-xl bg-slate-800 hover:bg-amber-950 border border-slate-700 hover:border-amber-500 text-slate-200 hover:text-white transition-all flex items-center justify-between group cursor-pointer shadow-xs">
+                <div>
+                  <span class="text-xs font-bold text-amber-400 block">📸 Step 5: Lembar Dokumentasi Foto F4</span>
+                  <span class="text-[10.5px] text-slate-400">Susun foto nota &amp; bukti fisik kegiatan ke lembar siap cetak F4</span>
+                </div>
+                <span class="text-xs text-amber-400 font-bold group-hover:translate-x-1 transition-transform ml-2">➔</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `,
+      showConfirmButton: false,
+      showCancelButton: true,
+      cancelButtonText: "Selesai (Tetap di Kwitansi)",
+      cancelButtonColor: "#334155",
+      background: "#0f172a",
+      color: "#f8fafc",
+      iconColor: "#10b981",
+      customClass: {
+        popup: "rounded-3xl border border-slate-800 shadow-2xl p-5 sm:p-6 max-w-lg",
+        title: "text-base sm:text-lg font-bold text-white",
+        cancelButton: "px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all",
+      },
+      didOpen: () => {
+        document.getElementById("swalBtnSp")?.addEventListener("click", () => {
+          Swal.close();
+          resolve("sp");
+        });
+        document.getElementById("swalBtnBast")?.addEventListener("click", () => {
+          Swal.close();
+          resolve("bast");
+        });
+        document.getElementById("swalBtnDokumentasi")?.addEventListener("click", () => {
+          Swal.close();
+          resolve("dokumentasi");
+        });
+      },
+    }).then((res) => {
+      if (res.dismiss) {
+        resolve("stay");
+      }
+    });
+  });
+};
+
 export default Swal;
 

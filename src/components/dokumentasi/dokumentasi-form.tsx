@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, ChangeEvent } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Camera,
   UploadCloud,
@@ -158,6 +159,11 @@ export function DokumentasiForm({
   const defaultLeader =
     profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
 
+  const searchParams = useSearchParams();
+  const urlReceiptNo = searchParams.get("receiptNo");
+  const urlSpNo = searchParams.get("spNo");
+  const urlBastNo = searchParams.get("bastNo");
+
   const [formData, setFormData] = useState<DokumentasiFormData>({
     judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
     subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
@@ -206,6 +212,45 @@ export function DokumentasiForm({
       console.warn("[LocalStorage] Gagal membaca draft:", err);
     }
   }, []);
+
+  // 1b. Auto-load dari URL Param jika diarahkan dari Alur Pengadaan (Kwitansi / SP / BAST)
+  useEffect(() => {
+    if (urlReceiptNo) {
+      // Cek apakah sudah ada arsip dokumentasi tersimpan untuk nomor bukti ini
+      const foundInSaved = savedList.find(
+        (d) => d.nomorReferensi?.toLowerCase() === urlReceiptNo.toLowerCase()
+      );
+      if (foundInSaved) {
+        handleSelectSavedDocumentation(foundInSaved.id);
+        return;
+      }
+
+      // Jika belum disimpan, tarik data dari opsi Kwitansi
+      const matchingReceipt = receiptOptions.find(
+        (r) => r.nomor?.toLowerCase() === urlReceiptNo.toLowerCase()
+      );
+      if (matchingReceipt) {
+        handleSelectSource(`receipt:${matchingReceipt.id}`);
+
+        // Cek jika ada foto yang diunggah di Kwitansi Form
+        try {
+          const kwitansiPhotosKey = `elpj_kwitansi_photos_${urlReceiptNo}`;
+          const savedKwitansiPhotos = localStorage.getItem(kwitansiPhotosKey);
+          if (savedKwitansiPhotos) {
+            const parsedPhotos = JSON.parse(savedKwitansiPhotos);
+            if (Array.isArray(parsedPhotos) && parsedPhotos.length > 0) {
+              setFormData((prev) => ({
+                ...prev,
+                photos: parsedPhotos,
+              }));
+            }
+          }
+        } catch (e) {
+          console.warn("[AutoLoadKwitansiPhotos] Err:", e);
+        }
+      }
+    }
+  }, [urlReceiptNo]);
 
   // 2. Auto-save ke Local Storage setiap ada perubahan
   useEffect(() => {

@@ -9,6 +9,7 @@ import { receiptRepository } from "@/repositories/receipt.repository";
 import { dokumentasiService } from "@/services/dokumentasi.service";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { DokumentasiForm } from "@/components/dokumentasi/dokumentasi-form";
+import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
 
 import { cookies } from "next/headers";
 import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
@@ -83,6 +84,11 @@ export default async function DokumentasiPage() {
 
       {/* Main Workspace */}
       <main className="w-full flex-1">
+        {/* Alur Pengadaan Terpadu Stepper (Step 5 of 5) */}
+        <div className="max-w-[1720px] mx-auto px-4 sm:px-8 pt-6">
+          <ProcurementStepper currentStep={5} />
+        </div>
+
         <Suspense
           fallback={
             <div className="p-8 text-center text-slate-400 font-sans">

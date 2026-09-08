@@ -2,6 +2,7 @@
 
 import { authService } from "@/services/auth.service";
 import { dokumentasiService } from "@/services/dokumentasi.service";
+import { dokumentasiRepository } from "@/repositories/dokumentasi.repository";
 import type {
   DokumentasiFormData,
   ActivityDocumentationRecord,
@@ -94,3 +95,24 @@ export async function deleteDokumentasiPhotoAction(
     return { success: false, message: "Gagal menghapus foto dari Cloudinary." };
   }
 }
+
+/**
+ * Server Action: Mengambil dokumentasi kegiatan berdasarkan nomor referensi (misal: nomor bukti Kwitansi)
+ */
+export async function getDokumentasiByRefAction(
+  nomorReferensi: string
+): Promise<ServiceResponse<ActivityDocumentationRecord | null>> {
+  try {
+    const session = await authService.getSession();
+    if (!session || !session.sub) {
+      return { success: false, message: "Sesi tidak valid." };
+    }
+
+    const doc = await dokumentasiRepository.findByNomorReferensi(nomorReferensi, session.sub);
+    return { success: true, message: "Dokumentasi berhasil dimuat.", data: doc };
+  } catch (error: any) {
+    console.error("[getDokumentasiByRefAction] Error:", error);
+    return { success: false, message: error?.message || "Gagal memuat dokumentasi." };
+  }
+}
+

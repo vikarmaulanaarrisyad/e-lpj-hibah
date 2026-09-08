@@ -51,10 +51,23 @@ import {
 } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
-import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalSuccessWithAction, swalWorkflowPrompt } from "@/lib/swal";
+import {
+  swalLoading,
+  swalSuccess,
+  swalError,
+  swalConfirmDelete,
+  swalSuccessWithAction,
+  swalWorkflowPrompt,
+  swalProcurementWorkflowPrompt,
+} from "@/lib/swal";
 import { exportKwitansiToPdf } from "@/lib/kwitansi-pdf";
 import { KwitansiCanvas } from "./kwitansi-canvas";
+import { KwitansiPhotoUploader } from "./kwitansi-photo-uploader";
 import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
+import {
+  saveDokumentasiAction,
+  getDokumentasiByRefAction,
+} from "@/app/actions/dokumentasi.action";
 import type {
   Receipt,
   ReceiptFormData,
@@ -63,6 +76,7 @@ import type {
   RabStatusItem,
   InstitutionProfile,
   Vendor,
+  DokumentasiPhoto,
 } from "@/types";
 
 function toDateInputValue(val?: string | Date | null): string {
@@ -339,6 +353,8 @@ export function KwitansiForm({
     };
   });
 
+  const [kwitansiPhotos, setKwitansiPhotos] = useState<DokumentasiPhoto[]>([]);
+
   // Re-fetch RAB summary on mount if not provided
   useEffect(() => {
     if (!rabSummary) {
@@ -431,6 +447,31 @@ export function KwitansiForm({
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
     setAllowDeficitOverride(false);
+
+    // Cek apakah ada foto tersimpan untuk kwitansi ini (dari LocalStorage atau Database)
+    try {
+      const localKey = `elpj_kwitansi_photos_${r.nomorBukti}`;
+      const saved = localStorage.getItem(localKey);
+      if (saved) {
+        setKwitansiPhotos(JSON.parse(saved));
+      } else {
+        getDokumentasiByRefAction(r.nomorBukti).then((res) => {
+          if (res.success && res.data?.photosJson) {
+            try {
+              const loaded = JSON.parse(res.data.photosJson);
+              setKwitansiPhotos(loaded);
+              localStorage.setItem(localKey, JSON.stringify(loaded));
+            } catch {
+              setKwitansiPhotos([]);
+            }
+          } else {
+            setKwitansiPhotos([]);
+          }
+        });
+      }
+    } catch {
+      setKwitansiPhotos([]);
+    }
   };
 
   // Real-time detection if current nomorBukti is already taken by another receipt
@@ -651,6 +692,7 @@ export function KwitansiForm({
         keteranganPajak: "",
       });
       setSelectedReceiptNo("NEW");
+      setKwitansiPhotos([]);
       setSaveSuccessMsg(null);
       setSaveErrorMsg(null);
       setAllowDeficitOverride(false);
@@ -888,39 +930,47 @@ export function KwitansiForm({
       setSaveSuccessMsg(response.message);
 
       const savedDoc = response.data || { nomorBukti: formData.nomorBukti, id: formData.id };
-      const choice = await swalWorkflowPrompt({
-        title: "Kwitansi Berhasil Disimpan ke BKU!",
-        html: `
-          <div class="space-y-3 text-left">
-            <p class="text-xs sm:text-sm text-slate-200">
-              Transaksi bukti kas <strong>${savedDoc.nomorBukti}</strong> senilai <strong>Rp ${effectiveNominal.toLocaleString("id-ID")}</strong> telah resmi tercatat di Buku Kas Umum (BKU).
-            </p>
-            <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
-              <strong class="text-emerald-400 block font-semibold">
-                Langkah Selanjutnya dalam Alur Pengadaan:
-              </strong>
-              <p class="text-[11px] text-slate-400">
-                Pilih apakah transaksi belanja ini memerlukan <strong>Surat Pesanan (SP)</strong> ke rekanan atau langsung <strong>Berita Acara (BAST)</strong> serah terima barang:
-              </p>
-            </div>
-          </div>
-        `,
-        confirmText: "📝 Buat Surat Pesanan (SP) ➔",
-        denyText: "📦 Langsung Buat BAST ➔",
-        cancelText: "Selesai (Tetap di Kwitansi)",
+
+      // Otomatis sinkronkan foto bukti ke modul Dokumentasi Kegiatan di Database
+      if (kwitansiPhotos.length > 0) {
+        saveDokumentasiAction({
+          judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+          subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
+          namaKegiatan: formData.uraian || "Belanja Pengadaan Barang / Jasa",
+          nomorReferensi: savedDoc.nomorBukti,
+          tanggalKegiatan: formData.tanggal,
+          lokasiKegiatan: formData.pemberi || "Sekretariat Lembaga",
+          layout: kwitansiPhotos.length > 2 ? "4-per-page" : "2-per-page",
+          photos: kwitansiPhotos,
+          sertakanTandaTangan: true,
+          penandatangan1Jabatan: `Penyedia / ${formData.penerima || "Toko Rekanan"}`,
+          penandatangan1Nama: formData.penerima || "Rekanan Toko",
+          penandatangan2Jabatan: "Ketua Lembaga",
+          penandatangan2Nama: formData.ketua,
+        }).catch((err) => console.warn("[AutoSyncDokumentasi] Error:", err));
+      }
+
+      const choice = await swalProcurementWorkflowPrompt({
+        nomorBukti: savedDoc.nomorBukti,
+        nominal: effectiveNominal,
+        hasPhotos: kwitansiPhotos.length > 0,
       });
 
-      if (choice === "confirm") {
+      if (choice === "sp") {
         router.push(
           `/user/pesanan?receiptNo=${encodeURIComponent(savedDoc.nomorBukti)}${
             savedDoc.id ? `&receiptId=${encodeURIComponent(savedDoc.id)}` : ""
           }`
         );
-      } else if (choice === "deny") {
+      } else if (choice === "bast") {
         router.push(
           `/user/bast?receiptNo=${encodeURIComponent(savedDoc.nomorBukti)}${
             savedDoc.id ? `&receiptId=${encodeURIComponent(savedDoc.id)}` : ""
           }`
+        );
+      } else if (choice === "dokumentasi") {
+        router.push(
+          `/user/dokumentasi?receiptNo=${encodeURIComponent(savedDoc.nomorBukti)}`
         );
       }
 
@@ -1978,6 +2028,17 @@ export function KwitansiForm({
                   </button>
                 </div>
               </div>
+
+              {/* Foto Bukti Belanja, Nota Toko, & Barang (Workflow Step 2 of 5) */}
+              <KwitansiPhotoUploader
+                nomorBukti={formData.nomorBukti}
+                uraian={formData.uraian}
+                tanggal={formData.tanggal}
+                penerima={formData.penerima}
+                pemberi={formData.pemberi}
+                initialPhotos={kwitansiPhotos}
+                onPhotosChanged={(photos) => setKwitansiPhotos(photos)}
+              />
 
               {/* Server Response Feedback */}
               {saveSuccessMsg && (
