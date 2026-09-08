@@ -209,7 +209,10 @@ export function PesananForm({
         ],
         subtotal: p.subtotal,
         pajak: p.pajak,
-        pajakKeterangan: p.pajakKeterangan || "- (Sudah Termasuk)",
+        pajakKeterangan:
+          p.pajakKeterangan && p.pajakKeterangan !== "- (Sudah Termasuk)"
+            ? p.pajakKeterangan
+            : "(Sudah Termasuk PPN)",
         totalHarga: p.totalHarga,
         terbilang: p.terbilang,
         batasWaktu: p.batasWaktu || todayStr,
@@ -249,7 +252,7 @@ export function PesananForm({
       ],
       subtotal: 0,
       pajak: 0,
-      pajakKeterangan: "- (Sudah Termasuk)",
+      pajakKeterangan: "(Sudah Termasuk PPN)",
       totalHarga: 0,
       terbilang: "Nol Rupiah",
       batasWaktu: todayStr,
@@ -539,7 +542,10 @@ export function PesananForm({
       ],
       subtotal: p.subtotal,
       pajak: p.pajak,
-      pajakKeterangan: p.pajakKeterangan || "- (Sudah Termasuk)",
+      pajakKeterangan:
+        p.pajakKeterangan && p.pajakKeterangan !== "- (Sudah Termasuk)"
+          ? p.pajakKeterangan
+          : "(Sudah Termasuk PPN)",
       totalHarga: p.totalHarga,
       terbilang: p.terbilang,
       batasWaktu: batasIso,
@@ -900,7 +906,7 @@ export function PesananForm({
       ],
       subtotal: 0,
       pajak: 0,
-      pajakKeterangan: "- (Sudah Termasuk)",
+      pajakKeterangan: "(Sudah Termasuk PPN)",
       totalHarga: 0,
       terbilang: "Nol Rupiah",
       batasWaktu: todayStr,
@@ -1714,6 +1720,28 @@ export function PesananForm({
 
                 <div className="text-[11px] text-slate-400 italic">
                   Terbilang: <strong className="text-emerald-300">"{formData.terbilang}"</strong>
+                </div>
+
+                {/* Keterangan Pajak PPN Field */}
+                <div className="pt-2 border-t border-slate-800">
+                  <label className="text-xs text-slate-300 font-medium block mb-1">
+                    Keterangan PPN / Pajak
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pajakKeterangan || "(Sudah Termasuk PPN)"}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        pajakKeterangan: e.target.value,
+                      }))
+                    }
+                    placeholder="(Sudah Termasuk PPN)"
+                    className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                  <span className="text-[10.5px] text-slate-400 block mt-0.5">
+                    Ditampilkan pada baris PPN &amp; catatan bawah dokumen Surat Pesanan
+                  </span>
                 </div>
               </div>
 

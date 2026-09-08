@@ -328,7 +328,10 @@ export function BastForm({
         })),
         subtotal: matchedPo.subtotal,
         pajak: matchedPo.pajak,
-        pajakKeterangan: matchedPo.pajakKeterangan || "- (Sudah Termasuk)",
+        pajakKeterangan:
+          matchedPo.pajakKeterangan && matchedPo.pajakKeterangan !== "- (Sudah Termasuk)"
+            ? matchedPo.pajakKeterangan
+            : "(Sudah Termasuk PPN)",
         totalHarga: matchedPo.totalHarga,
         terbilang: matchedPo.terbilang,
         batasWaktu: matchedPo.batasWaktu || formData.tanggal,
