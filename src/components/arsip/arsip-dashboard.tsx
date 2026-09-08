@@ -14,9 +14,12 @@ import {
   Building2,
   Calendar,
   Hash,
+  Camera,
+  MapPin,
+  Image as ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
-import type { InstitutionProfile } from "@/types";
+import type { InstitutionProfile, ActivityDocumentationRecord } from "@/types";
 
 interface Receipt {
   id: string;
@@ -53,10 +56,21 @@ interface ArsipDashboardProps {
   receipts: Receipt[];
   bastDocs: BastDoc[];
   pesananDocs: PesananDoc[];
+  dokumentasiDocs?: ActivityDocumentationRecord[];
 }
 
 function fRupiah(v: number) {
   return "Rp " + Math.round(v).toLocaleString("id-ID");
+}
+
+function getPhotoCount(photosJson?: string | null): number {
+  if (!photosJson) return 0;
+  try {
+    const parsed = JSON.parse(photosJson);
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function fDate(d: Date | string) {
@@ -150,14 +164,17 @@ export function ArsipDashboard({
   receipts,
   bastDocs,
   pesananDocs,
+  dokumentasiDocs = [],
 }: ArsipDashboardProps) {
   const [searchKwitansi, setSearchKwitansi] = useState("");
   const [searchBast, setSearchBast] = useState("");
   const [searchSp, setSearchSp] = useState("");
+  const [searchDokumentasi, setSearchDokumentasi] = useState("");
 
   const [openKwitansi, setOpenKwitansi] = useState(true);
   const [openBast, setOpenBast] = useState(true);
   const [openSp, setOpenSp] = useState(true);
+  const [openDokumentasi, setOpenDokumentasi] = useState(true);
 
   // Filter helpers
   const filteredReceipts = receipts.filter((r) => {
@@ -190,7 +207,22 @@ export function ArsipDashboard({
     );
   });
 
-  const totalDokumen = receipts.length + bastDocs.length + pesananDocs.length;
+  const filteredDokumentasi = dokumentasiDocs.filter((d) => {
+    const q = searchDokumentasi.toLowerCase();
+    return (
+      !q ||
+      d.namaKegiatan?.toLowerCase().includes(q) ||
+      d.judulDokumentasi?.toLowerCase().includes(q) ||
+      (d.nomorReferensi && d.nomorReferensi.toLowerCase().includes(q)) ||
+      (d.lokasiKegiatan && d.lokasiKegiatan.toLowerCase().includes(q))
+    );
+  });
+
+  const totalDokumen =
+    receipts.length +
+    bastDocs.length +
+    pesananDocs.length +
+    dokumentasiDocs.length;
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-8 space-y-6">
@@ -222,25 +254,28 @@ export function ArsipDashboard({
       </div>
 
       {/* Institution Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950/20 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
-          <Building2 className="w-5 h-5 text-blue-400" />
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950/20 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <Building2 className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">{institution}</p>
+            <p className="text-[11px] text-slate-400">
+              No. Reg:{" "}
+              <span className="font-mono text-amber-300">
+                {profile?.noRegistrasi || "–"}
+              </span>{" "}
+              • Ketua: {profile?.namaKetua || "–"}
+            </p>
+          </div>
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-white">{institution}</p>
-          <p className="text-[11px] text-slate-400">
-            No. Reg:{" "}
-            <span className="font-mono text-amber-300">
-              {profile?.noRegistrasi || "–"}
-            </span>{" "}
-            • Ketua: {profile?.namaKetua || "–"}
-          </p>
-        </div>
-        <div className="grid grid-cols-3 gap-3 shrink-0 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0 text-center">
           {[
             { label: "Kwitansi", count: receipts.length, color: "text-amber-400" },
             { label: "BAST", count: bastDocs.length, color: "text-blue-400" },
             { label: "SP/SPK", count: pesananDocs.length, color: "text-purple-400" },
+            { label: "Dokumentasi", count: dokumentasiDocs.length, color: "text-emerald-400" },
           ].map(({ label, count, color }) => (
             <div key={label} className="bg-slate-800/60 rounded-xl px-3 py-2 min-w-[64px]">
               <p className={`text-lg font-bold font-mono ${color}`}>{count}</p>
@@ -557,6 +592,133 @@ export function ArsipDashboard({
                       </td>
                       <td className="pt-3 text-right font-bold font-mono text-purple-400 text-xs whitespace-nowrap">
                         {fRupiah(filteredSp.reduce((s, p) => s + p.totalHarga, 0))}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ===== SECTION: DOKUMENTASI KEGIATAN ===== */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+        <div className="p-5">
+          <SectionHeader
+            icon={<Camera className="w-4.5 h-4.5 text-emerald-400" />}
+            title="Daftar Arsip Dokumentasi Kegiatan & Foto Fisik"
+            count={dokumentasiDocs.length}
+            color="bg-emerald-500/10 border-emerald-500/20"
+            linkHref="/user/dokumentasi"
+            linkLabel="Buka & Cetak"
+            isOpen={openDokumentasi}
+            onToggle={() => setOpenDokumentasi((v) => !v)}
+          />
+        </div>
+
+        {openDokumentasi && (
+          <div className="border-t border-slate-800 p-5 pt-4 space-y-3">
+            {dokumentasiDocs.length > 0 && (
+              <SearchInput
+                value={searchDokumentasi}
+                onChange={setSearchDokumentasi}
+                placeholder="Cari nama kegiatan, nomor referensi, atau lokasi..."
+              />
+            )}
+            {dokumentasiDocs.length === 0 ? (
+              <div className="py-10 text-center text-slate-500 text-xs">
+                <Camera className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                Belum ada dokumentasi kegiatan tersimpan untuk tahun ini.{" "}
+                <Link href="/user/dokumentasi" className="text-emerald-400 underline">
+                  Buat Dokumentasi
+                </Link>
+              </div>
+            ) : filteredDokumentasi.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-6">
+                Tidak ada hasil untuk &quot;{searchDokumentasi}&quot;
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400">
+                      <th className="pb-2 text-left font-semibold w-8">No.</th>
+                      <th className="pb-2 text-left font-semibold">Nama Kegiatan &amp; Judul</th>
+                      <th className="pb-2 text-left font-semibold">
+                        <span className="flex items-center gap-1">
+                          <Hash className="w-3 h-3" /> Ref. Dokumen
+                        </span>
+                      </th>
+                      <th className="pb-2 text-left font-semibold">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> Tanggal
+                        </span>
+                      </th>
+                      <th className="pb-2 text-left font-semibold">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> Lokasi
+                        </span>
+                      </th>
+                      <th className="pb-2 text-center font-semibold">Jumlah Foto</th>
+                      <th className="pb-2 text-center font-semibold">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDokumentasi.map((d, i) => {
+                      const photoCount = getPhotoCount(d.photosJson);
+                      return (
+                        <tr
+                          key={d.id}
+                          className="border-b border-slate-800/40 hover:bg-slate-800/20 transition-colors group"
+                        >
+                          <td className="py-2.5 text-slate-500">{i + 1}.</td>
+                          <td className="py-2.5 max-w-[260px]">
+                            <p className="font-semibold text-slate-200 truncate">{d.namaKegiatan}</p>
+                            <p className="text-[10px] text-slate-500 truncate">{d.judulDokumentasi}</p>
+                          </td>
+                          <td className="py-2.5 font-mono text-emerald-400 text-[11px] whitespace-nowrap">
+                            {d.nomorReferensi ? (
+                              <span className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40">
+                                {d.nomorReferensi}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">–</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 text-slate-400 whitespace-nowrap">
+                            {fDate(d.tanggalKegiatan)}
+                          </td>
+                          <td className="py-2.5 text-slate-400 max-w-[150px]">
+                            <p className="truncate">{d.lokasiKegiatan || "–"}</p>
+                          </td>
+                          <td className="py-2.5 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-medium">
+                              <ImageIcon className="w-2.5 h-2.5 text-emerald-400" />
+                              {photoCount} Foto
+                            </span>
+                          </td>
+                          <td className="py-2.5 text-center">
+                            <Link
+                              href={`/user/dokumentasi?id=${d.id}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/30 text-emerald-400 text-[10px] font-semibold transition-colors"
+                            >
+                              <Printer className="w-3 h-3" />
+                              Cetak
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-700">
+                      <td colSpan={5} className="pt-3 font-bold text-slate-300 text-xs">
+                        TOTAL {filteredDokumentasi.length} Dokumentasi Kegiatan
+                      </td>
+                      <td className="pt-3 text-center font-bold font-mono text-emerald-400 text-xs whitespace-nowrap">
+                        {filteredDokumentasi.reduce((acc, d) => acc + getPhotoCount(d.photosJson), 0)} Total Foto
                       </td>
                       <td />
                     </tr>

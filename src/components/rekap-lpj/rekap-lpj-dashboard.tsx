@@ -342,7 +342,7 @@ export function RekapLpjDashboard({
 
           {/* Foto Dokumentasi */}
           <Link
-            href="/user/dokumentasi"
+            href="/user/arsip"
             className="group flex flex-col items-center gap-2.5 p-4 bg-emerald-950/20 hover:bg-emerald-900/30 border border-emerald-800/30 hover:border-emerald-600/50 rounded-xl transition-all duration-200 text-center"
           >
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 group-hover:border-emerald-500/40 flex items-center justify-center transition-colors">

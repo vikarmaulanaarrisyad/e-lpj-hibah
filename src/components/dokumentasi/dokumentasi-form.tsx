@@ -160,6 +160,7 @@ export function DokumentasiForm({
     profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
 
   const searchParams = useSearchParams();
+  const urlId = searchParams.get("id");
   const urlReceiptNo = searchParams.get("receiptNo");
   const urlSpNo = searchParams.get("spNo");
   const urlBastNo = searchParams.get("bastNo");
@@ -195,6 +196,16 @@ export function DokumentasiForm({
       console.warn("[LocalStorage] Gagal membaca draft:", err);
     }
   }, []);
+
+  // 1a. Auto-load jika ada param ?id=... dari Arsip Dokumen
+  useEffect(() => {
+    if (urlId && savedList.length > 0) {
+      const found = savedList.find((d) => d.id === urlId);
+      if (found) {
+        handleSelectSavedDocumentation(urlId);
+      }
+    }
+  }, [urlId, savedList]);
 
   // 1b. Auto-load dari URL Param jika diarahkan dari Alur Pengadaan (Kwitansi / SP / BAST)
   useEffect(() => {

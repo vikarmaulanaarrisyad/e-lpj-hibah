@@ -5,6 +5,7 @@ import { institutionService } from "@/services/institution.service";
 import { receiptRepository } from "@/repositories/receipt.repository";
 import { bastRepository } from "@/repositories/bast.repository";
 import { pesananRepository } from "@/repositories/pesanan.repository";
+import { dokumentasiRepository } from "@/repositories/dokumentasi.repository";
 import { userRepository } from "@/repositories/user.repository";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { ArsipDashboard } from "@/components/arsip/arsip-dashboard";
@@ -22,12 +23,13 @@ export default async function ArsipPage() {
 
   const activeTahun = normalizeTahunAnggaran(cookies().get(COOKIE_TAHUN_ANGGARAN)?.value);
 
-  const [dbUser, profileRes, receipts, bastDocs, pesananDocs] = await Promise.all([
+  const [dbUser, profileRes, receipts, bastDocs, pesananDocs, dokumentasiDocs] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
     bastRepository.findManyByUserId(session.sub, activeTahun),
     pesananRepository.findManyByUserId(session.sub, activeTahun),
+    dokumentasiRepository.findManyByUserId(session.sub, activeTahun),
   ]);
 
   const profile = profileRes.data || null;
@@ -52,6 +54,7 @@ export default async function ArsipPage() {
           receipts={receipts}
           bastDocs={bastDocs as any[]}
           pesananDocs={pesananDocs}
+          dokumentasiDocs={dokumentasiDocs}
         />
       </main>
     </div>
