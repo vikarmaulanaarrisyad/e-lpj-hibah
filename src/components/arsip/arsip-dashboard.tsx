@@ -17,9 +17,12 @@ import {
   Camera,
   MapPin,
   Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import type { InstitutionProfile, ActivityDocumentationRecord } from "@/types";
+import { deleteDokumentasiAction } from "@/app/actions/dokumentasi.action";
+import { swalConfirmDelete, swalLoading, swalSuccess, swalError } from "@/lib/swal";
 
 interface Receipt {
   id: string;
@@ -176,6 +179,27 @@ export function ArsipDashboard({
   const [openSp, setOpenSp] = useState(true);
   const [openDokumentasi, setOpenDokumentasi] = useState(true);
 
+  const [dokumentasiList, setDokumentasiList] = useState(dokumentasiDocs);
+
+  const handleDeleteDokumentasi = async (id: string, refOrName: string) => {
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Arsip Dokumentasi?",
+      text: `Apakah Anda yakin ingin menghapus lembar dokumentasi "${refOrName}"? Foto dan berkas cetak terkait akan ikut dihapus.`,
+      confirmText: "Ya, Hapus!",
+      cancelText: "Batal",
+    });
+    if (!isConfirmed) return;
+
+    swalLoading("Menghapus Dokumentasi...", "Sedang memproses penghapusan arsip...");
+    const res = await deleteDokumentasiAction(id);
+    if (res.success) {
+      setDokumentasiList((prev) => prev.filter((d) => d.id !== id));
+      swalSuccess("Berhasil Dihapus", "Lembar dokumentasi kegiatan berhasil dihapus.");
+    } else {
+      swalError("Gagal Menghapus", res.message || "Terjadi kesalahan saat menghapus dokumentasi.");
+    }
+  };
+
   // Filter helpers
   const filteredReceipts = receipts.filter((r) => {
     const q = searchKwitansi.toLowerCase();
@@ -207,7 +231,7 @@ export function ArsipDashboard({
     );
   });
 
-  const filteredDokumentasi = dokumentasiDocs.filter((d) => {
+  const filteredDokumentasi = dokumentasiList.filter((d) => {
     const q = searchDokumentasi.toLowerCase();
     return (
       !q ||
@@ -222,7 +246,7 @@ export function ArsipDashboard({
     receipts.length +
     bastDocs.length +
     pesananDocs.length +
-    dokumentasiDocs.length;
+    dokumentasiList.length;
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-8 space-y-6">
@@ -609,7 +633,7 @@ export function ArsipDashboard({
           <SectionHeader
             icon={<Camera className="w-4.5 h-4.5 text-emerald-400" />}
             title="Daftar Arsip Dokumentasi Kegiatan & Foto Fisik"
-            count={dokumentasiDocs.length}
+            count={dokumentasiList.length}
             color="bg-emerald-500/10 border-emerald-500/20"
             linkHref="/user/dokumentasi"
             linkLabel="Buka & Cetak"
@@ -620,14 +644,14 @@ export function ArsipDashboard({
 
         {openDokumentasi && (
           <div className="border-t border-slate-800 p-5 pt-4 space-y-3">
-            {dokumentasiDocs.length > 0 && (
+            {dokumentasiList.length > 0 && (
               <SearchInput
                 value={searchDokumentasi}
                 onChange={setSearchDokumentasi}
                 placeholder="Cari nama kegiatan, nomor referensi, atau lokasi..."
               />
             )}
-            {dokumentasiDocs.length === 0 ? (
+            {dokumentasiList.length === 0 ? (
               <div className="py-10 text-center text-slate-500 text-xs">
                 <Camera className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 Belum ada dokumentasi kegiatan tersimpan untuk tahun ini.{" "}
@@ -699,14 +723,25 @@ export function ArsipDashboard({
                               {photoCount} Foto
                             </span>
                           </td>
-                          <td className="py-2.5 text-center">
-                            <Link
-                              href={`/user/dokumentasi?id=${d.id}`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/30 text-emerald-400 text-[10px] font-semibold transition-colors"
-                            >
-                              <Printer className="w-3 h-3" />
-                              Cetak
-                            </Link>
+                          <td className="py-2.5 text-center whitespace-nowrap">
+                            <div className="inline-flex items-center justify-center gap-1.5">
+                              <Link
+                                href={`/user/dokumentasi?id=${d.id}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/30 text-emerald-400 text-[10px] font-semibold transition-colors"
+                                title="Buka & Cetak Lembar Dokumentasi"
+                              >
+                                <Printer className="w-3 h-3" />
+                                Cetak
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDokumentasi(d.id, d.nomorReferensi || d.namaKegiatan)}
+                                className="p-1 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-700/60 transition-colors cursor-pointer"
+                                title="Hapus Lembar Dokumentasi Ini"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
