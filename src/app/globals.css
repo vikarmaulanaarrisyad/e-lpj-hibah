@@ -425,3 +425,80 @@ body {
   margin-top: 1.25rem !important;
 }
 
+/* ================= ULTRA-PREMIUM SHIMMER & LOADING ANIMATIONS ================= */
+@keyframes shimmerWave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.04) 35%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 65%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerWave 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.shimmer-pill {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-pill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerWave 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes topBarGlow {
+  0% {
+    transform: translateX(-100%);
+    width: 25%;
+  }
+  50% {
+    transform: translateX(60%);
+    width: 55%;
+  }
+  100% {
+    transform: translateX(200%);
+    width: 35%;
+  }
+}
+
+.animate-top-bar {
+  animation: topBarGlow 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+

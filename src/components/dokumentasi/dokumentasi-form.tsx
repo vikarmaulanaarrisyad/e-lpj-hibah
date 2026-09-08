@@ -423,28 +423,54 @@ export function DokumentasiForm({
           photosFromDb = formData.photos;
         }
 
-        const updated: DokumentasiFormData = {
-          ...formData,
-          id: res.data.id,
-          photos: photosFromDb,
-        };
-
-        setFormData(updated);
         setSavedList((prev) => {
           const filtered = prev.filter((item) => item.id !== res.data!.id);
           return [res.data!, ...filtered];
         });
 
-        // Update juga di localStorage
+        // Hapus draft lokal agar tidak tertinggal data lama
         try {
-          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(updated));
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
         } catch (e) {
-          console.warn("Storage update err:", e);
+          console.warn("Storage removal err:", e);
+        }
+
+        // Bersihkan query string URL jika sebelumnya memuat dokumen lama (?id=... dll)
+        if (typeof window !== "undefined" && window.history) {
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+
+        // Otomatis reset form ke kondisi kosong agar langsung siap digunakan untuk entri lainnya
+        setFormData({
+          id: undefined,
+          judulDokumentasi: "LEMBAR DOKUMENTASI REALISASI BELANJA",
+          subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
+          namaKegiatan: "",
+          nomorReferensi: "",
+          tanggalKegiatan: new Date().toISOString().split("T")[0],
+          lokasiKegiatan: profile?.alamat || `Sekretariat ${userProfile?.institution || ""}`,
+          layout: "2-per-page",
+          photos: [],
+          sertakanTandaTangan: true,
+          penandatangan1Jabatan: "Penyedia / Toko Rekanan",
+          penandatangan1Nama: "",
+          penandatangan2Jabatan: profile?.jabatanKetua || "Ketua Pimpinan Ranting",
+          penandatangan2Nama: userProfile?.leaderName || profile?.namaKetua || defaultLeader,
+        });
+        setIsDraftRestored(false);
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        const formElement = document.getElementById("formLedgerPanel");
+        if (formElement) {
+          formElement.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         swalSuccess(
-          "Tersimpan di Cloud & Database!",
-          "Dokumentasi kegiatan berhasil disimpan ke database. Foto telah teroptimasi dan tersimpan di Cloudinary."
+          "Tersimpan ke Database & Form Direset!",
+          "Dokumentasi kegiatan berhasil disimpan ke database. Formulir telah otomatis dikosongkan agar langsung siap digunakan untuk membuat dokumentasi berikutnya."
         );
       } else {
         swalError("Gagal Menyimpan", res.message || "Terjadi kesalahan pada sistem.");

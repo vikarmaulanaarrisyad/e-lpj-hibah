@@ -1,11 +1,13 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { InstitutionProfile } from "@/types";
 
 export class InstitutionRepository {
   /**
    * Mengambil profil lembaga, kop surat, dan format penomoran berdasarkan user ID
+   * Di-memoize per-request dengan React cache agar pemanggilan ganda dalam satu rute tidak memicu query duplikat.
    */
-  async findByUserId(userId: string): Promise<InstitutionProfile | null> {
+  findByUserId = cache(async (userId: string): Promise<InstitutionProfile | null> => {
     try {
       return await prisma.institutionProfile.findUnique({
         where: { userId },
@@ -14,7 +16,7 @@ export class InstitutionRepository {
       console.error("[InstitutionRepository] Error in findByUserId:", error);
       throw error;
     }
-  }
+  });
 
   /**
    * Menyimpan atau memperbarui profil kop surat & lembaga

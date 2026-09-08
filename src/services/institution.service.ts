@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { institutionRepository } from "@/repositories/institution.repository";
 import { userRepository } from "@/repositories/user.repository";
 import { uploadImageToCloudinary, deleteImageFromCloudinary } from "@/lib/cloudinary";
@@ -11,8 +12,9 @@ export class InstitutionService {
   /**
    * Mengambil profil lembaga & kop surat.
    * Jika belum ada di database, otomatis membuat profil default otentik Fatayat NU Dawuhan Selatan.
+   * Di-memoize per-request dengan React cache agar pemanggilan ganda tidak memicu query berulang.
    */
-  async getProfile(userId: string): Promise<ServiceResponse<InstitutionProfile>> {
+  getProfile = cache(async (userId: string): Promise<ServiceResponse<InstitutionProfile>> => {
     try {
       let profile = await institutionRepository.findByUserId(userId);
 
@@ -51,7 +53,7 @@ export class InstitutionService {
         message: "Gagal memuat profil lembaga.",
       };
     }
-  }
+  });
 
   /**
    * Menyimpan / memperbarui profil kop surat dan mengunggah logo ke Cloudinary

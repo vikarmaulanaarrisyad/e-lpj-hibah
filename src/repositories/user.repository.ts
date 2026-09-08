@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { User, CreateUserData } from "@/types";
 
@@ -19,8 +20,9 @@ export class UserRepository {
 
   /**
    * Find a user by their unique ID.
+   * Di-memoize per-request dengan React cache agar tidak memicu query ganda.
    */
-  async findById(id: string): Promise<User | null> {
+  findById = cache(async (id: string): Promise<User | null> => {
     try {
       return await prisma.user.findUnique({
         where: { id },
@@ -29,7 +31,7 @@ export class UserRepository {
       console.error("[UserRepository] Error in findById:", error);
       throw error;
     }
-  }
+  });
 
   /**
    * Create a new user record in the database.
