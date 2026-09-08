@@ -222,13 +222,13 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <span>:</span>
             <span className="font-bold text-black">{data.pihak2Nama || "ANSHORI"}</span>
 
-            {data.pihak2Jabatan && (
+            {/* {data.pihak2Jabatan && (
               <>
                 <span className="text-black font-medium">Jabatan</span>
                 <span>:</span>
                 <span className="text-black">{data.pihak2Jabatan}</span>
               </>
-            )}
+            )} */}
           </div>
           <p className="text-black italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
             Selanjutnya disebut sebagai <strong>Penyedia Barang</strong>
@@ -420,9 +420,9 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <div className="h-20 my-1" />
 
             <p className="font-bold text-black uppercase underline decoration-1">
-              {data.pihak2Nama || "ANSHORI"}
+              {data.pihak2Nama || "ELIN"}
             </p>
-            <p className="text-[10.5px] sm:text-[11px] text-black">{data.pihak2Jabatan || "Pimpinan Penyedia barang"}</p>
+            <p className="text-[11px] sm:text-[11.5px] text-black">Penyedia Barang</p>
           </div>
 
           {/* Kolom Kanan: Pemesan (Fatayat NU Dawuhan Selatan) */}
