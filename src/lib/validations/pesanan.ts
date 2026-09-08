@@ -37,6 +37,7 @@ export const purchaseOrderSchema = z.object({
   pihak2Nama: z
     .string({ required_error: "Nama pimpinan penyedia wajib diisi" })
     .min(2, "Nama pimpinan penyedia minimal 2 karakter"),
+  pihak2Jabatan: z.string().optional().nullable(),
   pihak2Alamat: z.string().optional().nullable(),
   items: z.array(pesananItemSchema).min(1, "Minimal harus ada 1 item barang"),
   subtotal: z.number().default(0),

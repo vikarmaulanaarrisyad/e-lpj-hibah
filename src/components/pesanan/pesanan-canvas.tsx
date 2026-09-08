@@ -210,7 +210,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         <div>
           <p className="font-semibold text-black mb-0.5">Bersama ini memerintahkan :</p>
           <div className="pl-4 grid grid-cols-[190px_12px_1fr] sm:grid-cols-[200px_12px_1fr] gap-y-0.5 text-[12px] sm:text-[12.5px]">
-            <span className="text-black font-medium">Nama</span>
+            <span className="text-black font-medium">Nama Perusahaan / Toko</span>
             <span>:</span>
             <span className="font-bold uppercase text-black">{data.pihak2Toko || "ADHUFU"}</span>
 

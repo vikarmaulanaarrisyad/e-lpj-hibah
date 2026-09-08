@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useMemo } from "react";
+import { useState, useTransition, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -80,6 +80,7 @@ interface PesananFormProps {
   initialReceipts?: Receipt[];
   initialProfile?: InstitutionProfile | null;
   initialNextNomorSp?: { nomorSp: string; nomorUrut: string };
+  initialVendors?: Vendor[];
   userProfile?: {
     name: string;
     leaderName?: string | null;
@@ -103,6 +104,7 @@ export function PesananForm({
   initialReceipts = [],
   initialProfile = null,
   initialNextNomorSp,
+  initialVendors = [],
   userProfile,
 }: PesananFormProps) {
   const router = useRouter();
@@ -113,7 +115,7 @@ export function PesananForm({
   const [bastList, setBastList] = useState<BastDocument[]>(initialBastList);
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
   const [isTokoModalOpen, setIsTokoModalOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
@@ -123,15 +125,22 @@ export function PesananForm({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingBundle, setIsExportingBundle] = useState(false);
 
-  // Load vendors list on mount
+  // Ref penanda query URL yang sudah dimuat ke form agar tidak terus me-reset data saat save
+  const lastProcessedQueryRef = useRef<string | null>(null);
+
+  // Sinkronisasi daftar toko langganan
   useEffect(() => {
-    startTransition(async () => {
-      const res = await getVendorsAction();
-      if (res.success && res.data) {
-        setVendors(res.data);
-      }
-    });
-  }, []);
+    if (initialVendors && initialVendors.length > 0) {
+      setVendors(initialVendors);
+    } else {
+      startTransition(async () => {
+        const res = await getVendorsAction();
+        if (res.success && res.data) {
+          setVendors(res.data);
+        }
+      });
+    }
+  }, [initialVendors]);
 
   const handleSelectVendor = (v: Vendor) => {
     setFormData((prev) => ({
@@ -421,25 +430,54 @@ export function PesananForm({
     }));
   };
 
-  // Check URL query param ?no=..., ?spNo=..., ?receiptNo=..., or ?receiptId=...
+  // Check URL query param ?id=..., ?no=..., ?spNo=..., ?receiptNo=..., or ?receiptId=...
   useEffect(() => {
+    const targetId = searchParams.get("id");
     const spNo = searchParams.get("no") || searchParams.get("spNo");
-    if (spNo && pesananList.length > 0) {
-      const p = pesananList.find((item) => item.nomorSp === spNo);
+    const rNo = searchParams.get("receiptNo");
+    const rId = searchParams.get("receiptId");
+
+    const queryKey = `${targetId || ""}|${spNo || ""}|${rId || ""}|${rNo || ""}`;
+    if (queryKey === "|||") {
+      return;
+    }
+
+    if (lastProcessedQueryRef.current === queryKey) {
+      return;
+    }
+
+    // 1. Memuat SP yang sudah tersimpan berdasarkan ID atau Nomor SP
+    if ((targetId || spNo) && pesananList.length > 0) {
+      const p = pesananList.find(
+        (item) => (targetId && item.id === targetId) || (spNo && item.nomorSp === spNo)
+      );
       if (p) {
+        lastProcessedQueryRef.current = queryKey;
         loadPesananIntoForm(p);
         return;
       }
     }
 
-    const rNo = searchParams.get("receiptNo");
-    const rId = searchParams.get("receiptId");
+    // 2. Memuat draft SP baru atau SP tertaut dari Kwitansi
     if ((rNo || rId) && initialReceipts.length > 0) {
       const r = initialReceipts.find(
         (item) => (rId && item.id === rId) || (rNo && item.nomorBukti === rNo)
       );
       if (r) {
-        handleSelectReceipt(r.id);
+        // Penting: Jika Kwitansi ini sudah pernah dibuatkan SP tersimpan di database,
+        // muat data SP tersimpan tersebut agar data toko & rincian tidak tereset!
+        const existingSp = pesananList.find((item) => item.receiptId === r.id);
+        if (existingSp) {
+          lastProcessedQueryRef.current = queryKey;
+          loadPesananIntoForm(existingSp);
+          return;
+        }
+
+        // Jika SP baru dan belum ditautkan ke kwitansi di form saat ini
+        if (formData.receiptId !== r.id || !formData.id) {
+          lastProcessedQueryRef.current = queryKey;
+          handleSelectReceipt(r.id);
+        }
       }
     }
   }, [searchParams, pesananList, initialReceipts]);
@@ -482,14 +520,22 @@ export function PesananForm({
         (r.penerima && v.namaPemilik && (r.penerima.toLowerCase().includes(v.namaPemilik.toLowerCase()) || v.namaPemilik.toLowerCase().includes(r.penerima.toLowerCase())))
     );
 
+    const isCompanyReceiver = Boolean(
+      r.penerima && /^(toko|cv|pt|ud|bengkel|percetakan|fotocopy|kios|warung|agen)/i.test(r.penerima.trim())
+    );
+
     setFormData((prev) => ({
       ...prev,
       receiptId: r.id,
       namaPaket: cleanUraian,
-      pihak2Toko: matchedVendor?.namaToko || r.penerima || prev.pihak2Toko,
-      pihak2Nama: matchedVendor?.namaPemilik || r.penerima || prev.pihak2Nama,
+      pihak2Toko: matchedVendor
+        ? matchedVendor.namaToko
+        : (isCompanyReceiver ? r.penerima : (prev.pihak2Toko || "")),
+      pihak2Nama: matchedVendor
+        ? (matchedVendor.namaPemilik || r.penerima || prev.pihak2Nama || "")
+        : (isCompanyReceiver ? (prev.pihak2Nama || "") : (r.penerima || prev.pihak2Nama || "")),
       pihak2Jabatan: matchedVendor?.jabatan || prev.pihak2Jabatan || "Pemilik",
-      pihak2Alamat: matchedVendor?.alamat || prev.pihak2Alamat,
+      pihak2Alamat: matchedVendor?.alamat || prev.pihak2Alamat || "",
       subtotal,
       totalHarga,
       terbilang: terbilangText,
@@ -788,7 +834,7 @@ export function PesananForm({
       if (res.success && res.data) {
         setSaveSuccessMsg(res.message);
         const savedSp = res.data;
-        setFormData((prev) => ({ ...prev, id: savedSp.id }));
+        loadPesananIntoForm(savedSp);
         setPesananList((prev) => {
           const idx = prev.findIndex((x) => x.id === savedSp.id || x.nomorSp === savedSp.nomorSp);
           if (idx >= 0) {
@@ -798,6 +844,17 @@ export function PesananForm({
           }
           return [savedSp, ...prev];
         });
+
+        // Sinkronkan ref dan URL browser ke dokumen tersimpan agar tidak tereset oleh ?receiptId=...
+        const newQueryKey = `${savedSp.id}|${savedSp.nomorSp}||`;
+        lastProcessedQueryRef.current = newQueryKey;
+        if (typeof window !== "undefined") {
+          window.history.replaceState(
+            null,
+            "",
+            `/user/pesanan?no=${encodeURIComponent(savedSp.nomorSp)}&id=${encodeURIComponent(savedSp.id)}`
+          );
+        }
 
         const choice = await swalWorkflowPrompt({
           title: "Surat Pesanan (SP) Berhasil Disimpan!",
@@ -875,6 +932,11 @@ export function PesananForm({
   };
 
   const handleCreateNew = async () => {
+    lastProcessedQueryRef.current = null;
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/user/pesanan");
+    }
+
     let nextNomor = buildFormattedDocumentNumber("001", ensureDocumentPrefix(formatPatternSp, "SP"), todayStr);
     let nextUrut = "001";
 

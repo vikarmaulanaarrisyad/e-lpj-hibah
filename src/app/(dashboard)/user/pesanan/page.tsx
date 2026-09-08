@@ -9,6 +9,7 @@ import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { PesananForm } from "@/components/pesanan/pesanan-form";
 
 import { bastService } from "@/services/bast.service";
+import { vendorService } from "@/services/vendor.service";
 
 import { cookies } from "next/headers";
 import { COOKIE_TAHUN_ANGGARAN, normalizeTahunAnggaran } from "@/lib/utils/tahun-anggaran";
@@ -29,19 +30,21 @@ export default async function PesananPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Fetch DB user profile, institution profile, purchase orders, receipts, BAST list, and next auto SP number for active year
-  const [dbUser, profileRes, pesananRes, userReceipts, bastRes, nextSpData] = await Promise.all([
+  // Fetch DB user profile, institution profile, purchase orders, receipts, BAST list, vendors, and next auto SP number for active year
+  const [dbUser, profileRes, pesananRes, userReceipts, bastRes, nextSpData, vendorsRes] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     pesananService.getPurchaseOrders(session.sub, activeTahun),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
     bastService.getBastList(session.sub, activeTahun),
     pesananService.generateNextNomorSp(session.sub),
+    vendorService.getVendors(session.sub),
   ]);
 
   const profile = profileRes.data || null;
   const pesananList = pesananRes.data || [];
   const bastList = bastRes.data || [];
+  const vendors = vendorsRes.data || [];
   const fullInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
     : dbUser?.institution || session.institution;
@@ -65,6 +68,7 @@ export default async function PesananPage() {
             initialReceipts={userReceipts}
             initialProfile={profile}
             initialNextNomorSp={nextSpData}
+            initialVendors={vendors}
             userProfile={{
               name: dbUser?.name || session.name,
               leaderName: profile?.namaKetua || dbUser?.leaderName || session.leaderName,
