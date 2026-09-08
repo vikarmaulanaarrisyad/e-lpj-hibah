@@ -328,6 +328,14 @@ export function RabTableView({
 
   // Delete Rincian Row
   const handleDeleteRow = async (groupId: string, row: RabDetailRow) => {
+    if ((row.realisasi && row.realisasi > 0) || row.statusSerapan === "LUNAS" || row.statusSerapan === "SEBAGIAN") {
+      swalError(
+        "Tidak Dapat Dihapus",
+        `Item "${row.uraian}" sudah memiliki realisasi belanja di Kwitansi/BKU (${formatRupiah(row.realisasi || 0)}). Hapus atau batalkan kwitansi terkait terlebih dahulu jika ingin menghapus item ini.`
+      );
+      return;
+    }
+
     const isConfirmed = await swalConfirmDelete({
       title: "Hapus Rincian Item?",
       text: `Apakah Anda yakin ingin menghapus item "${row.uraian}" (${formatRupiah(row.total)})?`,
@@ -748,8 +756,12 @@ export function RabTableView({
                     {rincianList.map((row, rowIdx) => {
                       const rowRealisasi = row.realisasi || 0;
                       const rowSisa = row.sisa != null ? row.sisa : row.total - rowRealisasi;
-                      const isRowLunas = rowRealisasi >= row.total && row.total > 0;
+                      const isRowLunas =
+                        row.statusSerapan === "LUNAS" ||
+                        (rowRealisasi >= row.total && row.total > 0) ||
+                        (rowSisa <= 0 && row.total > 0);
                       const isRowSebagian = rowRealisasi > 0 && !isRowLunas;
+                      const isRowDefisit = rowSisa < 0;
 
                       return (
                         <tr
@@ -863,6 +875,36 @@ export function RabTableView({
                             <div className="flex items-center justify-center gap-1.5">
                               {/* 1-Click Realisasikan ke Kwitansi Belanja dengan Sugesti Nominal Cerdas */}
                               {(() => {
+                                // 1. Jika sudah LUNAS / SELESAI: tombol tidak bisa di-klik (disabled)
+                                if (isRowLunas) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-emerald-400 text-[11px] font-semibold inline-flex items-center gap-1 cursor-not-allowed opacity-75 select-none"
+                                      title="Realisasi belanja item ini sudah selesai / lunas penuh (tidak dapat direalisasikan lagi)"
+                                    >
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                      <span>Lunas</span>
+                                    </button>
+                                  );
+                                }
+
+                                // 2. Jika DEFISIT: tombol tidak bisa di-klik (disabled)
+                                if (isRowDefisit) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className="px-2.5 py-1 rounded-lg bg-red-950/40 border border-red-800/60 text-red-400 text-[11px] font-semibold inline-flex items-center gap-1 cursor-not-allowed opacity-75 select-none"
+                                      title="Anggaran item belanja ini telah melebihi pagu (Defisit)"
+                                    >
+                                      <AlertTriangle className="w-3 h-3 text-red-400" />
+                                      <span>Defisit</span>
+                                    </button>
+                                  );
+                                }
+
                                 const costPerStage =
                                   row.koefisien2Vol && row.hargaSatuan
                                     ? row.koefisien2Vol * row.hargaSatuan
