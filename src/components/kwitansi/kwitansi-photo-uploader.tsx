@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { DokumentasiPhoto } from "@/types";
 import { swalError } from "@/lib/swal";
+import { generateStandardPhotoCaption } from "@/lib/utils/pesanan-date";
 
 export interface KwitansiPhotoUploaderProps {
   nomorBukti: string;
@@ -138,14 +139,17 @@ export function KwitansiPhotoUploader({
         if (!file.type.startsWith("image/")) continue;
 
         const compressedDataUrl = await compressImageClient(file, 1280, 0.8);
-        const defaultCaption = penerima
-          ? `Nota / Bukti Belanja dari ${penerima}`
-          : "Bukti Pembelian / Nota Fisik Belanja";
+        const currentIndex = photos.length + newItems.length;
+        const autoCaption = generateStandardPhotoCaption({
+          namaKegiatan: uraian,
+          penyedia: penerima,
+          photoIndex: currentIndex,
+        });
 
         newItems.push({
           id: `photo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           url: compressedDataUrl,
-          caption: defaultCaption,
+          caption: autoCaption,
           tanggal: tanggal ? tanggal.split("T")[0] : new Date().toISOString().split("T")[0],
           lokasi: pemberi || "Sekretariat Lembaga",
         });

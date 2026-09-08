@@ -29,6 +29,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { SourceDocumentModal } from "./source-document-modal";
@@ -40,8 +41,13 @@ import {
   deleteDokumentasiPhotoAction,
 } from "@/app/actions/dokumentasi.action";
 import { exportDokumentasiPdf } from "@/lib/dokumentasi-pdf";
-import { swalError, swalSuccess } from "@/lib/swal";
-import { determineDokumentasiTitle } from "@/lib/utils/pesanan-date";
+import { swalError, swalSuccess, swalLoading, swalConfirmDelete } from "@/lib/swal";
+import {
+  determineDokumentasiTitle,
+  generateStandardPhotoCaption,
+  getStandardCaptionPresets,
+  getAllCategoryCaptionPresets,
+} from "@/lib/utils/pesanan-date";
 import type {
   DokumentasiFormData,
   DokumentasiPhoto,
@@ -153,6 +159,8 @@ export function DokumentasiForm({
   const [isCompressing, setIsCompressing] = useState(false);
   const [isDraftRestored, setIsDraftRestored] = useState(false);
   const [savedList, setSavedList] = useState<ActivityDocumentationRecord[]>(initialSavedList);
+  const [templateModalPhotoId, setTemplateModalPhotoId] = useState<string | null>(null);
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("ALL");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalSourceOptions = bastOptions.length + spOptions.length + receiptOptions.length;
@@ -188,6 +196,15 @@ export function DokumentasiForm({
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
+        // Validasi: jika draft ini terikat pada ID arsip yang sudah dihapus dari database:
+        if (parsed?.id) {
+          const isStillExist = initialSavedList?.some((item) => item.id === parsed.id);
+          if (!isStillExist) {
+            // Arsip ini sudah dihapus di database! Bersihkan draft agar foto lama tidak muncul lagi
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+            return;
+          }
+        }
         if (parsed && parsed.namaKegiatan) {
           setFormData(parsed);
           setIsDraftRestored(true);
@@ -196,7 +213,37 @@ export function DokumentasiForm({
     } catch (err) {
       console.warn("[LocalStorage] Gagal membaca draft:", err);
     }
-  }, []);
+  }, [initialSavedList]);
+
+  // 1-sync. Otomatis bersihkan formulir jika dokumen yang sedang dibuka sudah tidak ada di arsip
+  useEffect(() => {
+    if (formData.id && savedList) {
+      const isStillExist = savedList.some((item) => item.id === formData.id);
+      if (!isStillExist) {
+        setFormData({
+          id: undefined,
+          judulDokumentasi: "LEMBAR DOKUMENTASI REALISASI BELANJA",
+          subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
+          namaKegiatan: "",
+          nomorReferensi: "",
+          tanggalKegiatan: new Date().toISOString().split("T")[0],
+          lokasiKegiatan: profile?.alamat || `Sekretariat ${userProfile?.institution || ""}`,
+          layout: "2-per-page",
+          photos: [],
+          sertakanTandaTangan: true,
+          penandatangan1Jabatan: "Penyedia / Toko Rekanan",
+          penandatangan1Nama: "",
+          penandatangan2Jabatan: profile?.jabatanKetua || "Ketua Pimpinan Ranting",
+          penandatangan2Nama: userProfile?.leaderName || profile?.namaKetua || defaultLeader,
+        });
+        try {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+    }
+  }, [savedList, formData.id]);
 
   // 1a. Auto-load jika ada param ?id=... dari Arsip Dokumen
   useEffect(() => {
@@ -276,10 +323,18 @@ export function DokumentasiForm({
         // Kompresi resolusi ke max 1280px & JPEG 80% (menghemat ~85-95% ukuran file)
         const compressedDataUrl = await compressImageClient(file, 1280, 0.8);
 
+        const currentPhotoIndex = formData.photos.length + newPhotos.length;
+        const autoCaption = generateStandardPhotoCaption({
+          namaKegiatan: formData.namaKegiatan,
+          judulDokumentasi: formData.judulDokumentasi,
+          penyedia: formData.penandatangan1Nama,
+          photoIndex: currentPhotoIndex,
+        });
+
         newPhotos.push({
           id: `photo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           url: compressedDataUrl,
-          caption: "Dokumentasi serah terima / pemanfaatan barang hibah.",
+          caption: autoCaption,
           tanggal: formData.tanggalKegiatan,
           lokasi: formData.lokasiKegiatan,
         });
@@ -300,6 +355,24 @@ export function DokumentasiForm({
         fileInputRef.current.value = "";
       }
     }
+  };
+
+  // Terapkan kalimat baku standar LPJ otomatis ke seluruh foto yang ada di formulir
+  const handleAutoStandardizeAllCaptions = () => {
+    if (formData.photos.length === 0) return;
+    setFormData((prev) => ({
+      ...prev,
+      photos: prev.photos.map((photo, idx) => ({
+        ...photo,
+        caption: generateStandardPhotoCaption({
+          namaKegiatan: prev.namaKegiatan,
+          judulDokumentasi: prev.judulDokumentasi,
+          penyedia: prev.penandatangan1Nama,
+          photoIndex: idx,
+        }),
+      })),
+    }));
+    swalSuccess("Keterangan Diselaraskan!", "Seluruh foto telah diperbarui dengan kalimat standar baku LPJ.");
   };
 
   const updatePhotoCaption = (id: string, caption: string) => {
@@ -429,13 +502,65 @@ export function DokumentasiForm({
 
   // Hapus dokumentasi tersimpan secara langsung (digunakan oleh tabel dan card)
   const handleDeleteSavedDocDirect = async (id: string) => {
+    const targetDoc = savedList.find((item) => item.id === id);
+    swalLoading("Menghapus Dokumentasi...", "Sedang memproses penghapusan arsip dan foto...");
     const res = await deleteDokumentasiAction(id);
     if (res.success) {
       setSavedList((prev) => prev.filter((item) => item.id !== id));
-      if (formData.id === id) {
-        setFormData((prev) => ({ ...prev, id: undefined }));
+
+      // Bersihkan foto dari localStorage jika ada nomor referensi terkait
+      if (targetDoc?.nomorReferensi) {
+        try {
+          localStorage.removeItem(`elpj_kwitansi_photos_${targetDoc.nomorReferensi}`);
+        } catch (e) {
+          console.warn(e);
+        }
       }
-      swalSuccess("Terhapus", "Arsip dokumentasi berhasil dihapus.");
+
+      // Cek apakah dokumen yang dihapus sedang aktif / ditampilkan di formulir saat ini
+      const isCurrentActive =
+        formData.id === id ||
+        (targetDoc?.nomorReferensi && formData.nomorReferensi === targetDoc.nomorReferensi) ||
+        (targetDoc?.namaKegiatan && formData.namaKegiatan === targetDoc.namaKegiatan);
+
+      if (isCurrentActive) {
+        // Hapus juga foto Cloudinary dari state saat ini jika ada
+        formData.photos.forEach((p) => {
+          const identifier = p.publicId || p.url;
+          if (identifier && (identifier.startsWith("http") || p.publicId)) {
+            deleteDokumentasiPhotoAction(identifier).catch((err) =>
+              console.warn("[Cloudinary] Gagal menghapus foto:", err)
+            );
+          }
+        });
+
+        // Kosongkan form dan hapus semua foto terkait (0 foto)
+        setFormData({
+          id: undefined,
+          judulDokumentasi: "LEMBAR DOKUMENTASI REALISASI BELANJA",
+          subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
+          namaKegiatan: "",
+          nomorReferensi: "",
+          tanggalKegiatan: new Date().toISOString().split("T")[0],
+          lokasiKegiatan: profile?.alamat || `Sekretariat ${userProfile?.institution || ""}`,
+          layout: "2-per-page",
+          photos: [], // <--- Foto dikosongkan total!
+          sertakanTandaTangan: true,
+          penandatangan1Jabatan: "Penyedia / Toko Rekanan",
+          penandatangan1Nama: "",
+          penandatangan2Jabatan: profile?.jabatanKetua || "Ketua Pimpinan Ranting",
+          penandatangan2Nama: userProfile?.leaderName || profile?.namaKetua || defaultLeader,
+        });
+
+        // Hapus draft di localStorage
+        try {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+
+      swalSuccess("Terhapus", "Arsip dokumentasi beserta seluruh foto terkait berhasil dihapus.");
     } else {
       swalError("Gagal Menghapus", res.message || "Gagal menghapus.");
     }
@@ -444,12 +569,24 @@ export function DokumentasiForm({
   // Hapus dokumentasi tersimpan dari tombol card
   const handleDeleteSavedDoc = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Apakah Anda yakin ingin menghapus arsip dokumentasi ini dari database?")) return;
+    const targetDoc = savedList.find((item) => item.id === id);
+    const isConfirmed = await swalConfirmDelete({
+      title: "Hapus Arsip Dokumentasi?",
+      text: `Apakah Anda yakin ingin menghapus arsip dokumentasi "${targetDoc?.namaKegiatan || ""}"? Seluruh foto kegiatan terkait (${targetDoc?.photosJson ? JSON.parse(targetDoc.photosJson).length : 0} foto) juga akan ikut dihapus.`,
+      confirmText: "Ya, Hapus!",
+      cancelText: "Batal",
+    });
+    if (!isConfirmed) return;
     await handleDeleteSavedDocDirect(id);
   };
 
   // Tambah entri dokumentasi baru (bersihkan form)
   const handleNewDocumentation = () => {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {
+      console.warn(e);
+    }
     setFormData({
       id: undefined,
       judulDokumentasi: "LEMBAR DOKUMENTASI REALISASI BELANJA",
@@ -464,7 +601,7 @@ export function DokumentasiForm({
       penandatangan1Jabatan: "Penyedia / Toko Rekanan",
       penandatangan1Nama: "",
       penandatangan2Jabatan: profile?.jabatanKetua || "Ketua Pimpinan Ranting",
-      penandatangan2Nama: userProfile?.leaderName || profile?.namaKetua || "HENI FUJIATI",
+      penandatangan2Nama: userProfile?.leaderName || profile?.namaKetua || defaultLeader,
     });
     const element = document.getElementById("formLedgerPanel");
     if (element) {
@@ -533,6 +670,13 @@ export function DokumentasiForm({
         );
       }
     });
+    if (formData.nomorReferensi) {
+      try {
+        localStorage.removeItem(`elpj_kwitansi_photos_${formData.nomorReferensi}`);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
     setFormData((prev) => ({ ...prev, photos: [] }));
   };
 
@@ -1112,20 +1256,32 @@ export function DokumentasiForm({
 
           {/* Photo Upload & Gallery Manager */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" />
                 <span>Foto Kegiatan &amp; Serah Terima ({formData.photos.length})</span>
               </h2>
               {formData.photos.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleClearPhotos}
-                  className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Kosongkan Semua</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAutoStandardizeAllCaptions}
+                    className="text-[11px] text-emerald-300 hover:text-emerald-200 flex items-center gap-1 font-semibold bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-700/60 px-2.5 py-1 rounded-lg transition-all shadow-xs cursor-pointer"
+                    title="Otomatiskan kalimat deskripsi seluruh foto sesuai standar baku LPJ dan jenis belanja"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>⚡ Standarkan Keterangan</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearPhotos}
+                    className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold px-2 py-1 rounded-lg hover:bg-rose-950/40 transition-colors cursor-pointer"
+                    title="Hapus seluruh foto"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Kosongkan</span>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1153,7 +1309,7 @@ export function DokumentasiForm({
                 {isCompressing ? "Mengompresi Gambar Otomatis..." : "Klik atau Seret Foto ke Sini"}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Foto kamera HP otomatis dikompresi ke 1280px (menghemat ~85% kapasitas Cloudinary)
+                Foto kamera HP otomatis dikompresi ke 1280px &amp; diisi keterangan standar baku LPJ
               </p>
             </div>
 
@@ -1163,6 +1319,15 @@ export function DokumentasiForm({
                 const isCloudinaryUrl =
                   photo.url &&
                   (photo.url.startsWith("http://") || photo.url.startsWith("https://"));
+                const presetOptions = getStandardCaptionPresets(
+                  formData.namaKegiatan,
+                  formData.judulDokumentasi,
+                  formData.penandatangan1Nama
+                );
+                const allCategoryPresets = getAllCategoryCaptionPresets(
+                  formData.namaKegiatan,
+                  formData.penandatangan1Nama
+                );
 
                 return (
                   <div
@@ -1234,9 +1399,47 @@ export function DokumentasiForm({
                         value={photo.caption}
                         onChange={(e) => updatePhotoCaption(photo.id, e.target.value)}
                         rows={2}
-                        placeholder="Tuliskan keterangan foto serah terima / kegiatan ini..."
-                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"
+                        placeholder="Tuliskan keterangan foto resmi LPJ..."
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none leading-relaxed"
                       />
+
+                      {/* Pilihan Cepat Keterangan Baku LPJ */}
+                      <div className="flex items-center justify-between gap-1.5 flex-wrap pt-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
+                            <span>Pilihan Cepat:</span>
+                          </span>
+                          {presetOptions.map((opt, optIdx) => (
+                            <button
+                              key={optIdx}
+                              type="button"
+                              onClick={() => updatePhotoCaption(photo.id, opt.text)}
+                              className={`text-[9.5px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                                photo.caption === opt.text
+                                  ? "bg-emerald-950/90 border-emerald-500 text-emerald-300 font-bold shadow-xs"
+                                  : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                              }`}
+                              title={opt.text}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTemplateModalPhotoId(photo.id);
+                            setSelectedCategoryTab("ALL");
+                          }}
+                          className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium hover:underline flex items-center gap-1 cursor-pointer ml-auto bg-cyan-950/40 hover:bg-cyan-950/70 border border-cyan-800/40 px-2 py-0.5 rounded transition-colors"
+                          title="Buka katalog lengkap kalimat baku dari pos belanja lainnya (Snack, Barang, Kegiatan, Banner, Sewa)"
+                        >
+                          <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
+                          <span>+ Pos Lain...</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1411,6 +1614,124 @@ export function DokumentasiForm({
         receiptOptions={receiptOptions}
         currentNomorReferensi={formData.nomorReferensi}
       />
+
+      {/* Modal Katalog Keterangan Standar Baku LPJ */}
+      {templateModalPhotoId && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Katalog Keterangan Standar Baku LPJ
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Pilih kalimat resmi untuk Foto ke-{(formData.photos.findIndex((p) => p.id === templateModalPhotoId) + 1) || 1}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTemplateModalPhotoId(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Category Tabs */}
+            <div className="px-4 pt-3 pb-2 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar bg-slate-950/30">
+              {[
+                { id: "ALL", label: "Semua Kategori" },
+                { id: "Kegiatan & Pelatihan", label: "🎓 Kegiatan & Pelatihan" },
+                { id: "Snack & Konsumsi", label: "🍱 Snack & Konsumsi" },
+                { id: "Pengadaan Barang", label: "📦 Pengadaan Barang" },
+                { id: "Banner & Publikasi", label: "🚩 Banner & ATK" },
+                { id: "Sewa Tempat", label: "🏢 Sewa Tempat" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedCategoryTab(tab.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    selectedCategoryTab === tab.id
+                      ? "bg-emerald-500 text-slate-950 shadow-xs"
+                      : "bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content List */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+              {getAllCategoryCaptionPresets(formData.namaKegiatan, formData.penandatangan1Nama)
+                .filter((cat) => selectedCategoryTab === "ALL" || cat.category === selectedCategoryTab)
+                .map((cat) => (
+                  <div key={cat.category} className="space-y-2">
+                    {selectedCategoryTab === "ALL" && (
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span>{cat.category}</span>
+                      </h4>
+                    )}
+                    <div className="grid grid-cols-1 gap-2">
+                      {cat.options.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            updatePhotoCaption(templateModalPhotoId, item.text);
+                            setTemplateModalPhotoId(null);
+                          }}
+                          className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/70 hover:bg-emerald-950/20 transition-all cursor-pointer group flex items-start justify-between gap-3"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-emerald-400 group-hover:text-emerald-300">
+                                {item.label}
+                              </span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">
+                                {cat.category}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300 group-hover:text-white leading-relaxed">
+                              &ldquo;{item.text}&rdquo;
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            className="shrink-0 text-[11px] font-bold text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/50"
+                          >
+                            Pilih
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">
+                💡 Klik pada kartu untuk langsung menerapkannya pada foto
+              </span>
+              <button
+                type="button"
+                onClick={() => setTemplateModalPhotoId(null)}
+                className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

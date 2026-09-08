@@ -172,7 +172,7 @@ export function DokumentasiCanvas({
                   </div>
 
                   {/* ================= TITLE & SUBTITLE (BISA DIEDIT LANGSUNG) ================= */}
-                  <div className="text-center mt-1 mb-2 relative group flex flex-col items-center justify-center gap-0.5">
+                  <div className="w-full text-center mt-1 mb-2 relative group flex flex-col items-center justify-center gap-0.5">
                     <div className="relative inline-flex items-center justify-center max-w-full m-0 p-0 leading-none">
                       <h3
                         contentEditable={Boolean(onUpdateTitle)}
@@ -194,7 +194,7 @@ export function DokumentasiCanvas({
                             ? "Klik untuk mengubah / mengedit judul langsung di kertas"
                             : undefined
                         }
-                        className={`text-[13.5px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-[2px] m-0 p-0 leading-snug transition-all ${
+                        className={`text-[13.5px] sm:text-[14px] font-bold tracking-wider uppercase text-black text-center underline decoration-2 decoration-[#006c4e] underline-offset-[2px] m-0 p-0 leading-snug transition-all ${
                           onUpdateTitle
                             ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
                             : ""
@@ -204,7 +204,7 @@ export function DokumentasiCanvas({
                         {data.judulDokumentasi || "LEMBAR DOKUMENTASI REALISASI BELANJA"}
                       </h3>
                       {onUpdateTitle && (
-                        <span className="no-print print:hidden hidden sm:inline-block text-[10px] text-emerald-700 font-normal ml-1.5 align-middle select-none opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 border border-emerald-300 rounded px-1.5 py-0.5 shadow-xs">
+                        <span className="no-print print:hidden hidden sm:inline-flex items-center gap-1 text-[10px] text-emerald-700 font-normal select-none opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 border border-emerald-300 rounded px-1.5 py-0.5 shadow-xs absolute left-full top-1/2 -translate-y-1/2 ml-2 pointer-events-none whitespace-nowrap z-10">
                           ✏️ Klik edit langsung
                         </span>
                       )}
@@ -229,7 +229,7 @@ export function DokumentasiCanvas({
                           ? "Klik untuk mengubah / mengedit subjudul langsung di kertas"
                           : undefined
                       }
-                      className={`font-mono text-[11px] sm:text-[11.5px] text-black m-0 p-0 mt-0.5 font-semibold leading-snug inline-block transition-all ${
+                      className={`font-mono text-[11px] sm:text-[11.5px] text-black text-center m-0 p-0 mt-0.5 font-semibold leading-snug inline-block transition-all ${
                         onUpdateSubJudul
                           ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
                           : ""

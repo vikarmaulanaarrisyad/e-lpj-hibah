@@ -182,19 +182,41 @@ export function ArsipDashboard({
   const [dokumentasiList, setDokumentasiList] = useState(dokumentasiDocs);
 
   const handleDeleteDokumentasi = async (id: string, refOrName: string) => {
+    const targetDoc = dokumentasiList.find((d) => d.id === id);
     const isConfirmed = await swalConfirmDelete({
       title: "Hapus Arsip Dokumentasi?",
-      text: `Apakah Anda yakin ingin menghapus lembar dokumentasi "${refOrName}"? Foto dan berkas cetak terkait akan ikut dihapus.`,
+      text: `Apakah Anda yakin ingin menghapus lembar dokumentasi "${refOrName}"? Seluruh foto dan berkas cetak terkait akan ikut dihapus.`,
       confirmText: "Ya, Hapus!",
       cancelText: "Batal",
     });
     if (!isConfirmed) return;
 
-    swalLoading("Menghapus Dokumentasi...", "Sedang memproses penghapusan arsip...");
+    swalLoading("Menghapus Dokumentasi...", "Sedang memproses penghapusan arsip dan foto...");
     const res = await deleteDokumentasiAction(id);
     if (res.success) {
       setDokumentasiList((prev) => prev.filter((d) => d.id !== id));
-      swalSuccess("Berhasil Dihapus", "Lembar dokumentasi kegiatan berhasil dihapus.");
+
+      // Bersihkan localStorage agar form dokumentasi tidak lagi memuat foto yang sudah dihapus
+      try {
+        const draftStr = localStorage.getItem("elpj_dokumentasi_draft");
+        if (draftStr) {
+          const draft = JSON.parse(draftStr);
+          if (
+            draft.id === id ||
+            (targetDoc?.nomorReferensi && draft.nomorReferensi === targetDoc.nomorReferensi) ||
+            (targetDoc?.namaKegiatan && draft.namaKegiatan === targetDoc.namaKegiatan)
+          ) {
+            localStorage.removeItem("elpj_dokumentasi_draft");
+          }
+        }
+        if (targetDoc?.nomorReferensi) {
+          localStorage.removeItem(`elpj_kwitansi_photos_${targetDoc.nomorReferensi}`);
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+
+      swalSuccess("Berhasil Dihapus", "Lembar dokumentasi kegiatan beserta seluruh foto terkait berhasil dihapus.");
     } else {
       swalError("Gagal Menghapus", res.message || "Terjadi kesalahan saat menghapus dokumentasi.");
     }

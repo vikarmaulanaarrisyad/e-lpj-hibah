@@ -563,4 +563,370 @@ export function determineDokumentasiTitle(
   return "LEMBAR DOKUMENTASI REALISASI BELANJA";
 }
 
+/**
+ * Membersihkan nama barang / uraian kegiatan dari format hitungan atau harga
+ * Contoh:
+ *   "Belanja Alat Hadroh sebanyak 1 Paket x @ Rp. 5.800.000 = Rp. 5.800.000" -> "Alat Hadroh"
+ */
+export function cleanItemDescription(rawName?: string | null): string {
+  if (!rawName) return "Barang / Kegiatan Hibah";
+  let cleaned = rawName.trim();
+  // Buang potongan hitungan
+  cleaned = cleaned.split(/sebanyak|sebesar|\sx\s@|\s=\sRp|\s@\sRp/i)[0].trim();
+  // Buang prefix "Belanja " atau "Pengadaan " jika ada agar enak dibaca dalam kalimat
+  cleaned = cleaned.replace(/^(belanja\s+pengadaan\s+|belanja\s+|pengadaan\s+)/i, "");
+  return cleaned.trim() || "Barang / Kegiatan Hibah";
+}
+
+/**
+ * Menghasilkan pilihan kalimat baku standar LPJ sesuai kategori belanja
+ */
+export function getStandardCaptionPresets(
+  namaKegiatan?: string | null,
+  judulDokumentasi?: string | null,
+  penyedia?: string | null
+): { label: string; text: string }[] {
+  const item = cleanItemDescription(namaKegiatan);
+  const combined = `${judulDokumentasi || ""} ${namaKegiatan || ""}`.toLowerCase();
+  const namaToko = penyedia?.trim() ? ` pihak ${penyedia}` : " pihak rekanan penyedia";
+
+  // 1. KONSUMSI / SNACK
+  if (
+    combined.includes("snack") ||
+    combined.includes("konsumsi") ||
+    combined.includes("makan") ||
+    combined.includes("minum") ||
+    combined.includes("katering") ||
+    combined.includes("roti")
+  ) {
+    return [
+      {
+        label: "Serah Terima Snack",
+        text: `Penerimaan dan serah terima ${item} dari${namaToko} sesuai rincian jumlah porsi kegiatan.`,
+      },
+      {
+        label: "Distribusi Peserta",
+        text: `Distribusi dan pembagian ${item} kepada peserta dan panitia pada saat jeda pelaksanaan kegiatan.`,
+      },
+      {
+        label: "Sajian Konsumsi",
+        text: `Dokumentasi sajian menu dan kelengkapan hidangan ${item} yang dinikmati bersama peserta kegiatan.`,
+      },
+      {
+        label: "Penyediaan Konsumsi",
+        text: `Dokumentasi penyediaan sarana konsumsi dan snack pendukung kelancaran pelaksanaan acara.`,
+      },
+    ];
+  }
+
+  // 2. BANNER / SPANDUK
+  if (
+    combined.includes("banner") ||
+    combined.includes("spanduk") ||
+    combined.includes("baliho")
+  ) {
+    return [
+      {
+        label: "Pemasangan Backdrop",
+        text: `Pemasangan banner dan backdrop publikasi resmi kegiatan di panggung utama lokasi acara.`,
+      },
+      {
+        label: "Dekorasi Ruangan",
+        text: `Tampilan banner publikasi dan dekorasi ruang kegiatan Program Bantuan Hibah Daerah.`,
+      },
+      {
+        label: "Foto Bersama Banner",
+        text: `Dokumentasi foto bersama peserta dan panitia berlatar belakang banner kegiatan resmi.`,
+      },
+      {
+        label: "Media Publikasi",
+        text: `Dokumentasi visual publikasi dan kelengkapan media informasi kegiatan organisasi.`,
+      },
+    ];
+  }
+
+  // 3. ATK, MODUL & PENGGANDAAN
+  if (
+    combined.includes("atk") ||
+    combined.includes("alat tulis") ||
+    combined.includes("modul") ||
+    combined.includes("penggandaan") ||
+    combined.includes("fotokopi") ||
+    combined.includes("cetak")
+  ) {
+    return [
+      {
+        label: "Pembagian Modul & ATK",
+        text: `Pembagian kelengkapan ATK dan penggandaan modul materi kepada peserta sebelum kegiatan dimulai.`,
+      },
+      {
+        label: "Pemanfaatan Materi",
+        text: `Pemanfaatan modul materi dan ATK oleh peserta dalam mengikuti rangkaian kegiatan.`,
+      },
+      {
+        label: "Kelengkapan Berkas",
+        text: `Dokumentasi kelengkapan berkas administrasi, penggandaan modul materi, dan sarana ATK kegiatan.`,
+      },
+      {
+        label: "Serah Terima Percetakan",
+        text: `Pemeriksaan kelengkapan dan serah terima hasil penggandaan materi kegiatan dari pihak percetakan.`,
+      },
+    ];
+  }
+
+  // 4. SEWA GEDUNG / TEMPAT & PERALATAN
+  if (
+    combined.includes("sewa gedung") ||
+    combined.includes("sewa tempat") ||
+    combined.includes("sewa lcd") ||
+    combined.includes("sewa sound") ||
+    combined.includes("sewa")
+  ) {
+    return [
+      {
+        label: "Pemanfaatan Ruangan",
+        text: `Pemanfaatan gedung / ruangan tempat pelaksanaan kegiatan yang telah disewa secara resmi.`,
+      },
+      {
+        label: "Operasional Sound & LCD",
+        text: `Operasional dan pengaturan sarana audio sound system serta proyektor LCD selama kegiatan berlangsung.`,
+      },
+      {
+        label: "Suasana Tempat Acara",
+        text: `Suasana tata letak ruangan dan fasilitas tempat kegiatan saat dihadiri oleh para peserta.`,
+      },
+      {
+        label: "Kelengkapan Fasilitas",
+        text: `Dokumentasi sarana prasarana tempat dan perlengkapan penunjang kelancaran acara.`,
+      },
+    ];
+  }
+
+  // 5. PENGADAAN BARANG / SARANA FISIK (Hadroh, Sound, Laptop, Printer, Kafan, dll)
+  if (
+    combined.includes("hadroh") ||
+    combined.includes("rebana") ||
+    combined.includes("alat") ||
+    combined.includes("barang") ||
+    combined.includes("sarana") ||
+    combined.includes("sound") ||
+    combined.includes("inventaris") ||
+    combined.includes("kafan") ||
+    combined.includes("seragam") ||
+    combined.includes("laptop") ||
+    combined.includes("komputer") ||
+    combined.includes("printer") ||
+    combined.includes("meja") ||
+    combined.includes("kursi") ||
+    combined.includes("boneka") ||
+    combined.includes("pengadaan")
+  ) {
+    return [
+      {
+        label: "Penyerahan Fisik",
+        text: `Penyerahan fisik sarana ${item} dari${namaToko} kepada pimpinan lembaga dalam kondisi baru dan lengkap.`,
+      },
+      {
+        label: "Uji Fungsi & Fisik",
+        text: `Pemeriksaan fisik dan uji fungsi spesifikasi ${item} untuk memastikan kelayakan pemanfaatan sarana organisasi.`,
+      },
+      {
+        label: "Penyimpanan Sekretariat",
+        text: `Penyimpanan dan inventarisasi sarana ${item} di sekretariat lembaga siap digunakan untuk kegiatan keumatan.`,
+      },
+      {
+        label: "Pemanfaatan Sarana",
+        text: `Dokumentasi kelengkapan fisik dan serah terima pengadaan ${item} bantuan dana hibah daerah.`,
+      },
+    ];
+  }
+
+  // 6. PELAKSANAAN KEGIATAN & PELATIHAN
+  if (
+    combined.includes("pelatihan") ||
+    combined.includes("kegiatan") ||
+    combined.includes("acara") ||
+    combined.includes("rapat") ||
+    combined.includes("sosialisasi") ||
+    combined.includes("peringatan") ||
+    combined.includes("kader") ||
+    combined.includes("mars") ||
+    combined.includes("honor") ||
+    combined.includes("transport")
+  ) {
+    return [
+      {
+        label: "Penyampaian Materi",
+        text: `Penyampaian materi pokok pada kegiatan ${item} oleh narasumber/instruktur kepada para peserta.`,
+      },
+      {
+        label: "Sesi Diskusi & Praktik",
+        text: `Sesi praktik dan interaksi aktif peserta dalam rangkaian tahapan kegiatan ${item}.`,
+      },
+      {
+        label: "Foto Bersama Penutupan",
+        text: `Foto bersama jajaran panitia, narasumber, dan peserta pada penutupan kegiatan ${item}.`,
+      },
+      {
+        label: "Antusiasme Peserta",
+        text: `Dokumentasi antusiasme dan keikutsertaan peserta selama berlangsungnya kegiatan ${item}.`,
+      },
+    ];
+  }
+
+  // 7. DEFAULT / UMUM
+  return [
+    {
+      label: "Realisasi Fisik Belanja",
+      text: `Dokumentasi fisik realisasi belanja ${item} sesuai peruntukan alokasi dana hibah daerah.`,
+    },
+    {
+      label: "Pemeriksaan & Serah Terima",
+      text: `Pemeriksaan kelengkapan dan serah terima hasil belanja ${item} bersama pihak terkait.`,
+    },
+    {
+      label: "Pemanfaatan Hasil Belanja",
+      text: `Pemanfaatan hasil belanja ${item} dalam mendukung kelancaran program kerja organisasi.`,
+    },
+    {
+      label: "Kelengkapan Pertanggungjawaban",
+      text: `Dokumentasi pendukung pertanggungjawaban realisasi belanja ${item}.`,
+    },
+  ];
+}
+
+/**
+ * Menghasilkan keterangan otomatis untuk foto ke-i (index 0, 1, 2, ...)
+ */
+export function generateStandardPhotoCaption(params: {
+  namaKegiatan?: string | null;
+  judulDokumentasi?: string | null;
+  penyedia?: string | null;
+  photoIndex: number;
+}): string {
+  const presets = getStandardCaptionPresets(
+    params.namaKegiatan,
+    params.judulDokumentasi,
+    params.penyedia
+  );
+  if (presets.length === 0) {
+    return "Dokumentasi pertanggungjawaban realisasi belanja kegiatan.";
+  }
+  if (params.photoIndex < presets.length) {
+    return presets[params.photoIndex].text;
+  }
+  const lastPreset = presets[presets.length - 1];
+  return `${lastPreset.text} (Bagian ${params.photoIndex + 1})`;
+}
+
+/**
+ * Daftar seluruh opsi kalimat standar LPJ dikelompokkan berdasarkan kategori
+ * Memudahkan pengguna jika dalam 1 lembar dokumentasi terdapat kombinasi foto (misal: ada foto materi, foto snack, dan foto penyerahan barang).
+ */
+export function getAllCategoryCaptionPresets(
+  namaKegiatan?: string | null,
+  penyedia?: string | null
+): { category: string; options: { label: string; text: string }[] }[] {
+  const item = cleanItemDescription(namaKegiatan);
+  const namaToko = penyedia?.trim() ? ` pihak ${penyedia}` : " pihak rekanan penyedia";
+
+  return [
+    {
+      category: "Kegiatan & Pelatihan",
+      options: [
+        {
+          label: "Penyampaian Materi",
+          text: `Penyampaian materi pokok pada kegiatan ${item} oleh narasumber/instruktur kepada para peserta.`,
+        },
+        {
+          label: "Sesi Tanya Jawab & Praktik",
+          text: `Sesi tanya jawab, diskusi interaktif, dan praktik peserta dalam rangkaian kegiatan ${item}.`,
+        },
+        {
+          label: "Foto Bersama Penutupan",
+          text: `Foto bersama jajaran pengurus, narasumber, dan seluruh peserta pada penutupan kegiatan ${item}.`,
+        },
+        {
+          label: "Antusiasme Peserta",
+          text: `Dokumentasi antusiasme dan keikutsertaan peserta selama berlangsungnya kegiatan ${item}.`,
+        },
+      ],
+    },
+    {
+      category: "Snack & Konsumsi",
+      options: [
+        {
+          label: "Serah Terima Snack",
+          text: `Penerimaan dan serah terima konsumsi / snack kegiatan dari pihak penyedia sesuai rincian jumlah porsi.`,
+        },
+        {
+          label: "Distribusi ke Peserta",
+          text: `Distribusi dan pembagian snack / konsumsi kepada seluruh peserta dan panitia pada saat pelaksanaan kegiatan.`,
+        },
+        {
+          label: "Sajian Hidangan Snack",
+          text: `Dokumentasi sajian hidangan konsumsi dan snack yang dinikmati bersama peserta dan panitia kegiatan.`,
+        },
+        {
+          label: "Penyediaan Konsumsi",
+          text: `Dokumentasi penyediaan sarana konsumsi pendukung kelancaran pelaksanaan acara.`,
+        },
+      ],
+    },
+    {
+      category: "Pengadaan Barang",
+      options: [
+        {
+          label: "Penyerahan Fisik Barang",
+          text: `Penyerahan fisik sarana ${item} dari${namaToko} kepada pimpinan lembaga dalam kondisi baru dan lengkap.`,
+        },
+        {
+          label: "Pemeriksaan & Uji Fungsi",
+          text: `Pemeriksaan fisik dan uji fungsi spesifikasi ${item} untuk memastikan kelayakan pemanfaatan sarana organisasi.`,
+        },
+        {
+          label: "Penyimpanan di Sekretariat",
+          text: `Penyimpanan dan inventarisasi sarana ${item} di sekretariat lembaga siap digunakan untuk kegiatan keumatan.`,
+        },
+        {
+          label: "Pemanfaatan Sarana",
+          text: `Dokumentasi kelengkapan fisik dan serah terima pengadaan ${item} bantuan dana hibah daerah.`,
+        },
+      ],
+    },
+    {
+      category: "Banner & Publikasi",
+      options: [
+        {
+          label: "Pemasangan Backdrop",
+          text: `Pemasangan banner dan backdrop publikasi resmi kegiatan di panggung utama lokasi acara.`,
+        },
+        {
+          label: "Foto Bersama Banner",
+          text: `Dokumentasi foto bersama peserta dan panitia berlatar belakang banner kegiatan resmi hibah daerah.`,
+        },
+        {
+          label: "Pembagian Modul & ATK",
+          text: `Pembagian kelengkapan modul materi dan ATK kepada seluruh peserta sebelum kegiatan dimulai.`,
+        },
+      ],
+    },
+    {
+      category: "Sewa Tempat",
+      options: [
+        {
+          label: "Pemanfaatan Ruangan Gedung",
+          text: `Pemanfaatan gedung / ruangan tempat pelaksanaan kegiatan yang telah disewa secara resmi.`,
+        },
+        {
+          label: "Operasional Sound & LCD",
+          text: `Operasional perangkat audio sound system dan proyektor LCD selama kegiatan berlangsung.`,
+        },
+      ],
+    },
+  ];
+}
+
+
+
 
