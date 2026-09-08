@@ -56,6 +56,7 @@ import {
   syncNomorDokumenBulanTahun,
   cleanPihakJabatan,
 } from "@/lib/utils/pesanan-date";
+import { cleanAndFormatTitle } from "@/lib/utils/title-case";
 import type {
   BastDocument,
   BastFormData,
@@ -269,7 +270,7 @@ export function BastForm({
     const mappedItems: BastItem[] = parsedItems.map((it, idx) => ({
       id: String(idx + 1),
       no: idx + 1,
-      jenisBarang: it.jenisBarang,
+      jenisBarang: cleanAndFormatTitle(it.jenisBarang),
       spesifikasi: it.spesifikasi || "Standar spesifikasi barang sesuai proposal NPHD",
       pesanan: `${it.jumlah} ${it.satuan || "unit"}`,
       realisasi: `${it.jumlah} ${it.satuan || "unit"}`,
@@ -284,7 +285,7 @@ export function BastForm({
       nomorBast: updatedBastNo,
       nomorSpk: po.nomorSp,
       tanggalSpk: tglIso,
-      namaKegiatan: po.namaPaket ? po.namaPaket.split(/\s+sebanyak\s+/i)[0].trim() : prev.namaKegiatan,
+      namaKegiatan: po.namaPaket ? cleanAndFormatTitle(po.namaPaket) : prev.namaKegiatan,
       pihak1Nama: po.pihak1Nama || prev.pihak1Nama,
       pihak1Jabatan: cleanPihakJabatan(po.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || prev.pihak1Jabatan),
       pihak2Nama: po.pihak2Nama || prev.pihak2Nama,
@@ -334,7 +335,10 @@ export function BastForm({
         waktuPenyelesaian: matchedPo.waktuPenyelesaian || "1 (satu) hari kalender",
         alamatPengiriman: matchedPo.alamatPengiriman || "Tempat / Lokasi Penerimaan",
         alamatPemeriksaan: matchedPo.alamatPemeriksaan || `Sekretariat ${defaultInstitution}`,
-        dendaKeterlambatan: matchedPo.dendaKeterlambatan || "Denda 1/500 dari nilai pesanan per hari keterlambatan.",
+        dendaKeterlambatan:
+          matchedPo.dendaKeterlambatan && !matchedPo.dendaKeterlambatan.includes("Denda 1/500")
+            ? matchedPo.dendaKeterlambatan
+            : "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku",
         receiptId: matchedPo.receiptId || formData.receiptId,
       };
     }
@@ -370,7 +374,8 @@ export function BastForm({
       waktuPenyelesaian: "1 (satu) hari kalender",
       alamatPengiriman: "Tempat / Lokasi Rekanan Toko",
       alamatPemeriksaan: `Sekretariat ${defaultInstitution}`,
-      dendaKeterlambatan: "Denda 1/500 per hari keterlambatan.",
+      dendaKeterlambatan:
+        "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku",
       receiptId: formData.receiptId,
     };
   }, [pesananList, formData, defaultInstitution, todayStr]);
@@ -427,8 +432,8 @@ export function BastForm({
           (receiptNoParam && item.nomorBukti === receiptNoParam)
       );
       if (r) {
-        const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
-        const itemName = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
+        const cleanUraian = cleanAndFormatTitle(r.uraian);
+        const itemName = cleanAndFormatTitle(cleanUraian.replace(/^Belanja\s+/i, "")) || "Pengadaan Sarana & Prasarana";
         const matchedVendor = vendors.find(
           (v) =>
             v.namaToko.toLowerCase() === (r.penerima || "").toLowerCase() ||
@@ -699,8 +704,8 @@ export function BastForm({
 
     const r = initialReceipts.find((it) => it.id === receiptId);
     if (r) {
-      const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
-      const cleanItem = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Barang";
+      const cleanUraian = cleanAndFormatTitle(r.uraian);
+      const cleanItem = cleanAndFormatTitle(cleanUraian.replace(/^Belanja\s+/i, "")) || "Pengadaan Barang";
       const receiptDate = r.tanggal ? new Date(r.tanggal) : new Date();
       const receiptDateIso = r.tanggal ? new Date(r.tanggal).toISOString().split("T")[0] : formData.tanggal;
       const { hariTanggal: rHariTanggal, terbilangResmi: rTerbilang } = formatTanggalTerbilang(receiptDate);
@@ -1493,6 +1498,14 @@ export function BastForm({
                     onChange={(e) =>
                       setFormData({ ...formData, namaKegiatan: e.target.value })
                     }
+                    onBlur={() => {
+                      if (formData.namaKegiatan) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          namaKegiatan: cleanAndFormatTitle(prev.namaKegiatan),
+                        }));
+                      }
+                    }}
                     className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -1702,6 +1715,11 @@ export function BastForm({
                           onChange={(e) =>
                             handleUpdateItem(idx, "jenisBarang", e.target.value)
                           }
+                          onBlur={() => {
+                            if (item.jenisBarang) {
+                              handleUpdateItem(idx, "jenisBarang", cleanAndFormatTitle(item.jenisBarang));
+                            }
+                          }}
                           placeholder="cth: Sound Aktif Portable 15 Inch + Wireless Mic"
                           className="w-full text-xs font-medium bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500"
                         />
@@ -2355,7 +2373,7 @@ export function BastForm({
                         </td>
                         <td className="py-3 px-4">
                           <span className="text-slate-200 font-medium line-clamp-1">
-                            {b.namaKegiatan}
+                            {cleanAndFormatTitle(b.namaKegiatan)}
                           </span>
                           <span className="text-[11px] text-slate-400 block mt-0.5">
                             Nomor SPK: {b.nomorSpk}

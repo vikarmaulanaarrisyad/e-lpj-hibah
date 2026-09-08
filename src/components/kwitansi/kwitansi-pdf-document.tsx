@@ -2,6 +2,7 @@ import React from "react";
 import * as ReactPdfAll from "@react-pdf/renderer";
 import type { ReceiptFormData, InstitutionProfile } from "@/types";
 import { getSignatoryKetuaTitles } from "@/lib/utils/kwitansi-signatory";
+import { formatUraianBelanja } from "@/lib/utils/title-case";
 
 // Handle both ES module default and named exports from @react-pdf/renderer in browser/webpack
 const ReactPDF = (ReactPdfAll as any).default || ReactPdfAll;
@@ -347,7 +348,7 @@ export function KwitansiPdfDocument({
                   <Text style={styles.rowLabel}>Guna Membayar</Text>
                   <Text style={styles.rowColon}>:</Text>
                   <Text style={styles.rowValueUraian}>
-                    {data.uraian || "Belanja Sound Aktif sebanyak 1 unit x @ Rp. 3.000.000 = Rp. 3.000.000"}
+                    {formatUraianBelanja(data.uraian) || "Belanja Sound Aktif sebanyak 1 unit x @ Rp. 3.000.000 = Rp. 3.000.000"}
                   </Text>
                 </View>
               </View>

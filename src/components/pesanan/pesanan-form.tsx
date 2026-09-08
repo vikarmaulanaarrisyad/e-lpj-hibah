@@ -57,6 +57,7 @@ import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
+import { cleanAndFormatTitle } from "@/lib/utils/title-case";
 import { PesananCanvas } from "./pesanan-canvas";
 import { BastCanvas } from "../bast/bast-canvas";
 import type {
@@ -81,6 +82,16 @@ interface PesananFormProps {
     leaderName?: string | null;
     institution?: string | null;
   };
+}
+
+const DEFAULT_SP_DENDA =
+  "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku";
+
+function getInitialDenda(val?: string | null): string {
+  if (!val || val.trim() === "" || val.includes("Denda 1/500")) {
+    return DEFAULT_SP_DENDA;
+  }
+  return val;
 }
 
 export function PesananForm({
@@ -203,7 +214,7 @@ export function PesananForm({
         waktuPenyelesaian: p.waktuPenyelesaian || "1 (satu) hari kalender",
         alamatPengiriman: p.alamatPengiriman || "Tempat / Gudang Toko Surya Mas",
         alamatPemeriksaan: p.alamatPemeriksaan || "Sekretariat PR Fatayat NU Dawuhan Selatan",
-        dendaKeterlambatan: p.dendaKeterlambatan || "Denda 1/500 dari nilai pekerjaan sebelum pajak per hari keterlambatan.",
+        dendaKeterlambatan: getInitialDenda(p.dendaKeterlambatan),
         receiptId: p.receiptId,
       };
     }
@@ -239,7 +250,7 @@ export function PesananForm({
       waktuPenyelesaian: "4 (empat) hari kalender dan pekerjaan harus sudah selesai pada tanggal 04 Agustus 2026",
       alamatPengiriman: "Jl. Sunan Amangkurat 1 Pesarean Kejeron",
       alamatPemeriksaan: "Jl. Kemuning 2016 Desa Dawuhan RT. 23 RW. 06 Kec. Talang Kab. Tegal",
-      dendaKeterlambatan: "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku",
+      dendaKeterlambatan: DEFAULT_SP_DENDA,
       receiptId: null,
     };
   });
@@ -429,8 +440,8 @@ export function PesananForm({
     const r = initialReceipts.find((item) => item.id === rcId);
     if (!r) return;
 
-    const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
-    const itemName = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
+    const cleanUraian = cleanAndFormatTitle(r.uraian);
+    const itemName = cleanAndFormatTitle(cleanUraian.replace(/^Belanja\s+/i, "")) || "Pengadaan Sarana & Prasarana";
     const subtotal = r.nominal;
     const totalHarga = r.nominal;
     const terbilangText = r.terbilang || angkaKeTerbilang(totalHarga);
@@ -527,7 +538,7 @@ export function PesananForm({
       waktuPenyelesaian: p.waktuPenyelesaian || deskripsiWaktuPenyelesaian,
       alamatPengiriman: p.alamatPengiriman || "",
       alamatPemeriksaan: p.alamatPemeriksaan || "",
-      dendaKeterlambatan: p.dendaKeterlambatan || "",
+      dendaKeterlambatan: getInitialDenda(p.dendaKeterlambatan),
       receiptId: p.receiptId,
     });
 
@@ -874,7 +885,7 @@ export function PesananForm({
       waktuPenyelesaian: "1 (satu) hari kalender",
       alamatPengiriman: "Tempat / Gudang Toko Surya Mas",
       alamatPemeriksaan: "Sekretariat PR Fatayat NU Dawuhan Selatan",
-      dendaKeterlambatan: "Denda 1/500 dari nilai pesanan sebelum pajak untuk setiap hari keterlambatan.",
+      dendaKeterlambatan: DEFAULT_SP_DENDA,
       receiptId: null,
     });
     setSaveSuccessMsg(null);
@@ -1332,6 +1343,14 @@ export function PesananForm({
                     onChange={(e) =>
                       setFormData({ ...formData, namaPaket: e.target.value })
                     }
+                    onBlur={() => {
+                      if (formData.namaPaket) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          namaPaket: cleanAndFormatTitle(prev.namaPaket),
+                        }));
+                      }
+                    }}
                     placeholder="Contoh: Pengadaan Sarana Sound Aktif & Alat Hadroh"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
@@ -1581,6 +1600,11 @@ export function PesananForm({
                           onChange={(e) =>
                             handleUpdateItem(idx, "jenisBarang", e.target.value)
                           }
+                          onBlur={() => {
+                            if (item.jenisBarang) {
+                              handleUpdateItem(idx, "jenisBarang", cleanAndFormatTitle(item.jenisBarang));
+                            }
+                          }}
                           placeholder="Contoh: Sound Aktif Portable 15 Inch"
                           className="w-full text-xs font-medium bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500"
                         />
@@ -1795,6 +1819,21 @@ export function PesananForm({
                       setFormData({ ...formData, alamatPemeriksaan: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-300 font-medium block mb-1">
+                    Klausul Denda Keterlambatan (Poin 6)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.dendaKeterlambatan}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dendaKeterlambatan: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-sans"
+                    placeholder={DEFAULT_SP_DENDA}
                   />
                 </div>
               </div>
@@ -2176,7 +2215,7 @@ export function PesananForm({
                         </td>
                         <td className="py-3 px-4">
                           <span className="text-slate-200 font-medium line-clamp-1">
-                            {p.namaPaket}
+                            {cleanAndFormatTitle(p.namaPaket)}
                           </span>
                           <span className="text-[11px] text-slate-400 block mt-0.5">
                             Pihak Kesatu: {p.pihak1Nama}

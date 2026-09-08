@@ -2,6 +2,7 @@
 
 import type { BastFormData, InstitutionProfile } from "@/types";
 import { cleanPihakJabatan } from "@/lib/utils/pesanan-date";
+import { cleanAndFormatTitle } from "@/lib/utils/title-case";
 
 interface BastCanvasProps {
   data: BastFormData;
@@ -28,12 +29,7 @@ function formatDateIndo(dateStr?: string) {
 const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 function cleanTitle(text?: string | null): string {
-  if (!text) return "";
-  let clean = text.trim();
-  clean = clean.split(/\s+(?:sebanyak|sebesar|sejumlah|senilai)\s+/i)[0].trim();
-  clean = clean.split(/\s*x\s*@\s*Rp/i)[0].trim();
-  clean = clean.split(/\s*=\s*Rp/i)[0].trim();
-  return clean;
+  return cleanAndFormatTitle(text);
 }
 
 function getPembukaBast(hariTanggal?: string, tanggalTerbilang?: string) {

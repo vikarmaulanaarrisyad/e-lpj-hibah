@@ -29,6 +29,7 @@ import type {
   InstitutionProfile,
 } from "@/types";
 import { exportRabToPdf } from "@/lib/rab-pdf";
+import { formatProperCase } from "@/lib/utils/title-case";
 import { RabCanvas } from "./rab-canvas";
 import {
   addRabDetailRowAction,
@@ -96,9 +97,10 @@ export function formatKwitansiUraian(
   }
 ): string {
   // 1. Bersihkan keterangan volume yang menempel di uraian (misal: "Transport Peserta 3 kegiatan" -> "Transport Peserta")
-  const cleanRow = (rowUraian || "")
+  const rawCleanRow = (rowUraian || "")
     .replace(/\s*\(?\d+\s*kegiatan\)?$/i, "")
     .trim();
+  const cleanRow = formatProperCase(rawCleanRow);
   const cleanGroup = (groupNama || "").trim();
 
   // 2. Bersihkan seluruh kode akun / nomor urut di awal nama kelompok (misal: "5.2.1 - Belanja..." atau "VI. PELATIHAN MARS")
@@ -109,26 +111,24 @@ export function formatKwitansiUraian(
   // Ambil nama kegiatan murni
   const matchBelanjaGroup = groupWithoutCode.match(/^belanja\s+(.+)$/i);
   const rawActivity = matchBelanjaGroup && matchBelanjaGroup[1] ? matchBelanjaGroup[1].trim() : groupWithoutCode;
-  const activityName = formatActivityTitle(rawActivity);
+  const activityName = formatProperCase(rawActivity);
 
   // 3. Gabungkan nama kegiatan spesifik jika relevan (misal kelompok "Pelatihan MARS" digabung dengan "Transport Peserta")
   // Jangan gabungkan jika nama kelompok adalah pos generik seperti "Pengadaan", "Sarana", "Belanja Barang", dsb.
-  let combined = cleanRow;
+  const cleanRowWithoutBelanja = cleanRow.replace(/^belanja\s+/i, "");
+  let combined = cleanRowWithoutBelanja;
   const isGenericGroup = /^(?:pengadaan|sarana|barang|alat|peralatan|administrasi|operasional|kesekretariatan)/i.test(activityName);
 
   if (
     activityName &&
     !isGenericGroup &&
-    !cleanRow.toLowerCase().includes(activityName.toLowerCase())
+    !cleanRowWithoutBelanja.toLowerCase().includes(activityName.toLowerCase())
   ) {
-    combined = `${cleanRow} ${activityName}`;
+    combined = `${cleanRowWithoutBelanja} ${activityName}`;
   }
 
-  // 4. Pastikan diawali dengan kata "Belanja "
-  let finalTitle = combined;
-  if (!/^belanja\b/i.test(finalTitle)) {
-    finalTitle = `Belanja ${finalTitle}`;
-  }
+  // 4. Pastikan diawali dengan kata "Belanja " dan diformat Proper Case
+  let finalTitle = formatProperCase(`Belanja ${combined}`);
 
   // 5. Tambahkan keterangan tahapan jika ada
   if (options?.mode === "bertahap" && options.stageNumber) {
@@ -1273,7 +1273,7 @@ export function RabTableView({
                 </label>
                 <input
                   type="text"
-                  placeholder="Contoh: BELANJA ALAT HADROH"
+                  placeholder="Contoh: Belanja Alat Hadroh"
                   value={editGroupNama}
                   onChange={(e) => setEditGroupNama(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-600"

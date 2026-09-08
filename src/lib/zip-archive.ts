@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { jsPDF } from "jspdf";
 import { generateBkuPdf } from "./bku-pdf";
 import { angkaKeTerbilang } from "./utils/terbilang";
+import { formatUraianBelanja, cleanAndFormatTitle } from "./utils/title-case";
 import type { LpjArchiveData } from "@/app/actions/archive.action";
 import type { Receipt, PurchaseOrder, BastDocument, BastItem, PesananItem } from "@/types";
 
@@ -471,7 +472,7 @@ function createSingleReceiptPdf(receipt: Receipt, data: LpjArchiveData): Blob {
 
   row("Telah Terima Dari", receipt.pemberi);
   row("Uang Sejumlah", `${fmtRupiah(receipt.nominal)} (${angkaKeTerbilang(receipt.nominal)})`, true);
-  row("Untuk Pembayaran", receipt.uraian);
+  row("Untuk Pembayaran", formatUraianBelanja(receipt.uraian));
   row("Penerima / Toko", receipt.penerima, true);
   if (receipt.kategoriRab) {
     row("Pos Anggaran RAB", receipt.kategoriRab);
@@ -569,7 +570,7 @@ function createSingleSpPdf(sp: PurchaseOrder, data: LpjArchiveData): Blob {
 
   // Paket Pekerjaan
   doc.setFont("helvetica", "bold");
-  doc.text(`Paket Pengadaan: ${sp.namaPaket}`, margin, y);
+  doc.text(`Paket Pengadaan: ${cleanAndFormatTitle(sp.namaPaket)}`, margin, y);
   y += 6;
 
   // Tabel Barang
@@ -609,7 +610,7 @@ function createSingleSpPdf(sp: PurchaseOrder, data: LpjArchiveData): Blob {
     let rx = margin;
     const rowVals = [
       String(idx + 1),
-      it.jenisBarang,
+      cleanAndFormatTitle(it.jenisBarang),
       it.spesifikasi || "-",
       `${it.jumlah} ${it.satuan || "unit"}`,
       fmtRupiah(it.hargaSatuan),
@@ -713,7 +714,7 @@ function createSingleBastPdf(bast: BastDocument, data: LpjArchiveData): Blob {
   // Rujukan SPK & Nama Kegiatan
   doc.text(`Dasar Surat Pesanan : ${bast.nomorSpk || "-"}`, margin, y);
   y += 4.5;
-  doc.text(`Kegiatan / Paket         : ${bast.namaKegiatan}`, margin, y);
+  doc.text(`Kegiatan / Paket         : ${cleanAndFormatTitle(bast.namaKegiatan)}`, margin, y);
   y += 7;
 
   // Tabel Barang Serah Terima
@@ -753,7 +754,7 @@ function createSingleBastPdf(bast: BastDocument, data: LpjArchiveData): Blob {
     let rx = margin;
     const rowVals = [
       String(idx + 1),
-      it.jenisBarang,
+      cleanAndFormatTitle(it.jenisBarang),
       it.spesifikasi || "-",
       it.pesanan,
       it.realisasi,
@@ -857,11 +858,11 @@ DAFTAR BERKAS DOKUMEN DALAM ARSIP INI:
 
 [✓] Folder 06_SURAT_PESANAN_SP/
     - Total: ${data.counts.purchaseOrders} berkas Surat Pesanan (SP).
-    ${data.purchaseOrders.map((p, i) => `  ${i + 1}. [${p.nomorSp}] ${p.namaPaket} (${p.pihak2Toko})`).join("\n    ")}
+    ${data.purchaseOrders.map((p, i) => `  ${i + 1}. [${p.nomorSp}] ${cleanAndFormatTitle(p.namaPaket)} (${p.pihak2Toko})`).join("\n    ")}
 
 [✓] Folder 07_BERITA_ACARA_BAST/
     - Total: ${data.counts.bastDocuments} berkas Berita Acara Serah Terima (BAST).
-    ${data.bastDocuments.map((b, i) => `  ${i + 1}. [${b.nomorBast}] ${b.namaKegiatan} (${b.pihak2Toko})`).join("\n    ")}
+    ${data.bastDocuments.map((b, i) => `  ${i + 1}. [${b.nomorBast}] ${cleanAndFormatTitle(b.namaKegiatan)} (${b.pihak2Toko})`).join("\n    ")}
 
 [✓] Folder 08_DOKUMENTASI_KEGIATAN/
     - Total: ${data.counts.documentations} lembar dokumentasi kegiatan fisik.

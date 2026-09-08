@@ -2,6 +2,7 @@
 
 import type { PesananFormData, InstitutionProfile } from "@/types";
 import { extractNamaTempat, cleanPihakJabatan } from "@/lib/utils/pesanan-date";
+import { cleanAndFormatTitle } from "@/lib/utils/title-case";
 
 interface PesananCanvasProps {
   data: PesananFormData;
@@ -18,20 +19,39 @@ function formatDateIndo(dateStr?: string | null): string {
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
-    const monthIndex = parseInt(m, 10) - 1;
-    const monthName = months[monthIndex] || m;
-    return `${parseInt(d, 10)} ${monthName} ${y}`;
+    const mIdx = parseInt(m, 10) - 1;
+    return `${parseInt(d, 10)} ${months[mIdx] || m} ${y}`;
   }
   return dateStr;
 }
 
 function cleanTitle(text?: string | null): string {
-  if (!text) return "";
-  let clean = text.trim();
-  clean = clean.split(/\s+(?:sebanyak|sebesar|sejumlah|senilai)\s+/i)[0].trim();
-  clean = clean.split(/\s*x\s*@\s*Rp/i)[0].trim();
-  clean = clean.split(/\s*=\s*Rp/i)[0].trim();
-  return clean;
+  return cleanAndFormatTitle(text);
+}
+
+function formatPesananDendaText(rawDenda?: string | null): string {
+  const defaultText =
+    "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku";
+
+  if (!rawDenda || !rawDenda.trim()) {
+    return defaultText;
+  }
+
+  const trimmed = rawDenda.trim();
+
+  // Bersihkan nilai bawaan lama yang ringkas agar otomatis upgrade ke klausul resmi
+  if (trimmed.includes("Denda 1/500 dari nilai") || trimmed === "Denda 1/500 per hari keterlambatan.") {
+    return defaultText;
+  }
+
+  // Hapus awalan nomor urut jika ada
+  let cleaned = trimmed.replace(/^6\s*[\)\.]\s*/i, "");
+
+  // Hapus awalan kata "Denda :" atau "Denda " agar tidak terjadi duplikasi dengan label
+  cleaned = cleaned.replace(/^Denda\s*:\s*/i, "");
+  cleaned = cleaned.replace(/^Denda\s+/i, "");
+
+  return cleaned || defaultText;
 }
 
 export function PesananCanvas({ data, profile }: PesananCanvasProps) {
@@ -366,11 +386,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
           </span>
         </p>
         <p className="text-justify">
-          <strong>6) Denda :</strong>{" "}
-          <span>
-            {data.dendaKeterlambatan ||
-              "Terhadap setiap hari keterlambatan penyelesaian pekerjaan Penyedia barang akan dikenakan Denda Keterlambatan sebesar 1/500 (satu per seribu) dari Nilai Pekerjaan atau bagian tertentu dari Nilai Pekerjaan sebelum PPN sesuai dengan persyaratan dan ketentuan yang berlaku"}
-          </span>
+          <strong>6) Denda</strong>{" "}
+          <span>{formatPesananDendaText(data.dendaKeterlambatan)}</span>
         </p>
       </div>
 

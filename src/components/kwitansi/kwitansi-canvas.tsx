@@ -2,6 +2,7 @@
 
 import type { ReceiptFormData, InstitutionProfile } from "@/types";
 import { getSignatoryKetuaTitles } from "@/lib/utils/kwitansi-signatory";
+import { formatUraianBelanja } from "@/lib/utils/title-case";
 
 interface KwitansiCanvasProps {
   data: ReceiptFormData;
@@ -141,7 +142,7 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
                   </span>
                   <span className="font-bold text-slate-800 shrink-0 mr-[0.8cqw] pt-[0.05cqw]">:</span>
                   <span className="font-medium text-slate-950 flex-1 leading-snug break-words">
-                    {data.uraian || "Belanja Sound Aktif sebanyak 1 unit x @ Rp. 3.000.000 = Rp. 3.000.000"}
+                    {formatUraianBelanja(data.uraian) || "Belanja Sound Aktif sebanyak 1 unit x @ Rp. 3.000.000 = Rp. 3.000.000"}
                   </span>
                 </div>
               </div>

@@ -1,44 +1,12 @@
 import type { InstitutionProfile, ReceiptFormData } from "@/types";
+import { formatProperCase } from "./title-case";
 
 /**
  * Konversi teks ke format Proper Case (Title Case)
  * dengan menjaga akronim umum organisasi (NU, PR, PAC, dll.) tetap huruf kapital.
  */
 export function toTitleCaseWithAcronyms(str: string): string {
-  if (!str) return "";
-  const acronyms = new Set([
-    "NU",
-    "PR",
-    "PAC",
-    "PC",
-    "PW",
-    "PP",
-    "IPNU",
-    "IPPNU",
-    "GP",
-    "ANSOR",
-    "FATAYAT",
-    "MUSLIMAT",
-    "RI",
-    "RT",
-    "RW",
-    "DPRD",
-  ]);
-
-  return str
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word) => {
-      const upper = word.toUpperCase();
-      if (acronyms.has(upper)) {
-        // Khusus Fatayat dan Muslimat biasanya ditulis kapital di awal
-        if (upper === "FATAYAT") return "Fatayat";
-        if (upper === "MUSLIMAT") return "Muslimat";
-        return upper;
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .join(" ");
+  return formatProperCase(str);
 }
 
 /**

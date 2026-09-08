@@ -42,6 +42,7 @@ import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib/utils/terbilang";
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
 import { getRomanMonth, syncNomorDokumenBulanTahun } from "@/lib/utils/pesanan-date";
+import { formatUraianBelanja } from "@/lib/utils/title-case";
 import {
   saveReceiptAction,
   getNextNomorBuktiAction,
@@ -176,7 +177,7 @@ export function KwitansiForm({
   // Form State initialized from database if available
   const [formData, setFormData] = useState<ReceiptFormData>(() => {
     if (isPrefillFromRab) {
-      const uraianParam = searchParams.get("uraian") || "";
+      const uraianParam = formatUraianBelanja(searchParams.get("uraian") || "");
       const nominalParam = searchParams.get("nominal");
       const kategoriParam = searchParams.get("kategori") || "5.2.1";
       const num = nominalParam ? parseFloat(nominalParam) : 0;
@@ -1735,6 +1736,14 @@ export function KwitansiForm({
                   onChange={(e) =>
                     setFormData({ ...formData, uraian: e.target.value })
                   }
+                  onBlur={() => {
+                    if (formData.uraian) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        uraian: formatUraianBelanja(prev.uraian),
+                      }));
+                    }
+                  }}
                   className="w-full text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-emerald-600 resize-none"
                 />
 
