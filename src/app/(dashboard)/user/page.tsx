@@ -55,7 +55,7 @@ export default async function UserDashboardPage() {
   const rabSummary = rabRes.data;
   const bkuSummary = bkuRes.data?.summary;
 
-  const totalAnggaran = rabSummary?.totalAnggaran || 25000000;
+  const totalAnggaran = rabSummary?.totalAnggaran || 0;
   const totalRealisasi = rabSummary?.totalRealisasi || bkuSummary?.totalPengeluaran || 0;
   const persentaseSerapan =
     totalAnggaran > 0 ? Math.round((totalRealisasi / totalAnggaran) * 1000) / 10 : 0;
