@@ -3,6 +3,7 @@
 import { receiptSchema, type ReceiptValidationInput } from "@/lib/validations/receipt";
 import { receiptService } from "@/services/receipt.service";
 import { authService } from "@/services/auth.service";
+import { loggerService } from "@/services/logger.service";
 import type { ActionResponse, Receipt } from "@/types";
 import { revalidatePath } from "next/cache";
 
@@ -38,6 +39,15 @@ export async function saveReceiptAction(
       revalidatePath("/user/kwitansi");
       revalidatePath("/user/rab");
       revalidatePath("/user");
+      // Catat aktivitas simpan kwitansi ke audit log
+      await loggerService.log({
+        level: "INFO",
+        action: validationResult.data.id ? "KWITANSI_UPDATED" : "KWITANSI_SAVED",
+        message: `Kwitansi ${res.data?.nomorBukti || validationResult.data.nomorBukti} berhasil ${validationResult.data.id ? "diperbarui" : "disimpan"} — Nominal: Rp ${validationResult.data.nominal?.toLocaleString("id-ID")}`,
+        endpoint: "/user/kwitansi",
+        userId: session.sub,
+        userEmail: session.email,
+      });
     }
     return res;
   } catch (error) {
@@ -144,6 +154,14 @@ export async function deleteReceiptAction(id: string): Promise<ActionResponse<bo
       revalidatePath("/user/bku");
       revalidatePath("/user/rab");
       revalidatePath("/user");
+      await loggerService.log({
+        level: "WARN",
+        action: "KWITANSI_DELETED",
+        message: `Kwitansi dihapus dari sistem.`,
+        endpoint: "/user/kwitansi",
+        userId: session.sub,
+        userEmail: session.email,
+      });
     }
     return res;
   } catch (error) {

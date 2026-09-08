@@ -107,8 +107,18 @@ export async function loginAction(
         endpoint: "/login",
         userEmail: validationResult.data.email,
       });
+    } else if (result.data) {
+      await loggerService.log({
+        level: "INFO",
+        action: "USER_LOGIN",
+        message: `Login berhasil: ${result.data.user.name} (${result.data.user.email})`,
+        endpoint: "/login",
+        userId: result.data.user.sub,
+        userEmail: result.data.user.email,
+      });
     }
     return result;
+
   } catch (error) {
     console.error("[loginAction] Unexpected error:", error);
     await loggerService.logError("AUTH_LOGIN_UNCAUGHT_ERROR", error, {

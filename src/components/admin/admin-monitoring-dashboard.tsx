@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import Link from "next/link";
 import {
   Users,
   Receipt,
@@ -449,17 +450,28 @@ export function AdminMonitoringDashboard({ initialData }: AdminMonitoringDashboa
                           {u.institution || u.institutionProfile?.namaLembaga || "Penerima Hibah"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            u.role === "ADMIN"
-                              ? "bg-emerald-950 border border-emerald-700/60 text-emerald-300"
-                              : "bg-slate-800 text-slate-300 border border-slate-700"
-                          }`}
-                        >
-                          {u.role}
-                        </span>
-                        <p className="text-[10px] text-slate-500 mt-1">{formatDate(u.createdAt)}</p>
+                      <div className="text-right flex items-center gap-2">
+                        <div>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              u.role === "ADMIN"
+                                ? "bg-emerald-950 border border-emerald-700/60 text-emerald-300"
+                                : "bg-slate-800 text-slate-300 border border-slate-700"
+                            }`}
+                          >
+                            {u.role}
+                          </span>
+                          <p className="text-[10px] text-slate-500 mt-1">{formatDate(u.createdAt)}</p>
+                        </div>
+                        {u.role === "USER" && (
+                          <Link
+                            href={`/admin/lembaga/${u.id}`}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-950 text-slate-400 hover:text-emerald-300 border border-slate-700 hover:border-emerald-700 transition-colors"
+                            title="Pantau LPJ Lembaga Ini"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -636,16 +648,28 @@ export function AdminMonitoringDashboard({ initialData }: AdminMonitoringDashboa
                           {formatDate(u.createdAt)}
                         </td>
                         <td className="py-3 px-3.5 text-center">
-                          {!isSelf && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteUser(u)}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 border border-slate-700 hover:border-rose-800 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"
-                              title="Hapus Pengguna"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <div className="flex items-center justify-center gap-1.5">
+                            {u.role === "USER" && (
+                              <Link
+                                href={`/admin/lembaga/${u.id}`}
+                                className="px-2 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800 hover:border-emerald-700 text-emerald-300 transition-colors inline-flex items-center gap-1 text-[11px] font-medium"
+                                title="Pantau LPJ & Dokumen Lembaga Ini"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span className="hidden xl:inline">Detail LPJ</span>
+                              </Link>
+                            )}
+                            {!isSelf && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u)}
+                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 border border-slate-700 hover:border-rose-800 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"
+                                title="Hapus Pengguna"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

@@ -127,6 +127,51 @@ export class LoggerService {
   }
 
   /**
+   * Mengambil log aktivitas milik user tertentu (Audit Trail per akun)
+   */
+  async getLogsByUserId(
+    userId: string,
+    params?: {
+      level?: string;
+      search?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) {
+    try {
+      const { level, search, limit = 50, offset = 0 } = params || {};
+
+      const where: any = { userId };
+
+      if (level && level !== "ALL") {
+        where.level = level;
+      }
+      if (search && search.trim()) {
+        const q = search.trim();
+        where.OR = [
+          { message: { contains: q, mode: "insensitive" } },
+          { action: { contains: q, mode: "insensitive" } },
+        ];
+      }
+
+      const [items, total] = await Promise.all([
+        db.systemLog.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        db.systemLog.count({ where }),
+      ]);
+
+      return { items, total };
+    } catch (error) {
+      console.error("[LoggerService.getLogsByUserId] Error:", error);
+      return { items: [], total: 0 };
+    }
+  }
+
+  /**
    * Hapus seluruh log (maintenance)
    */
   async clearAll() {

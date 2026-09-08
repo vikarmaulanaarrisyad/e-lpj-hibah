@@ -27,6 +27,8 @@ import {
   Send,
   Camera,
   Calendar,
+  ClipboardList,
+  Activity,
 } from "lucide-react";
 
 export default async function UserDashboardPage() {
@@ -435,6 +437,60 @@ export default async function UserDashboardPage() {
             </div>
             <div className="text-xs font-semibold text-violet-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
               <span>Buka Dokumentasi</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          {/* Card 9: Rekapitulasi LPJ Final */}
+          <Link
+            href="/user/rekap-lpj"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-amber-950/40 hover:to-amber-900/40 border border-slate-800 hover:border-amber-500/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-amber-950/70 border border-amber-700/50 text-amber-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
+                  <ClipboardList className="w-6 h-6 text-amber-300" />
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded bg-amber-950 border border-amber-700/60 text-amber-300 font-semibold shadow-xs">
+                  Ringkasan 1 Halaman
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors mt-4">
+                Rekapitulasi LPJ Final
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Preview komprehensif seluruh dokumen LPJ dalam 1 halaman cetak — RAB, BKU, Kwitansi, BAST & SPK.
+              </p>
+            </div>
+            <div className="text-xs font-semibold text-amber-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
+              <span>Buka Rekapitulasi LPJ</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          {/* Card 10: Riwayat Aktivitas & Audit Trail */}
+          <Link
+            href="/user/riwayat"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-rose-950/40 hover:to-rose-900/40 border border-slate-800 hover:border-rose-500/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-rose-950/70 border border-rose-700/50 text-rose-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
+                  <Activity className="w-6 h-6 text-rose-300" />
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded bg-rose-950 border border-rose-700/60 text-rose-300 font-semibold shadow-xs">
+                  Audit Trail
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-rose-300 transition-colors mt-4">
+                Riwayat Aktivitas Akun
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Log audit keamanan akun Anda — riwayat login, pembuatan kwitansi, sinkronisasi BKU, & transaksi.
+              </p>
+            </div>
+            <div className="text-xs font-semibold text-rose-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
+              <span>Buka Riwayat Log</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </Link>
