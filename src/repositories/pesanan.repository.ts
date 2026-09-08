@@ -227,6 +227,22 @@ export class PesananRepository {
       return false;
     }
   }
+
+  /**
+   * Mengambil semua nomor Surat Pesanan yang telah digunakan oleh user
+   */
+  async getAllNomorSp(userId: string): Promise<string[]> {
+    try {
+      const list = await prisma.purchaseOrder.findMany({
+        where: { userId },
+        select: { nomorSp: true },
+      });
+      return list.map((item) => item.nomorSp);
+    } catch (error) {
+      console.error("[PesananRepository.getAllNomorSp] Error:", error);
+      return [];
+    }
+  }
 }
 
 export const pesananRepository = new PesananRepository();

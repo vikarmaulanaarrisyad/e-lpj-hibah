@@ -29,13 +29,14 @@ export default async function PesananPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Fetch DB user profile, institution profile, purchase orders, receipts, and BAST list for active year
-  const [dbUser, profileRes, pesananRes, userReceipts, bastRes] = await Promise.all([
+  // Fetch DB user profile, institution profile, purchase orders, receipts, BAST list, and next auto SP number for active year
+  const [dbUser, profileRes, pesananRes, userReceipts, bastRes, nextSpData] = await Promise.all([
     userRepository.findById(session.sub),
     institutionService.getProfile(session.sub),
     pesananService.getPurchaseOrders(session.sub, activeTahun),
     receiptRepository.findManyByUserId(session.sub, activeTahun),
     bastService.getBastList(session.sub, activeTahun),
+    pesananService.generateNextNomorSp(session.sub),
   ]);
 
   const profile = profileRes.data || null;
@@ -63,6 +64,7 @@ export default async function PesananPage() {
             initialBastList={bastList}
             initialReceipts={userReceipts}
             initialProfile={profile}
+            initialNextNomorSp={nextSpData}
             userProfile={{
               name: dbUser?.name || session.name,
               leaderName: profile?.namaKetua || dbUser?.leaderName || session.leaderName,

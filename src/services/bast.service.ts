@@ -80,7 +80,7 @@ export class BastService {
     userId: string
   ): Promise<ServiceResponse<{ bast: BastWithReceipt; items: BastItem[] } | null>> {
     try {
-      const doc = await bastRepository.findByNomorBast(nomorBast);
+      const doc = await bastRepository.findByNomorBast(nomorBast, userId);
       if (!doc || doc.userId !== userId) {
         return {
           success: false,

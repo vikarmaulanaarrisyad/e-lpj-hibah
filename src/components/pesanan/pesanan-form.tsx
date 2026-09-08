@@ -52,7 +52,7 @@ import {
   extractNamaTempat,
   cleanPihakJabatan,
 } from "@/lib/utils/pesanan-date";
-import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
+import { savePurchaseOrderAction, deletePurchaseOrderAction, getNextNomorSpAction } from "@/app/actions/pesanan.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
@@ -77,6 +77,7 @@ interface PesananFormProps {
   initialBastList?: BastDocument[];
   initialReceipts?: Receipt[];
   initialProfile?: InstitutionProfile | null;
+  initialNextNomorSp?: { nomorSp: string; nomorUrut: string };
   userProfile?: {
     name: string;
     leaderName?: string | null;
@@ -98,7 +99,8 @@ export function PesananForm({
   initialPesananList = [],
   initialBastList = [],
   initialReceipts = [],
-  initialProfile,
+  initialProfile = null,
+  initialNextNomorSp,
   userProfile,
 }: PesananFormProps) {
   const router = useRouter();
@@ -219,16 +221,20 @@ export function PesananForm({
       };
     }
 
+    const defaultSpNo =
+      initialNextNomorSp?.nomorSp ||
+      buildFormattedDocumentNumber("01", profile?.formatNomorSp || "/A/PR.FNU/", todayStr);
+
     return {
-      nomorSp: "02/A/PR.FNU/VIII/2026",
-      tanggal: "2026-08-01",
-      namaPaket: "Pembelian Alat Rebana",
-      pihak1Nama: "HENI FUJIATI",
-      pihak1Jabatan: "Ketua",
-      pihak1Alamat: "Jl Kemuning 2016 Desa Dawuhan RT. 23 RW. 06 Kec. Talang Kab. Tegal",
-      pihak2Toko: "ADHUFU",
+      nomorSp: defaultSpNo,
+      tanggal: todayStr,
+      namaPaket: "Pengadaan Sarana Sound Aktif & Alat Hadroh",
+      pihak1Nama: defaultChairman,
+      pihak1Jabatan: profile?.jabatanKetua || "Ketua",
+      pihak1Alamat: profile?.alamat || "Jl. Kemuning 2016 Desa Dawuhan RT.23 RW.06",
+      pihak2Toko: "SURYA MAS",
       pihak2Nama: "ANSHORI",
-      pihak2Alamat: "Jl. Sunan Amangkurat 1 Pesarean Kejeron",
+      pihak2Alamat: "Jl. Raya Selatan No. 23 Tembok Luwung",
       items: [
         {
           id: "1",
@@ -273,7 +279,9 @@ export function PesananForm({
     }
     return initDecompSp.formatPattern || "/A/PR.FNU/";
   });
-  const [nomorUrutSp, setNomorUrutSp] = useState<string>(initDecompSp.nomorUrut || "02");
+  const [nomorUrutSp, setNomorUrutSp] = useState<string>(
+    initDecompSp.nomorUrut || initialNextNomorSp?.nomorUrut || "01"
+  );
   const [isManualNomorSp, setIsManualNomorSp] = useState<boolean>(false);
   const [isSavingPattern, startSavePattern] = useTransition();
 
@@ -848,10 +856,24 @@ export function PesananForm({
     }
   };
 
-  const handleCreateNew = () => {
-    const nextUrut = String(pesananList.length + 1).padStart(2, "0");
+  const handleCreateNew = async () => {
+    let nextNomor = buildFormattedDocumentNumber("01", formatPatternSp, todayStr);
+    let nextUrut = "01";
+
+    try {
+      const res = await getNextNomorSpAction(todayStr);
+      if (res.success && res.data) {
+        nextNomor = res.data.nomorSp;
+        nextUrut = res.data.nomorUrut;
+      }
+    } catch (err) {
+      console.warn("[PesananForm] Error fetching next nomor SP:", err);
+      const calculatedUrut = String(pesananList.length + 1).padStart(2, "0");
+      nextUrut = calculatedUrut;
+      nextNomor = buildFormattedDocumentNumber(calculatedUrut, formatPatternSp, todayStr);
+    }
+
     setNomorUrutSp(nextUrut);
-    const nextNomor = buildFormattedDocumentNumber(nextUrut, formatPatternSp, todayStr);
     setIsManualNomorSp(false);
 
     setFormData({

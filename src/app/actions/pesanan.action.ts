@@ -95,3 +95,27 @@ export async function deletePurchaseOrderAction(
     return { success: false, message: "Gagal menghapus Surat Pesanan.", data: false };
   }
 }
+
+/**
+ * Server Action: Mendapatkan nomor register SP dan No. Urut berikutnya secara otomatis
+ */
+export async function getNextNomorSpAction(
+  dateString?: string
+): Promise<ServiceResponse<{ nomorSp: string; nomorUrut: string }>> {
+  try {
+    const session = await authService.getSession();
+    const userId = session?.sub || "default";
+    const nextData = await pesananService.generateNextNomorSp(userId, dateString);
+    return { success: true, message: "Nomor SP dibuat otomatis.", data: nextData };
+  } catch (error) {
+    console.error("[getNextNomorSpAction] Error:", error);
+    return {
+      success: true,
+      message: "Nomor default.",
+      data: {
+        nomorSp: "01/A/PR.FNU/IX/2026",
+        nomorUrut: "01",
+      },
+    };
+  }
+}

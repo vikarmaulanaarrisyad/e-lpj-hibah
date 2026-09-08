@@ -1,6 +1,8 @@
 import { pesananRepository } from "@/repositories/pesanan.repository";
+import { institutionRepository } from "@/repositories/institution.repository";
 import { purchaseOrderSchema } from "@/lib/validations/pesanan";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
+import { buildFormattedDocumentNumber, deconstructDocumentNumber } from "@/lib/utils/pesanan-date";
 import type { PurchaseOrder, CreatePesananInput, ServiceResponse } from "@/types";
 
 export class PesananService {
@@ -138,6 +140,85 @@ export class PesananService {
         success: false,
         message: "Terjadi kesalahan saat menghapus Surat Pesanan.",
         data: false,
+      };
+    }
+  }
+
+  /**
+   * Menghasilkan nomor register Surat Pesanan (SP) berikutnya yang urut, otomatis, dan anti-double.
+   * Terisolasi per user (multi-tenant) dan dinamis terhadap tanggal transaksi.
+   */
+  async generateNextNomorSp(
+    userId: string,
+    targetDate?: Date | string
+  ): Promise<{ nomorSp: string; nomorUrut: string }> {
+    try {
+      let dateObj = targetDate ? new Date(targetDate) : new Date();
+      if (isNaN(dateObj.getTime())) {
+        dateObj = new Date();
+      }
+
+      // Ambil format pola lembaga dari profil akun pengguna
+      let pattern = "/A/PR.FNU/";
+      try {
+        const profile = await institutionRepository.findByUserId(userId);
+        if (profile?.formatNomorSp && profile.formatNomorSp.trim()) {
+          pattern = profile.formatNomorSp.trim();
+        } else if (profile?.formatNomorBast && profile.formatNomorBast.trim()) {
+          pattern = profile.formatNomorBast.trim();
+        }
+      } catch (err) {
+        console.warn("[PesananService] Could not load institution profile for SP pattern:", err);
+      }
+
+      // Ambil seluruh nomor SP yang sudah pernah digunakan khusus oleh pengguna ini
+      const allSpNumbers = await pesananRepository.getAllNomorSp(userId);
+      const usedSet = new Set(allSpNumbers.map((n) => n.trim().toLowerCase()));
+
+      // Cari nomor urut numerik tertinggi yang pernah ada
+      const parsedSeqNumbers: number[] = [];
+      for (const numStr of allSpNumbers) {
+        const decomp = deconstructDocumentNumber(numStr);
+        if (decomp.nomorUrut && /^\d+$/.test(decomp.nomorUrut)) {
+          parsedSeqNumbers.push(parseInt(decomp.nomorUrut, 10));
+        } else {
+          const tokens = numStr.split(/[\/\-\s]+/);
+          for (const token of tokens) {
+            if (/^\d+$/.test(token)) {
+              const val = parseInt(token, 10);
+              if (val < 1990 || val > 2099) {
+                parsedSeqNumbers.push(val);
+              }
+            }
+          }
+        }
+      }
+
+      const maxSeq = parsedSeqNumbers.length > 0 ? Math.max(...parsedSeqNumbers) : 0;
+      let nextSeq = Math.max(maxSeq, allSpNumbers.length) + 1;
+      if (nextSeq < 1) nextSeq = 1;
+
+      let paddedUrut = String(nextSeq).padStart(nextSeq >= 100 ? 3 : 2, "0");
+      let candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
+
+      while (usedSet.has(candidate.toLowerCase())) {
+        nextSeq++;
+        paddedUrut = String(nextSeq).padStart(nextSeq >= 100 ? 3 : 2, "0");
+        candidate = buildFormattedDocumentNumber(paddedUrut, pattern, dateObj);
+      }
+
+      return {
+        nomorSp: candidate,
+        nomorUrut: paddedUrut,
+      };
+    } catch (error) {
+      console.error("[PesananService] Error generating next nomor SP:", error);
+      const now = new Date();
+      const defaultUrut = "01";
+      const candidate = buildFormattedDocumentNumber(defaultUrut, "/A/PR.FNU/", now);
+      return {
+        nomorSp: candidate,
+        nomorUrut: defaultUrut,
       };
     }
   }
