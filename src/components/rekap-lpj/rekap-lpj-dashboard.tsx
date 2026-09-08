@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   ClipboardList,
   Building2,
+  Camera,
 } from "lucide-react";
 import Link from "next/link";
 import type { RabSummary, BkuSummary, Receipt, InstitutionProfile } from "@/types";
@@ -275,7 +276,95 @@ export function RekapLpjDashboard({
         </div>
       )}
 
+      {/* ===== AKSES CEPAT EXPORT DOKUMEN (no-print) ===== */}
+      <div className="no-print bg-slate-900/60 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-white">Akses Cepat Export Dokumen</h2>
+            <p className="text-[11px] text-slate-400">Klik untuk langsung membuka halaman export PDF tiap dokumen LPJ</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Kwitansi */}
+          <Link
+            href="/user/kwitansi"
+            className="group flex flex-col items-center gap-2.5 p-4 bg-amber-950/20 hover:bg-amber-900/30 border border-amber-800/30 hover:border-amber-600/50 rounded-xl transition-all duration-200 text-center"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 group-hover:border-amber-500/40 flex items-center justify-center transition-colors">
+              <ReceiptIcon className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-amber-300 group-hover:text-amber-200">Kwitansi</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">Bukti Pengeluaran</p>
+            </div>
+            <span className="text-[10px] font-mono text-amber-500/70 bg-amber-900/20 px-2 py-0.5 rounded-full">
+              {receipts.length} dokumen
+            </span>
+          </Link>
+
+          {/* Surat Pesanan */}
+          <Link
+            href="/user/pesanan"
+            className="group flex flex-col items-center gap-2.5 p-4 bg-purple-950/20 hover:bg-purple-900/30 border border-purple-800/30 hover:border-purple-600/50 rounded-xl transition-all duration-200 text-center"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 group-hover:border-purple-500/40 flex items-center justify-center transition-colors">
+              <Package className="w-5 h-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-purple-300 group-hover:text-purple-200">Surat Pesanan</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">SP / SPK Pengadaan</p>
+            </div>
+            <span className="text-[10px] font-mono text-purple-500/70 bg-purple-900/20 px-2 py-0.5 rounded-full">
+              {pesananCount} dokumen
+            </span>
+          </Link>
+
+          {/* Berita Acara (BAST) */}
+          <Link
+            href="/user/bast"
+            className="group flex flex-col items-center gap-2.5 p-4 bg-blue-950/20 hover:bg-blue-900/30 border border-blue-800/30 hover:border-blue-600/50 rounded-xl transition-all duration-200 text-center"
+          >
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 group-hover:border-blue-500/40 flex items-center justify-center transition-colors">
+              <FileText className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-blue-300 group-hover:text-blue-200">Berita Acara</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">BAST Serah Terima</p>
+            </div>
+            <span className="text-[10px] font-mono text-blue-500/70 bg-blue-900/20 px-2 py-0.5 rounded-full">
+              {bastCount} dokumen
+            </span>
+          </Link>
+
+          {/* Foto Dokumentasi */}
+          <Link
+            href="/user/dokumentasi"
+            className="group flex flex-col items-center gap-2.5 p-4 bg-emerald-950/20 hover:bg-emerald-900/30 border border-emerald-800/30 hover:border-emerald-600/50 rounded-xl transition-all duration-200 text-center"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 group-hover:border-emerald-500/40 flex items-center justify-center transition-colors">
+              <Camera className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-emerald-300 group-hover:text-emerald-200">Foto Dokumentasi</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">Lembar Dokumentasi</p>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-500/70 bg-emerald-900/20 px-2 py-0.5 rounded-full">
+              Buka →
+            </span>
+          </Link>
+        </div>
+
+        <p className="text-[10px] text-slate-500 text-center pt-1">
+          💡 Di setiap halaman tersebut terdapat tombol <strong className="text-slate-400">Cetak / Export PDF</strong> untuk mengunduh dokumen
+        </p>
+      </div>
+
       {/* Signature area for print */}
+
       <div className="hidden print:grid grid-cols-3 gap-8 mt-10 pt-6 border-t border-slate-700">
         {["Dibuat Oleh Bendahara", "Mengetahui Ketua", "Verifikasi / Pemeriksa"].map((label) => (
           <div key={label} className="text-center text-xs text-slate-600">
