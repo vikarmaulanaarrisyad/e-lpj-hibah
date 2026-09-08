@@ -10,7 +10,6 @@ import {
   Sparkles,
   ArrowUpRight,
   Calculator,
-  RefreshCw,
   CheckCircle2,
   AlertTriangle,
   FileText,
@@ -35,7 +34,6 @@ import {
   addRabDetailRowAction,
   updateRabDetailRowAction,
   deleteRabDetailRowAction,
-  resetRabToNphdDefaultsAction,
   deleteRabItemAction,
   updateRabAllocationAction,
 } from "@/app/actions/rab.action";
@@ -479,30 +477,6 @@ export function RabTableView({
     });
   };
 
-  // Reset to Official NPHD Defaults (V, VI, VII, VIII)
-  const handleResetToNphd = async () => {
-    const isConfirmed = await swalConfirm({
-      title: "Muat Template Format Gambar NPHD?",
-      text: "Data kelompok kegiatan akan disesuaikan persis seperti tabel gambar referensi (V. Pelatihan Jenazah, VI. Pelatihan Mars, VII. Pelatihan Kader Dasar, VIII. Hadroh). Lanjutkan?",
-      confirmText: "Ya, Muat Template!",
-      cancelText: "Batal",
-      icon: "question",
-    });
-
-    if (!isConfirmed) return;
-
-    swalLoading("Memuat Template NPHD...", "Menyusun struktur tabel multi-koefisien...");
-    startTransition(async () => {
-      const res = await resetRabToNphdDefaultsAction();
-      if (res.success && res.data) {
-        onSummaryUpdated(res.data);
-        swalSuccess("Template Berhasil Dimuat!", "Tabel RAB kini sesuai dengan format dokumen NPHD.");
-      } else {
-        swalError("Gagal Memuat Template", res.message);
-      }
-    });
-  };
-
   // Print Action
   const handlePrint = () => {
     window.print();
@@ -547,16 +521,6 @@ export function RabTableView({
           >
             <FolderPlus className="w-3.5 h-3.5 text-emerald-400" />
             <span>+ Kelompok Kegiatan</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleResetToNphd}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-            title="Muat data default persis seperti pada foto referensi"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Muat Template Gambar</span>
           </button>
 
           <button

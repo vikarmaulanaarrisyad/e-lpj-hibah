@@ -3,62 +3,35 @@ import type { RabItem, UpdateRabItemInput } from "@/types";
 
 export const DEFAULT_RAB_CATEGORIES = [
   {
-    kode: "V",
-    nama: "PELATIHAN PEMULASARAAN JENAZAH",
-    anggaran: 21560000,
-    keterangan: JSON.stringify([
-      { id: "v-1", no: 1, uraian: "Honor Narasumber", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 300000, total: 1800000 },
-      { id: "v-2", no: 2, uraian: "Penggandaan Modul", koefisien1Vol: 100, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 15000, total: 1500000 },
-      { id: "v-3", no: 3, uraian: "Banner", koefisien1Vol: 1, koefisien1Satuan: "Buah", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 50000, total: 50000 },
-      { id: "v-4", no: 4, uraian: "Boneka Alat Peraga", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 1000000, total: 1000000 },
-      { id: "v-5", no: 5, uraian: "Kain Kafan", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 240000, total: 240000 },
-      { id: "v-6", no: 6, uraian: "Konsumsi", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 120, koefisien2Satuan: "box", hargaSatuan: 17000, total: 6120000 },
-      { id: "v-7", no: 7, uraian: "Sewa Gedung", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 650000, total: 650000 },
-      { id: "v-8", no: 8, uraian: "Transport Peserta dan Panitia", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 120, koefisien2Satuan: "Orang", hargaSatuan: 25000, total: 9000000 },
-      { id: "v-9", no: 9, uraian: "Kebersihan", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 100000, total: 600000 },
-      { id: "v-10", no: 10, uraian: "Keamanan", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 100000, total: 600000 },
-    ]),
-  },
-  {
-    kode: "VI",
-    nama: "PELATIHAN MARS",
-    anggaran: 22900000,
-    keterangan: JSON.stringify([
-      { id: "vi-1", no: 1, uraian: "Honor Pelatih", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 500000, total: 3000000 },
-      { id: "vi-2", no: 2, uraian: "Konsumsi", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 110, koefisien2Satuan: "Orang", hargaSatuan: 20000, total: 6600000 },
-      { id: "vi-3", no: 3, uraian: "ATK", koefisien1Vol: 100, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 10000, total: 1000000 },
-      { id: "vi-4", no: 4, uraian: "Banner", koefisien1Vol: 1, koefisien1Satuan: "Buah", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 50000, total: 50000 },
-      { id: "vi-5", no: 5, uraian: "Sewa LCD dan Sound", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 600000, total: 600000 },
-      { id: "vi-6", no: 6, uraian: "Penggandaan Modul", koefisien1Vol: 100, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 15000, total: 1500000 },
-      { id: "vi-7", no: 7, uraian: "Transport Peserta dan Panitia", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 110, koefisien2Satuan: "Orang", hargaSatuan: 25000, total: 8250000 },
-      { id: "vi-8", no: 8, uraian: "Sewa Gedung", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 700000, total: 700000 },
-      { id: "vi-9", no: 9, uraian: "Keamanan", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 100000, total: 600000 },
-      { id: "vi-10", no: 10, uraian: "Kebersihan", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 100000, total: 600000 },
-    ]),
-  },
-  {
-    kode: "VII",
-    nama: "PELATIHAN KADER DASAR",
-    anggaran: 23450000,
-    keterangan: JSON.stringify([
-      { id: "vii-1", no: 1, uraian: "Honor Narasumber", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 300000, total: 1800000 },
-      { id: "vii-2", no: 2, uraian: "Konsumsi Peserta & Panitia", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 100, koefisien2Satuan: "Box", hargaSatuan: 20000, total: 6000000 },
-      { id: "vii-3", no: 3, uraian: "Penggandaan Modul & Materi", koefisien1Vol: 100, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 15000, total: 1500000 },
-      { id: "vii-4", no: 4, uraian: "Banner Kegiatan", koefisien1Vol: 1, koefisien1Satuan: "Buah", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 50000, total: 50000 },
-      { id: "vii-5", no: 5, uraian: "Sewa Tempat & Sound System", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 800000, total: 800000 },
-      { id: "vii-6", no: 6, uraian: "Transport Peserta dan Panitia", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 100, koefisien2Satuan: "Orang", hargaSatuan: 25000, total: 7500000 },
-      { id: "vii-7", no: 7, uraian: "Sewa Gedung", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 700000, total: 700000 },
-      { id: "vii-8", no: 8, uraian: "Sertifikat Peserta", koefisien1Vol: 100, koefisien1Satuan: "Lembar", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 10000, total: 1000000 },
-      { id: "vii-9", no: 9, uraian: "ATK & Buku Catatan", koefisien1Vol: 100, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 15000, total: 1500000 },
-      { id: "vii-10", no: 10, uraian: "Kebersihan & Keamanan", koefisien1Vol: 3, koefisien1Satuan: "Kegiatan", koefisien2Vol: 2, koefisien2Satuan: "Orang", hargaSatuan: 100000, total: 600000 },
-    ]),
-  },
-  {
-    kode: "VIII",
-    nama: "PENGADAAN PERALATAN KESENIAN (REBANA)",
+    kode: "I",
+    nama: "ALAT HADROH",
     anggaran: 5800000,
     keterangan: JSON.stringify([
-      { id: "viii-1", no: 1, uraian: "Alat Rebana / Hadroh Komplit", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 5800000, total: 5800000 },
+      { id: "i-1", no: 1, uraian: "Belanja Alat Hadroh", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 5800000, total: 5800000 },
+    ]),
+  },
+  {
+    kode: "II",
+    nama: "SOUND AKTIF",
+    anggaran: 3000000,
+    keterangan: JSON.stringify([
+      { id: "ii-1", no: 1, uraian: "Belanja Sound Aktif", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 3000000, total: 3000000 },
+    ]),
+  },
+  {
+    kode: "III",
+    nama: "LEPTOP",
+    anggaran: 8000000,
+    keterangan: JSON.stringify([
+      { id: "iii-1", no: 1, uraian: "Belanja Leptop", koefisien1Vol: 1, koefisien1Satuan: "Unit", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 8000000, total: 8000000 },
+    ]),
+  },
+  {
+    kode: "IV",
+    nama: "PRINTER",
+    anggaran: 3500000,
+    keterangan: JSON.stringify([
+      { id: "iv-1", no: 1, uraian: "Belanja Printer", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 3500000, total: 3500000 },
     ]),
   },
 ];
