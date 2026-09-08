@@ -16,7 +16,8 @@ import type {
 export class RabService {
   /**
    * Helper untuk memeriksa apakah kategori pada kwitansi cocok dengan kode atau nama pos RAB.
-   * Mendukung kode numerik bertingkat (contoh: "5.2.1", "5.2.2") tanpa salah cocok karena pemotongan titik.
+   * Mendukung kode numerik bertingkat (contoh: "5.2.1", "5.2.2") maupun angka Romawi (contoh: "I", "II", "III", "IV")
+   * tanpa salah cocok akibat substring substring (contoh: "I" tidak boleh mencocokkan "II", "III", "IV", atau nama akun bertuliskan huruf i).
    */
   private isCategoryMatch(receiptCategory: string | null | undefined, rabKodeOrNama: string): boolean {
     if (!receiptCategory || !rabKodeOrNama) return false;
@@ -26,33 +27,53 @@ export class RabService {
     // 1. Exact match
     if (cleanReceipt === cleanTarget) return true;
 
-    // 2. Ekstrak kode numerik bertingkat (misal: "5.2.1", "5.2.2")
-    const receiptCodeMatch = cleanReceipt.match(/^([0-9]+(?:\.[0-9]+)*)/);
-    const targetCodeMatch = cleanTarget.match(/^([0-9]+(?:\.[0-9]+)*)/);
+    // Helper pengecekan angka Romawi (I, II, III, IV, V, VI, VII, VIII, IX, X, dst.)
+    const isRoman = (str: string) => /^[ivxlcdm]+$/i.test(str.trim());
 
-    // Jika keduanya memiliki kode angka bertingkat di awal, keduanya WAJIB cocok persis!
-    if (receiptCodeMatch && targetCodeMatch) {
-      return receiptCodeMatch[1] === targetCodeMatch[1];
+    // Helper ekstraksi kode pos (baik kode desimal bertingkat 5.2.1 maupun Romawi I, II, III)
+    const extractCategoryCode = (str: string): string | null => {
+      const match = str.match(/^(?:pos\s+|rekening\s+)?([0-9]+(?:\.[0-9]+)*|[ivxlcdm]+)(?:[\s\-.:]|$)/i);
+      return match ? match[1].toLowerCase() : null;
+    };
+
+    const receiptCode = extractCategoryCode(cleanReceipt);
+    const targetCode = extractCategoryCode(cleanTarget);
+
+    // 2. Jika keduanya memiliki kode pos (desimal atau Romawi), WAJIB cocok persis!
+    if (receiptCode && targetCode) {
+      return receiptCode === targetCode;
     }
 
-    // 3. Jika target adalah kode numerik dan kwitansi diawali kode tersebut diikuti spasi/strip/titik dua
-    if (targetCodeMatch) {
-      const code = targetCodeMatch[1];
-      const escaped = code.replace(/\./g, "\\.");
-      const regex = new RegExp(`^${escaped}(?:[\\s\\-:]+|$)`);
-      if (regex.test(cleanReceipt)) return true;
+    // 3. Jika salah satu adalah kode hasil ekstraksi dan yang lain adalah kode murni
+    if (receiptCode && receiptCode === cleanTarget) return true;
+    if (targetCode && targetCode === cleanReceipt) return true;
+
+    // Helper pendeteksi apakah sebuah token adalah kode singkat (panjang <= 3, Romawi murni, atau angka desimal)
+    const isShortOrCode = (s: string) => s.length <= 3 || isRoman(s) || /^[0-9.]+$/.test(s);
+
+    // 4. Pencocokan berbasis nama akun: HANYA jika kedua pihak bukan kode singkat
+    // Hal ini krusial agar kode seperti "I" tidak mencocokkan nama seperti "PRINTER" atau "PELATIHAN" hanya karena mengandung huruf "i"!
+    if (!isShortOrCode(cleanReceipt) && !isShortOrCode(cleanTarget)) {
+      return cleanReceipt.includes(cleanTarget) || cleanTarget.includes(cleanReceipt);
     }
 
-    // 4. Jika kwitansi diawali kode numerik dan target adalah nama akun teks
-    if (receiptCodeMatch) {
-      const textAfterCode = cleanReceipt.replace(/^[0-9.]+\s*[-:]*\s*/, "").trim();
+    // 5. Jika kwitansi diawali kode diikuti nama pos (contoh: "I - ALAT HADROH") dan target adalah nama pos deskriptif
+    if (receiptCode && !isShortOrCode(cleanTarget)) {
+      const textAfterCode = cleanReceipt.replace(/^(?:pos\s+|rekening\s+)?(?:[0-9.]+|[ivxlcdm]+)\s*[\-.:]*\s*/i, "").trim();
       if (textAfterCode && (textAfterCode.includes(cleanTarget) || cleanTarget.includes(textAfterCode))) {
         return true;
       }
     }
 
-    // 5. Pencocokan substring berbasis teks akun
-    return cleanReceipt.includes(cleanTarget) || cleanTarget.includes(cleanReceipt);
+    // 6. Jika target diawali kode diikuti nama pos dan kwitansi adalah nama pos deskriptif
+    if (targetCode && !isShortOrCode(cleanReceipt)) {
+      const textAfterCode = cleanTarget.replace(/^(?:pos\s+|rekening\s+)?(?:[0-9.]+|[ivxlcdm]+)\s*[\-.:]*\s*/i, "").trim();
+      if (textAfterCode && (textAfterCode.includes(cleanReceipt) || cleanReceipt.includes(textAfterCode))) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
