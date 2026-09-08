@@ -219,7 +219,8 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
           <span className="col-span-2 font-medium">Jabatan</span>
-          <span className="col-span-9">: {cleanPihak2Jabatan}</span>
+          <span className="col-span-9">: Penyedia Barang</span>
+          {/* <span className="col-span-9">: {cleanPihak2Jabatan}</span> */}
         </div>
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
