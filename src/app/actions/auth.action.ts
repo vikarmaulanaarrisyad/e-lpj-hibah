@@ -5,8 +5,6 @@ import { authService } from "@/services/auth.service";
 import { loggerService } from "@/services/logger.service";
 import type { ActionResponse, LoginResultData, RegisterResultData } from "@/types";
 
-export type { ActionResponse };
-
 /**
  * Server Action for User / Institution Registration.
  * Validates form submission, calls AuthService.register, and auto-logs in.
