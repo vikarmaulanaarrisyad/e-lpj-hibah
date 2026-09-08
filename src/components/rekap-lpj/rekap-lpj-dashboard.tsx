@@ -291,7 +291,7 @@ export function RekapLpjDashboard({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Kwitansi */}
           <Link
-            href="/user/kwitansi"
+            href="/user/arsip"
             className="group flex flex-col items-center gap-2.5 p-4 bg-amber-950/20 hover:bg-amber-900/30 border border-amber-800/30 hover:border-amber-600/50 rounded-xl transition-all duration-200 text-center"
           >
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 group-hover:border-amber-500/40 flex items-center justify-center transition-colors">
@@ -308,7 +308,7 @@ export function RekapLpjDashboard({
 
           {/* Surat Pesanan */}
           <Link
-            href="/user/pesanan"
+            href="/user/arsip"
             className="group flex flex-col items-center gap-2.5 p-4 bg-purple-950/20 hover:bg-purple-900/30 border border-purple-800/30 hover:border-purple-600/50 rounded-xl transition-all duration-200 text-center"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 group-hover:border-purple-500/40 flex items-center justify-center transition-colors">
@@ -325,7 +325,7 @@ export function RekapLpjDashboard({
 
           {/* Berita Acara (BAST) */}
           <Link
-            href="/user/bast"
+            href="/user/arsip"
             className="group flex flex-col items-center gap-2.5 p-4 bg-blue-950/20 hover:bg-blue-900/30 border border-blue-800/30 hover:border-blue-600/50 rounded-xl transition-all duration-200 text-center"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 group-hover:border-blue-500/40 flex items-center justify-center transition-colors">
@@ -359,7 +359,7 @@ export function RekapLpjDashboard({
         </div>
 
         <p className="text-[10px] text-slate-500 text-center pt-1">
-          💡 Di setiap halaman tersebut terdapat tombol <strong className="text-slate-400">Cetak / Export PDF</strong> untuk mengunduh dokumen
+          💡 Klik kartu di atas untuk membuka daftar arsip dan mencetak ulang dokumen PDF yang diinginkan
         </p>
       </div>
 

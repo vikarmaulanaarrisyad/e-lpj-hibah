@@ -494,6 +494,33 @@ export default async function UserDashboardPage() {
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </Link>
+
+          {/* Card 11: Arsip Dokumen LPJ */}
+          <Link
+            href="/user/arsip"
+            className="group card-hover-lift p-5 sm:p-6 bg-gradient-to-br from-slate-900 to-blue-950/40 hover:to-blue-900/40 border border-slate-800 hover:border-blue-500/70 rounded-2xl shadow-xl flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-blue-950/70 border border-blue-700/50 text-blue-300 flex items-center justify-center shrink-0 shadow-glow group-hover:scale-110 group-hover:rotate-1 transition-transform duration-300">
+                  <BookMarked className="w-6 h-6 text-blue-300" />
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded bg-blue-950 border border-blue-700/60 text-blue-300 font-semibold shadow-xs">
+                  Cetak Ulang
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-blue-300 transition-colors mt-4">
+                Arsip Dokumen LPJ
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Lihat semua Kwitansi, Surat Pesanan & BAST — cari dan cetak ulang dokumen kapan saja.
+              </p>
+            </div>
+            <div className="text-xs font-semibold text-blue-400 flex items-center gap-1 group-hover:translate-x-1.5 transition-transform pt-2 border-t border-slate-800/80">
+              <span>Buka Arsip Dokumen</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
         </div>
       </main>
     </div>
