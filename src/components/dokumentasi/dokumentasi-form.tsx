@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { DokumentasiCanvas } from "./dokumentasi-canvas";
+import { DokumentasiTable } from "./dokumentasi-table";
 import {
   saveDokumentasiAction,
   deleteDokumentasiAction,
@@ -371,14 +372,15 @@ export function DokumentasiForm({
     };
 
     setFormData(loadedData);
-    swalSuccess("Arsip Dimuat!", `Dokumentasi "${found.namaKegiatan}" berhasil ditampilkan.`);
+    const element = document.getElementById("formLedgerPanel");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    swalSuccess("Arsip Dimuat!", `Dokumentasi "${found.namaKegiatan}" siap diedit.`);
   };
 
-  // Hapus dokumentasi tersimpan
-  const handleDeleteSavedDoc = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm("Apakah Anda yakin ingin menghapus arsip dokumentasi ini dari database?")) return;
-
+  // Hapus dokumentasi tersimpan secara langsung (digunakan oleh tabel dan card)
+  const handleDeleteSavedDocDirect = async (id: string) => {
     const res = await deleteDokumentasiAction(id);
     if (res.success) {
       setSavedList((prev) => prev.filter((item) => item.id !== id));
@@ -389,6 +391,38 @@ export function DokumentasiForm({
     } else {
       swalError("Gagal Menghapus", res.message || "Gagal menghapus.");
     }
+  };
+
+  // Hapus dokumentasi tersimpan dari tombol card
+  const handleDeleteSavedDoc = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Apakah Anda yakin ingin menghapus arsip dokumentasi ini dari database?")) return;
+    await handleDeleteSavedDocDirect(id);
+  };
+
+  // Tambah entri dokumentasi baru (bersihkan form)
+  const handleNewDocumentation = () => {
+    setFormData({
+      id: undefined,
+      judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
+      subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
+      namaKegiatan: "",
+      nomorReferensi: "",
+      tanggalKegiatan: new Date().toISOString().split("T")[0],
+      lokasiKegiatan: profile?.alamat || `Sekretariat ${userProfile?.institution || ""}`,
+      layout: "2-per-page",
+      photos: [],
+      sertakanTandaTangan: true,
+      penandatangan1Jabatan: "Penyedia / Toko Rekanan",
+      penandatangan1Nama: "",
+      penandatangan2Jabatan: profile?.jabatanKetua || "Ketua Pimpinan Ranting",
+      penandatangan2Nama: userProfile?.leaderName || profile?.namaKetua || "HENI FUJIATI",
+    });
+    const element = document.getElementById("formLedgerPanel");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    swalSuccess("Formulir Baru Siap", "Formulir dokumentasi telah dikosongkan untuk entri baru.");
   };
 
   // Reset / Kosongkan Draft Lokal
@@ -672,6 +706,13 @@ export function DokumentasiForm({
                 <span>Arsip Dokumentasi &amp; Preset</span>
               </span>
               <div className="flex items-center gap-2">
+                <a
+                  href="#tabelArsipDokumentasi"
+                  className="text-[11px] px-2.5 py-1 rounded bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 font-semibold hover:bg-indigo-900/80 transition-colors flex items-center gap-1"
+                >
+                  <FolderArchive className="w-3 h-3 text-indigo-400" />
+                  <span>Lihat Tabel ↓</span>
+                </a>
                 {isDraftRestored && (
                   <button
                     onClick={handleResetDraft}
@@ -1151,6 +1192,18 @@ export function DokumentasiForm({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ================= TABEL ARSIP DOKUMENTASI & PRESET ================= */}
+      <div id="tabelArsipDokumentasi" className="max-w-[1720px] mx-auto w-full px-4 sm:px-8 pb-12 scroll-mt-6">
+        <DokumentasiTable
+          items={savedList}
+          activeId={formData.id}
+          onSelect={handleSelectSavedDocumentation}
+          onDelete={handleDeleteSavedDocDirect}
+          onNew={handleNewDocumentation}
+          onLoadPreset={handleLoadSamplePreset}
+        />
       </div>
 
       {/* Modal Pengaturan Kop Surat Lembaga */}
