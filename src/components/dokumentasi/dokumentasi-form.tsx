@@ -25,8 +25,12 @@ import {
   HardDrive,
   RefreshCw,
   Loader2,
+  Search,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
+import { SourceDocumentModal } from "./source-document-modal";
 import { DokumentasiCanvas } from "./dokumentasi-canvas";
 import { DokumentasiTable } from "./dokumentasi-table";
 import {
@@ -138,6 +142,8 @@ export function DokumentasiForm({
 }: DokumentasiFormProps) {
   const [profile, setProfile] = useState<InstitutionProfile | null>(initialProfile || null);
   const [isKopModalOpen, setIsKopModalOpen] = useState(false);
+  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
+  const [isSourceBarExpanded, setIsSourceBarExpanded] = useState(false);
   const [zoomScale, setZoomScale] = useState<number>(100);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -146,6 +152,8 @@ export function DokumentasiForm({
   const [isDraftRestored, setIsDraftRestored] = useState(false);
   const [savedList, setSavedList] = useState<ActivityDocumentationRecord[]>(initialSavedList);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const totalSourceOptions = bastOptions.length + spOptions.length + receiptOptions.length;
 
   const defaultLeader =
     profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
@@ -779,55 +787,118 @@ export function DokumentasiForm({
               <span>Informasi Kegiatan &amp; Dokumen</span>
             </h2>
 
-            {/* Quick Auto-Fill Source Banner: Menjawab pertanyaan user tentang cara otomatis */}
-            {(bastOptions.length > 0 || spOptions.length > 0 || receiptOptions.length > 0) && (
-              <div className="bg-emerald-950/50 border border-emerald-600/60 rounded-xl p-3.5 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Tarik Otomatis dari Berkas (Tidak Perlu Ketik Manual):</span>
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/80 text-emerald-300 font-semibold font-mono">
-                    1-Klik Otomatis
-                  </span>
+            {/* Bilah Ringkas Tarik Berkas Sumber (Sangat Hemat Ruang & Tangguh untuk Data Banyak) */}
+            {totalSourceOptions > 0 && (
+              <div className="bg-emerald-950/40 border border-emerald-600/50 rounded-xl p-2.5 transition-all space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 rounded-md bg-emerald-900/60 border border-emerald-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="truncate">
+                      <span className="text-xs font-bold text-emerald-300 block sm:inline">
+                        Tarik dari Berkas LPJ
+                      </span>
+                      <span className="text-[10px] text-emerald-400/80 font-mono ml-0 sm:ml-1.5">
+                        ({totalSourceOptions} berkas tersedia)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsSourceModalOpen(true)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                      title="Buka jendela pencarian berkas (sangat cepat untuk data banyak)"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Cari &amp; Pilih Berkas</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsSourceBarExpanded(!isSourceBarExpanded)}
+                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs border border-slate-700 transition-colors flex items-center gap-1"
+                      title={isSourceBarExpanded ? "Tutup dropdown cepat" : "Buka dropdown cepat"}
+                    >
+                      {isSourceBarExpanded ? (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline text-[11px]">Tutup</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline text-[11px]">Pilih Cepat</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <select
-                  onChange={(e) => handleSelectSource(e.target.value)}
-                  defaultValue=""
-                  className="w-full bg-slate-950 border border-emerald-600/70 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-medium cursor-pointer"
-                >
-                  <option value="">-- Pilih Berkas: BAST / Surat Pesanan / Kwitansi --</option>
-                  {bastOptions.length > 0 && (
-                    <optgroup label="📋 Berita Acara Serah Terima (BAST)">
-                      {bastOptions.map((b) => (
-                        <option key={`bast-${b.id}`} value={`bast:${b.id}`}>
-                          BAST: {b.nomor} - {b.nama}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {spOptions.length > 0 && (
-                    <optgroup label="📦 Surat Pesanan (SP)">
-                      {spOptions.map((s) => (
-                        <option key={`sp-${s.id}`} value={`sp:${s.id}`}>
-                          SP: {s.nomor} - {s.nama}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {receiptOptions.length > 0 && (
-                    <optgroup label="🧾 Kwitansi Belanja">
-                      {receiptOptions.map((r) => (
-                        <option key={`receipt-${r.id}`} value={`receipt:${r.id}`}>
-                          Kwitansi: {r.nomor} - {r.nama}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-                <p className="text-[10.5px] text-slate-400 leading-snug">
-                  💡 Memilih berkas di atas akan otomatis mengisikan <strong>Nama Kegiatan</strong>, <strong>Tanggal</strong>, <strong>Nomor Referensi</strong>, dan <strong>Nama Rekanan Toko</strong>. Anda tetap bisa mengubahnya manual jika diperlukan.
-                </p>
+
+                {/* Status Terhubung / Referensi Aktif */}
+                {formData.nomorReferensi && (
+                  <div className="flex items-center justify-between gap-1 text-[11px] bg-slate-950/60 border border-emerald-700/40 rounded-lg px-2.5 py-1 text-slate-300">
+                    <span className="truncate">
+                      ✓ Terhubung ke: <strong className="font-mono text-emerald-300">{formData.nomorReferensi}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, nomorReferensi: "" }))}
+                      className="text-[10px] text-slate-400 hover:text-rose-400 shrink-0 ml-2"
+                      title="Lepas keterhubungan nomor referensi"
+                    >
+                      Lepas
+                    </button>
+                  </div>
+                )}
+
+                {/* Dropdown Cepat Inline (Hanya tampil jika tombol 'Pilih Cepat' dibuka) */}
+                {isSourceBarExpanded && (
+                  <div className="pt-2 border-t border-emerald-700/30 space-y-2 animate-in fade-in duration-100">
+                    <select
+                      onChange={(e) => {
+                        handleSelectSource(e.target.value);
+                        setIsSourceBarExpanded(false);
+                      }}
+                      defaultValue=""
+                      className="w-full bg-slate-950 border border-emerald-600/70 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400 font-medium cursor-pointer"
+                    >
+                      <option value="">-- Pilih Berkas: BAST / Surat Pesanan / Kwitansi --</option>
+                      {bastOptions.length > 0 && (
+                        <optgroup label="📋 Berita Acara Serah Terima (BAST)">
+                          {bastOptions.map((b) => (
+                            <option key={`bast-${b.id}`} value={`bast:${b.id}`}>
+                              BAST: {b.nomor} - {b.nama}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {spOptions.length > 0 && (
+                        <optgroup label="📦 Surat Pesanan (SP)">
+                          {spOptions.map((s) => (
+                            <option key={`sp-${s.id}`} value={`sp:${s.id}`}>
+                              SP: {s.nomor} - {s.nama}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {receiptOptions.length > 0 && (
+                        <optgroup label="🧾 Kwitansi Belanja">
+                          {receiptOptions.map((r) => (
+                            <option key={`receipt-${r.id}`} value={`receipt:${r.id}`}>
+                              Kwitansi: {r.nomor} - {r.nama}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                    <p className="text-[10px] text-slate-400 leading-snug">
+                      💡 Tip: Jika data sangat banyak, gunakan tombol <strong>&quot;Cari &amp; Pilih Berkas&quot;</strong> di atas untuk mencari nama rekanan atau nomor dokumen seketika.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1289,6 +1360,17 @@ export function DokumentasiForm({
         onClose={() => setIsKopModalOpen(false)}
         initialProfile={profile}
         onProfileUpdated={(updated) => setProfile(updated)}
+      />
+
+      {/* Modal Pencarian Berkas Sumber Realisasi (BAST, SP, Kwitansi) */}
+      <SourceDocumentModal
+        isOpen={isSourceModalOpen}
+        onClose={() => setIsSourceModalOpen(false)}
+        onSelect={handleSelectSource}
+        bastOptions={bastOptions}
+        spOptions={spOptions}
+        receiptOptions={receiptOptions}
+        currentNomorReferensi={formData.nomorReferensi}
       />
     </div>
   );
