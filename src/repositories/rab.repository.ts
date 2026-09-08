@@ -1,40 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { RabItem, UpdateRabItemInput } from "@/types";
 
-export const DEFAULT_RAB_CATEGORIES = [
-  {
-    kode: "I",
-    nama: "ALAT HADROH",
-    anggaran: 5800000,
-    keterangan: JSON.stringify([
-      { id: "i-1", no: 1, uraian: "Belanja Alat Hadroh", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 5800000, total: 5800000 },
-    ]),
-  },
-  {
-    kode: "II",
-    nama: "SOUND AKTIF",
-    anggaran: 3000000,
-    keterangan: JSON.stringify([
-      { id: "ii-1", no: 1, uraian: "Belanja Sound Aktif", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 3000000, total: 3000000 },
-    ]),
-  },
-  {
-    kode: "III",
-    nama: "LEPTOP",
-    anggaran: 8000000,
-    keterangan: JSON.stringify([
-      { id: "iii-1", no: 1, uraian: "Belanja Leptop", koefisien1Vol: 1, koefisien1Satuan: "Unit", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 8000000, total: 8000000 },
-    ]),
-  },
-  {
-    kode: "IV",
-    nama: "PRINTER",
-    anggaran: 3500000,
-    keterangan: JSON.stringify([
-      { id: "iv-1", no: 1, uraian: "Belanja Printer", koefisien1Vol: 1, koefisien1Satuan: "Paket", koefisien2Vol: null, koefisien2Satuan: null, hargaSatuan: 3500000, total: 3500000 },
-    ]),
-  },
-];
+export const DEFAULT_RAB_CATEGORIES: Array<{
+  kode: string;
+  nama: string;
+  anggaran: number;
+  keterangan?: string | null;
+}> = [];
 
 export class RabRepository {
   /**
@@ -122,7 +94,7 @@ export class RabRepository {
   async seedDefaultCategoriesIfEmpty(userId: string): Promise<RabItem[]> {
     try {
       const existing = await this.findByUserId(userId);
-      if (existing.length > 0) {
+      if (existing.length > 0 || DEFAULT_RAB_CATEGORIES.length === 0) {
         return existing;
       }
 
@@ -181,12 +153,14 @@ export class RabRepository {
         where: { userId },
       });
 
-      await prisma.rabItem.createMany({
-        data: DEFAULT_RAB_CATEGORIES.map((item) => ({
-          ...item,
-          userId,
-        })),
-      });
+      if (DEFAULT_RAB_CATEGORIES.length > 0) {
+        await prisma.rabItem.createMany({
+          data: DEFAULT_RAB_CATEGORIES.map((item) => ({
+            ...item,
+            userId,
+          })),
+        });
+      }
 
       return await this.findByUserId(userId);
     } catch (error) {

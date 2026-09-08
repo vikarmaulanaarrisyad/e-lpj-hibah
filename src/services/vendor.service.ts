@@ -157,36 +157,6 @@ export class VendorService {
             kategori: "Penyedia Pengadaan",
           });
         }
-        return;
-      }
-
-      // 3. Fallback bawaan organisasi standar jika benar-benar baru
-      const defaultPresets: CreateVendorInput[] = [
-        {
-          namaToko: "SURYA MAS",
-          namaPemilik: "ANSHORI",
-          alamat: "Jl. Raya Talang No. 16, Kec. Talang – Kabupaten Tegal",
-          noHp: "085642719869",
-          kategori: "Elektronik & Sound System",
-        },
-        {
-          namaToko: "Percetakan & ATK Grafika Mandiri",
-          namaPemilik: "M. Ikhsan",
-          alamat: "Jl. Kemuning No. 24 Dawuhan, Talang – Tegal",
-          noHp: "081234567890",
-          kategori: "Percetakan, Banner & ATK",
-        },
-        {
-          namaToko: "Katering Berkah Barokah",
-          namaPemilik: "Hj. Siti Aminah",
-          alamat: "Dawuhan Selatan RT.23 RW.06 Talang – Tegal",
-          noHp: "085712345678",
-          kategori: "Konsumsi & Makanan Rapat",
-        },
-      ];
-
-      for (const preset of defaultPresets) {
-        await vendorRepository.create(userId, preset);
       }
     } catch (err) {
       console.warn("[VendorService.autoDiscoverOrSeedVendors] Ignored seeding err:", err);

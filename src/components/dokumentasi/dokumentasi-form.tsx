@@ -167,33 +167,16 @@ export function DokumentasiForm({
   const [formData, setFormData] = useState<DokumentasiFormData>({
     judulDokumentasi: "LEMBAR DOKUMENTASI KEGIATAN & PENGADAAN SARANA",
     subJudul: "PROGRAM BANTUAN HIBAH DAERAH TAHUN ANGGARAN 2026",
-    namaKegiatan: "Pengadaan Sarana Sound System & Perlengkapan Organisasi",
-    nomorReferensi: "014/BAST-HB/FTY/VII/2026",
-    tanggalKegiatan: "2026-09-07",
-    lokasiKegiatan: "Sekretariat PR Fatayat NU Dawuhan Selatan",
+    namaKegiatan: "",
+    nomorReferensi: "",
+    tanggalKegiatan: new Date().toISOString().split("T")[0],
+    lokasiKegiatan: profile?.alamat || "",
     layout: "2-per-page",
-    photos: [
-      {
-        id: "sample-1",
-        url: SAMPLE_PHOTO_1,
-        caption:
-          "Penyerahan 1 Unit Sound Portable Huper 15 Inch dan Wireless Microphone dari Toko Surya Mas kepada Ketua Pimpinan Ranting Fatayat NU.",
-        tanggal: "2026-09-07",
-        lokasi: "Dawuhan Selatan",
-      },
-      {
-        id: "sample-2",
-        url: SAMPLE_PHOTO_2,
-        caption:
-          "Uji fungsi dan pemeriksaan kelayakan barang pengadaan sarana hibah dalam kondisi lengkap, prima, dan siap dimanfaatkan untuk kegiatan organisasi.",
-        tanggal: "2026-09-07",
-        lokasi: "Dawuhan Selatan",
-      },
-    ],
+    photos: [],
     sertakanTandaTangan: true,
-    penandatangan1Jabatan: "Penyedia / Toko Surya Mas",
-    penandatangan1Nama: "ANSHORI",
-    penandatangan2Jabatan: "Ketua Pimpinan Ranting",
+    penandatangan1Jabatan: "Penyedia / Toko Rekanan",
+    penandatangan1Nama: "",
+    penandatangan2Jabatan: profile?.jabatanKetua || "Ketua Pimpinan Ranting",
     penandatangan2Nama: defaultLeader,
   });
 

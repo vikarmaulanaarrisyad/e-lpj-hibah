@@ -656,7 +656,32 @@ export function RabTableView({
 
             {/* Table Body */}
             <tbody className="divide-y divide-slate-800 print:divide-black">
-              {summary.items.map((group, groupIdx) => {
+              {summary.items.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="py-12 px-4 text-center text-slate-400 print:hidden">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
+                        <FolderPlus className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-300">Belum Ada Pos Anggaran RAB</p>
+                        <p className="text-xs text-slate-500">
+                          Database bersih dari data dummy. Silakan klik tombol <strong className="text-emerald-400">&quot;Tambah Pos Baru&quot;</strong> di atas untuk menginput pos NPHD Anda.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onOpenAddGroupModal}
+                        className="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah Pos Sekarang</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                summary.items.map((group, groupIdx) => {
                 const rincianList = group.rincian || [];
                 const subtotalAnggaran = rincianList.reduce((sum, r) => sum + r.total, 0) || group.anggaran;
                 const subtotalRealisasi = group.realisasi;
@@ -974,7 +999,8 @@ export function RabTableView({
                     </tr>
                   </Fragment>
                 );
-              })}
+              })
+            )}
 
               {/* BARIS TOTAL KESELURUHAN ANGGARAN BIAYA (RAB) */}
               <tr className="bg-emerald-950/60 print:bg-slate-300 border-t-4 border-slate-700 print:border-black font-black text-sm">

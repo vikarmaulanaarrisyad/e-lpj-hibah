@@ -193,7 +193,7 @@ export function KwitansiForm({
     if (isPrefillFromRab) {
       const uraianParam = formatUraianBelanja(searchParams.get("uraian") || "");
       const nominalParam = searchParams.get("nominal");
-      const kategoriParam = searchParams.get("kategori") || "5.2.1";
+      const kategoriParam = searchParams.get("kategori") || (initialRabSummary?.items[0]?.kode || "");
       const num = nominalParam ? parseFloat(nominalParam) : 0;
       const validNum = isNaN(num) ? 0 : num;
       const formatted = formatRupiahNumber(validNum);
@@ -291,7 +291,7 @@ export function KwitansiForm({
         penerima: first.penerima,
         denganMaterai: first.denganMaterai,
         template: (first.template as ReceiptTemplateMode) || "bank",
-        kategoriRab: first.kategoriRab || "5.2.1",
+        kategoriRab: first.kategoriRab || (initialRabSummary?.items[0]?.kode || ""),
         isPpn,
         isPpnIncluded,
         ppnRate,
@@ -424,7 +424,7 @@ export function KwitansiForm({
       penerima: r.penerima,
       denganMaterai: r.denganMaterai,
       template: (r.template as ReceiptTemplateMode) || "bank",
-      kategoriRab: r.kategoriRab || "5.2.1",
+      kategoriRab: r.kategoriRab || (rabSummary?.items[0]?.kode || ""),
       isPpn: Boolean(r.isPpn),
       isPpnIncluded: true,
       ppnRate: r.ppnRate || 0.11,
@@ -1288,12 +1288,7 @@ export function KwitansiForm({
                       ))}
                     </>
                   ) : (
-                    <>
-                      <option value="5.2.1">5.2.1 - Belanja Peralatan & Perlengkapan (Pagu: Rp 10.000.000)</option>
-                      <option value="5.2.2">5.2.2 - Belanja Makanan & Minuman / Konsumsi (Pagu: Rp 5.000.000)</option>
-                      <option value="5.2.3">5.2.3 - Belanja Sewa Sarana & Prasarana (Pagu: Rp 7.000.000)</option>
-                      <option value="5.2.4">5.2.4 - Belanja Transportasi & Seragam (Pagu: Rp 3.000.000)</option>
-                    </>
+                    <option value="">-- Belum ada pos pagu RAB (Input di menu RAB) --</option>
                   )}
                 </select>
               </div>
@@ -1777,7 +1772,7 @@ export function KwitansiForm({
                     Guna Membayar (Rincian Barang / Jasa)
                   </label>
                   <span className="text-[11px] text-brand-tertiary font-medium">
-                    Link RAB: {formData.kategoriRab || "5.2.1"}
+                    Link RAB: {formData.kategoriRab || "-"}
                   </span>
                 </div>
                 <textarea
