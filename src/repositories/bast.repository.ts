@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, withPrismaRetry } from "@/lib/prisma";
 import { getYearDateRange } from "@/lib/utils/tahun-anggaran";
 import type { BastDocument, CreateBastInput } from "@/types";
 
@@ -127,25 +127,27 @@ export class BastRepository {
   async findManyByUserId(userId: string, tahun?: string | null): Promise<BastWithReceipt[]> {
     try {
       const { startDate, endDate } = getYearDateRange(tahun);
-      return (await prisma.bastDocument.findMany({
-        where: {
-          userId,
-          ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
-        },
-        include: {
-          receipt: {
-            select: {
-              id: true,
-              nomorBukti: true,
-              nominal: true,
-              tanggal: true,
-              uraian: true,
-              penerima: true,
+      return await withPrismaRetry(async () => {
+        return (await prisma.bastDocument.findMany({
+          where: {
+            userId,
+            ...(startDate && endDate ? { tanggal: { gte: startDate, lte: endDate } } : {}),
+          },
+          include: {
+            receipt: {
+              select: {
+                id: true,
+                nomorBukti: true,
+                nominal: true,
+                tanggal: true,
+                uraian: true,
+                penerima: true,
+              },
             },
           },
-        },
-        orderBy: { tanggal: "desc" },
-      })) as BastWithReceipt[];
+          orderBy: { tanggal: "desc" },
+        })) as BastWithReceipt[];
+      });
     } catch (error) {
       console.error("[BastRepository] Error in findManyByUserId:", error);
       throw error;
