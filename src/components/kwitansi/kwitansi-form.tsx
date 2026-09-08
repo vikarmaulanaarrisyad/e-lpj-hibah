@@ -50,9 +50,10 @@ import {
 } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
-import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalSuccessWithAction } from "@/lib/swal";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalSuccessWithAction, swalWorkflowPrompt } from "@/lib/swal";
 import { exportKwitansiToPdf } from "@/lib/kwitansi-pdf";
 import { KwitansiCanvas } from "./kwitansi-canvas";
+import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
 import type {
   Receipt,
   ReceiptFormData,
@@ -885,16 +886,41 @@ export function KwitansiForm({
 
       setSaveSuccessMsg(response.message);
 
-      const goToBku = await swalSuccessWithAction({
-        title: "Kwitansi Berhasil Disimpan!",
-        text: `${response.message} Transaksi ${formData.nomorBukti} senilai Rp ${effectiveNominal.toLocaleString("id-ID")} telah otomatis tercatat di Buku Kas Umum (BKU).`,
-        confirmText: "Lihat di Buku Kas Umum (BKU) →",
-        cancelText: "Tetap di Generator",
+      const savedDoc = response.data || { nomorBukti: formData.nomorBukti, id: formData.id };
+      const choice = await swalWorkflowPrompt({
+        title: "Kwitansi Berhasil Disimpan ke BKU!",
+        html: `
+          <div class="space-y-3 text-left">
+            <p class="text-xs sm:text-sm text-slate-200">
+              Transaksi bukti kas <strong>${savedDoc.nomorBukti}</strong> senilai <strong>Rp ${effectiveNominal.toLocaleString("id-ID")}</strong> telah resmi tercatat di Buku Kas Umum (BKU).
+            </p>
+            <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
+              <strong class="text-emerald-400 block font-semibold">
+                Langkah Selanjutnya dalam Alur Pengadaan:
+              </strong>
+              <p class="text-[11px] text-slate-400">
+                Pilih apakah transaksi belanja ini memerlukan <strong>Surat Pesanan (SP)</strong> ke rekanan atau langsung <strong>Berita Acara (BAST)</strong> serah terima barang:
+              </p>
+            </div>
+          </div>
+        `,
+        confirmText: "📝 Buat Surat Pesanan (SP) ➔",
+        denyText: "📦 Langsung Buat BAST ➔",
+        cancelText: "Selesai (Tetap di Kwitansi)",
       });
 
-      if (goToBku) {
-        router.push("/user/bku");
-        router.refresh();
+      if (choice === "confirm") {
+        router.push(
+          `/user/pesanan?receiptNo=${encodeURIComponent(savedDoc.nomorBukti)}${
+            savedDoc.id ? `&receiptId=${encodeURIComponent(savedDoc.id)}` : ""
+          }`
+        );
+      } else if (choice === "deny") {
+        router.push(
+          `/user/bast?receiptNo=${encodeURIComponent(savedDoc.nomorBukti)}${
+            savedDoc.id ? `&receiptId=${encodeURIComponent(savedDoc.id)}` : ""
+          }`
+        );
       }
 
       setTimeout(() => setSaveSuccessMsg(null), 5000);
@@ -980,6 +1006,13 @@ export function KwitansiForm({
 
       {/* ================= WORKSPACE LAYOUT ================= */}
       <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-8">
+        {/* Visual Procurement Flow Stepper */}
+        <ProcurementStepper
+          currentStep={2}
+          relatedReceiptNo={selectedReceiptNo !== "NEW" ? selectedReceiptNo : formData.nomorBukti}
+          relatedReceiptId={formData.id}
+        />
+
         {/* Responsive Mobile / Tablet View Switcher Tab (< xl screens) */}
         <div className="xl:hidden mb-6 flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-2xl shadow-lg">
           <button
@@ -1952,42 +1985,72 @@ export function KwitansiForm({
               )}
 
               {/* Action Buttons */}
-              <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                <button
-                  type="button"
-                  disabled={isPending || (Boolean(currentRabStatus?.isDeficit) && !allowDeficitOverride)}
-                  onClick={handleSaveToBKU}
-                  className="w-full px-3 py-3 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-xs font-semibold shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition-all border border-emerald-600/40 disabled:opacity-50 disabled:cursor-not-allowed btn-press cursor-pointer hover:shadow-emerald-900/40"
-                >
-                  {isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-emerald-200" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  <span className="truncate">
-                    {currentRabStatus?.isDeficit && !allowDeficitOverride
-                      ? "Tertahan Defisit"
-                      : "Simpan ke BKU"}
-                  </span>
-                </button>
+              <div className="pt-2 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    disabled={isPending || (Boolean(currentRabStatus?.isDeficit) && !allowDeficitOverride)}
+                    onClick={handleSaveToBKU}
+                    className="w-full px-3 py-3 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-xs font-semibold shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition-all border border-emerald-600/40 disabled:opacity-50 disabled:cursor-not-allowed btn-press cursor-pointer hover:shadow-emerald-900/40"
+                  >
+                    {isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-200" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    <span className="truncate">
+                      {currentRabStatus?.isDeficit && !allowDeficitOverride
+                        ? "Tertahan Defisit"
+                        : "Simpan ke BKU"}
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={handleResetForm}
-                  className="w-full px-3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700 btn-press cursor-pointer hover:text-white"
-                >
-                  <PlusCircle className="w-4 h-4 text-emerald-400" />
-                  <span>Kwitansi Baru (+)</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleResetForm}
+                    className="w-full px-3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700 btn-press cursor-pointer hover:text-white"
+                  >
+                    <PlusCircle className="w-4 h-4 text-emerald-400" />
+                    <span>Kwitansi Baru (+)</span>
+                  </button>
+                </div>
 
-                <Link
-                  href={`/user/bast?receiptNo=${formData.nomorBukti}`}
-                  className="w-full px-3 py-3 rounded-xl bg-[#006c4e] hover:bg-[#004532] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md text-center btn-press hover:shadow-emerald-950/40"
-                  title="Buat Berita Acara Serah Terima Barang untuk Kwitansi ini"
-                >
-                  <FileCheck className="w-4 h-4 text-emerald-300 shrink-0" />
-                  <span className="truncate">Buat BAST</span>
-                </Link>
+                {/* Sub-row: Lanjutan Alur Pengadaan (SP & BAST) */}
+                <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      Lanjutan Alur Pengadaan:
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {formData.nomorBukti}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Link
+                      href={`/user/pesanan?receiptNo=${encodeURIComponent(formData.nomorBukti)}${
+                        formData.id ? `&receiptId=${encodeURIComponent(formData.id)}` : ""
+                      }`}
+                      className="px-3 py-2 rounded-lg bg-sky-950/80 border border-sky-700/60 hover:border-sky-500 text-sky-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                      title="Terbitkan Surat Pesanan (SP) untuk transaksi belanja ini"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                      <span className="truncate">Buat Surat Pesanan</span>
+                    </Link>
+
+                    <Link
+                      href={`/user/bast?receiptNo=${encodeURIComponent(formData.nomorBukti)}${
+                        formData.id ? `&receiptId=${encodeURIComponent(formData.id)}` : ""
+                      }`}
+                      className="px-3 py-2 rounded-lg bg-amber-950/80 border border-amber-700/60 hover:border-amber-500 text-amber-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                      title="Terbitkan Berita Acara Serah Terima (BAST) untuk transaksi ini"
+                    >
+                      <FileCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="truncate">Buat Berita Acara (BAST)</span>
+                    </Link>
+                  </div>
+                </div>
               </div>
 
               {/* Tombol Hapus Kwitansi (Muncul jika sedang membuka kwitansi tersimpan) */}

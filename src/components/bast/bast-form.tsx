@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   FileText,
   Calendar,
@@ -47,7 +47,8 @@ import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { saveBastAction, deleteBastAction, getNextNomorBastAction } from "@/app/actions/bast.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
-import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalWorkflowPrompt } from "@/lib/swal";
+import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
 import { formatTanggalTerbilang } from "@/services/bast.service";
 import {
   buildFormattedDocumentNumber,
@@ -99,6 +100,7 @@ export function BastForm({
   initialNextBast,
   userProfile,
 }: BastFormProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
@@ -398,6 +400,7 @@ export function BastForm({
     const spNoParam = searchParams.get("spNo");
     const spIdParam = searchParams.get("spId");
     const receiptNoParam = searchParams.get("receiptNo");
+    const receiptIdParam = searchParams.get("receiptId");
     const noParam = searchParams.get("no");
 
     if (noParam) {
@@ -416,19 +419,31 @@ export function BastForm({
       }
     }
 
-    if (receiptNoParam && initialReceipts.length > 0) {
-      const r = initialReceipts.find((item) => item.nomorBukti === receiptNoParam);
+    if ((receiptNoParam || receiptIdParam) && initialReceipts.length > 0) {
+      const r = initialReceipts.find(
+        (item) =>
+          (receiptIdParam && item.id === receiptIdParam) ||
+          (receiptNoParam && item.nomorBukti === receiptNoParam)
+      );
       if (r) {
         const cleanUraian = (r.uraian || "").split(/\s+sebanyak\s+/i)[0].trim();
         const itemName = cleanUraian.replace(/^Belanja\s+/i, "") || "Pengadaan Sarana & Prasarana";
+        const matchedVendor = vendors.find(
+          (v) =>
+            v.namaToko.toLowerCase() === (r.penerima || "").toLowerCase() ||
+            (r.penerima || "").toLowerCase().includes(v.namaToko.toLowerCase())
+        );
+
         setFormData((prev) => ({
           ...prev,
           receiptId: r.id,
           linkedReceiptNomor: r.nomorBukti,
           linkedReceiptNominal: r.nominal,
           namaKegiatan: cleanUraian,
-          pihak2Nama: r.penerima || prev.pihak2Nama,
-          pihak2Toko: `${r.penerima || "Penyedia"} (Penyedia Barang)`,
+          pihak2Nama: matchedVendor?.namaPemilik || r.penerima || prev.pihak2Nama,
+          pihak2Toko: matchedVendor
+            ? `${matchedVendor.namaToko} (Penyedia Barang)`
+            : `${r.penerima || "Penyedia"} (Penyedia Barang)`,
           items: [
             {
               id: "1",
@@ -442,7 +457,7 @@ export function BastForm({
         }));
       }
     }
-  }, [searchParams, bastList, pesananList, initialReceipts]);
+  }, [searchParams, bastList, pesananList, initialReceipts, vendors]);
 
   // Handler to load selected BAST
   const loadBastIntoForm = (b: BastDocument) => {
@@ -788,16 +803,44 @@ export function BastForm({
 
       const res = await saveBastAction(payload);
       if (res.success && res.data) {
-        setSaveSuccessMsg(`Berita Acara ${res.data.nomorBast} berhasil disimpan ke database otentik!`);
+        const savedBast = res.data;
+        setSaveSuccessMsg(`Berita Acara ${savedBast.nomorBast} berhasil disimpan ke database otentik!`);
         setBastList((prev) => {
-          const exists = prev.some((b) => b.id === res.data!.id);
+          const exists = prev.some((b) => b.id === savedBast.id);
           if (exists) {
-            return prev.map((b) => (b.id === res.data!.id ? res.data! : b));
+            return prev.map((b) => (b.id === savedBast.id ? savedBast : b));
           }
-          return [res.data!, ...prev];
+          return [savedBast, ...prev];
         });
-        setFormData((prev) => ({ ...prev, id: res.data!.id }));
-        swalSuccess("BAST Disimpan!", `Berita Acara ${res.data.nomorBast} berhasil tersimpan.`);
+        setFormData((prev) => ({ ...prev, id: savedBast.id }));
+
+        const choice = await swalWorkflowPrompt({
+          title: "Berita Acara (BAST) Berhasil Disimpan!",
+          html: `
+            <div class="space-y-3 text-left">
+              <p class="text-xs sm:text-sm text-slate-200">
+                Dokumen Berita Acara Serah Terima <strong>${savedBast.nomorBast}</strong> telah resmi tersimpan dan disahkan.
+              </p>
+              <div class="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/80 text-xs text-emerald-200 space-y-1">
+                <strong class="text-emerald-300 block font-semibold flex items-center gap-1.5">
+                  <span class="text-base">🎉</span> Rangkaian Dokumen Pengadaan Lengkap!
+                </strong>
+                <p class="text-[11px] text-emerald-300/80">
+                  Seluruh tahapan pengadaan (Pagu RAB ➔ Kwitansi Kas ➔ Surat Pesanan ➔ BAST) telah lengkap dan siap dibundel untuk LPJ.
+                </p>
+              </div>
+            </div>
+          `,
+          confirmText: "📖 Buka Buku Kas Umum (BKU) ➔",
+          denyText: "📦 Download Arsip Lengkap (.ZIP)",
+          cancelText: "Tetap di Halaman BAST",
+        });
+
+        if (choice === "confirm") {
+          router.push("/user/bku");
+        } else if (choice === "deny") {
+          router.push("/user/dashboard?openArchive=true");
+        }
       } else {
         const err = res.message || "Gagal menyimpan BAST";
         setSaveErrorMsg(err);
@@ -1023,49 +1066,14 @@ export function BastForm({
         </div>
 
         {/* ================= ALUR DOKUMEN PENGADAAN TERPADU ================= */}
-        <div className="mb-6 w-full">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
-                1 Realisasi Pembelian Pengadaan Nyambung:
-              </span>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
-                (Surat Pesanan &amp; Berita Acara Terhubung)
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap text-xs">
-              <Link
-                href={`/user/pesanan?no=${encodeURIComponent(formData.nomorSpk || "")}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all btn-press font-medium border border-slate-700/60 shadow-xs"
-              >
-                <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
-                <span>1. Surat Pesanan (SP)</span>
-              </Link>
-
-              <span className="text-slate-600 font-bold">➔</span>
-
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950 border border-emerald-600/80 text-emerald-300 font-bold shadow-[0_0_12px_rgba(16,185,129,0.25)]">
-                <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>2. Berita Acara (BAST)</span>
-              </div>
-
-              <span className="text-slate-600 font-bold">➔</span>
-
-              <Link
-                href="/user/kwitansi"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors font-medium border border-slate-700/60 shadow-xs"
-              >
-                <ReceiptIcon className="w-3.5 h-3.5 text-emerald-400" />
-                <span>3. Kwitansi Belanja</span>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <ProcurementStepper
+          currentStep={4}
+          relatedReceiptNo={initialReceipts.find((r) => r.id === formData.receiptId)?.nomorBukti || formData.linkedReceiptNomor}
+          relatedReceiptId={formData.receiptId}
+          relatedSpNo={formData.nomorSpk}
+          relatedBastNo={formData.nomorBast}
+          relatedBastId={formData.id}
+        />
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* ================= LEFT COLUMN: Generator & Administrasi BAST Form (5 Cols) ================= */}

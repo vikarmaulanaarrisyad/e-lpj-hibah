@@ -176,4 +176,48 @@ export const swalSuccessWithAction = async (options: {
   return result.isConfirmed;
 };
 
+// 7. SWAL ALUR PENGADAAN TERPADU (Multi-Step Workflow Prompt)
+export const swalWorkflowPrompt = async (options: {
+  title: string;
+  html?: string;
+  text?: string;
+  confirmText?: string;
+  denyText?: string;
+  cancelText?: string;
+}): Promise<"confirm" | "deny" | "cancel"> => {
+  const result = await Swal.fire({
+    icon: "success",
+    title: options.title,
+    html: options.html,
+    text: options.text,
+    showConfirmButton: true,
+    showDenyButton: Boolean(options.denyText),
+    showCancelButton: true,
+    confirmButtonText: options.confirmText || "Lanjutkan",
+    denyButtonText: options.denyText,
+    cancelButtonText: options.cancelText || "Tetap di Halaman Ini",
+    confirmButtonColor: "#059669",
+    denyButtonColor: "#0284c7",
+    cancelButtonColor: "#334155",
+    reverseButtons: false,
+    background: "#0f172a",
+    color: "#f8fafc",
+    iconColor: "#10b981",
+    customClass: {
+      popup: "rounded-3xl border border-slate-800 shadow-2xl p-6",
+      title: "text-base sm:text-lg font-bold text-white",
+      htmlContainer: "text-xs sm:text-sm text-slate-300 leading-relaxed text-left",
+      actions: "flex flex-wrap gap-2 justify-center mt-4",
+      confirmButton: "px-4 py-2.5 rounded-xl font-semibold text-xs shadow-md bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center gap-1.5",
+      denyButton: "px-4 py-2.5 rounded-xl font-semibold text-xs shadow-md bg-sky-600 hover:bg-sky-500 text-white transition-all flex items-center gap-1.5",
+      cancelButton: "px-4 py-2.5 rounded-xl font-semibold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all",
+    },
+  });
+
+  if (result.isConfirmed) return "confirm";
+  if (result.isDenied) return "deny";
+  return "cancel";
+};
+
 export default Swal;
+

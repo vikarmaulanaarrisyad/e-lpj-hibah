@@ -33,6 +33,7 @@ import {
 } from "@/app/actions/rab.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { RabTableView } from "./rab-table-view";
+import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
 
 interface RabDashboardProps {
   initialSummary: RabSummary;
@@ -267,6 +268,9 @@ export function RabDashboard({
 
   return (
     <div className="space-y-6">
+      {/* Alur Pengadaan Terpadu Stepper */}
+      <ProcurementStepper currentStep={1} />
+
       {/* ================= HEADER INTRO ================= */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

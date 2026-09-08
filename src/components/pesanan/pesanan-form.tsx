@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   FileText,
   FileCheck,
@@ -37,6 +37,8 @@ import { exportPesananToPdf } from "@/lib/pesanan-pdf";
 import { exportBundelPengadaanPdf } from "@/lib/bundel-pengadaan-pdf";
 import { formatTanggalTerbilang } from "@/services/bast.service";
 import { angkaKeTerbilang } from "@/lib/utils/terbilang";
+import { ProcurementStepper } from "@/components/workflow/procurement-stepper";
+import { swalLoading, swalSuccess, swalError, swalConfirmDelete, swalWorkflowPrompt } from "@/lib/swal";
 import {
   formatDateIndo,
   calculateDurasiDanDeskripsi,
@@ -51,7 +53,6 @@ import {
 import { savePurchaseOrderAction, deletePurchaseOrderAction } from "@/app/actions/pesanan.action";
 import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
-import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
 import { MasterTokoModal } from "@/components/vendor/master-toko-modal";
 import { PesananCanvas } from "./pesanan-canvas";
@@ -87,6 +88,7 @@ export function PesananForm({
   initialProfile,
   userProfile,
 }: PesananFormProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
@@ -389,7 +391,7 @@ export function PesananForm({
     }));
   };
 
-  // Check URL query param ?no=..., ?spNo=..., or ?receiptNo=...
+  // Check URL query param ?no=..., ?spNo=..., ?receiptNo=..., or ?receiptId=...
   useEffect(() => {
     const spNo = searchParams.get("no") || searchParams.get("spNo");
     if (spNo && pesananList.length > 0) {
@@ -401,8 +403,11 @@ export function PesananForm({
     }
 
     const rNo = searchParams.get("receiptNo");
-    if (rNo && initialReceipts.length > 0) {
-      const r = initialReceipts.find((item) => item.nomorBukti === rNo);
+    const rId = searchParams.get("receiptId");
+    if ((rNo || rId) && initialReceipts.length > 0) {
+      const r = initialReceipts.find(
+        (item) => (rId && item.id === rId) || (rNo && item.nomorBukti === rNo)
+      );
       if (r) {
         handleSelectReceipt(r.id);
       }
@@ -438,12 +443,20 @@ export function PesananForm({
       ? syncNomorDokumenBulanTahun(formData.nomorSp, nextTanggalSp)
       : buildFormattedDocumentNumber(nomorUrutSp, formatPatternSp, nextTanggalSp);
 
+    // Cek apakah penerima pada kwitansi cocok dengan Master Toko
+    const matchedVendor = vendors.find(
+      (v) =>
+        v.namaToko.toLowerCase() === (r.penerima || "").toLowerCase() ||
+        (r.penerima || "").toLowerCase().includes(v.namaToko.toLowerCase())
+    );
+
     setFormData((prev) => ({
       ...prev,
       receiptId: r.id,
       namaPaket: cleanUraian,
-      pihak2Toko: r.penerima || prev.pihak2Toko,
-      pihak2Nama: r.penerima || prev.pihak2Nama,
+      pihak2Toko: matchedVendor?.namaToko || r.penerima || prev.pihak2Toko,
+      pihak2Nama: matchedVendor?.namaPemilik || r.penerima || prev.pihak2Nama,
+      pihak2Alamat: matchedVendor?.alamat || prev.pihak2Alamat,
       subtotal,
       totalHarga,
       terbilang: terbilangText,
@@ -735,17 +748,47 @@ export function PesananForm({
       const res = await savePurchaseOrderAction(formData);
       if (res.success && res.data) {
         setSaveSuccessMsg(res.message);
-        setFormData((prev) => ({ ...prev, id: res.data!.id }));
+        const savedSp = res.data;
+        setFormData((prev) => ({ ...prev, id: savedSp.id }));
         setPesananList((prev) => {
-          const idx = prev.findIndex((x) => x.id === res.data!.id || x.nomorSp === res.data!.nomorSp);
+          const idx = prev.findIndex((x) => x.id === savedSp.id || x.nomorSp === savedSp.nomorSp);
           if (idx >= 0) {
             const nextList = [...prev];
-            nextList[idx] = res.data!;
+            nextList[idx] = savedSp;
             return nextList;
           }
-          return [res.data!, ...prev];
+          return [savedSp, ...prev];
         });
-        swalSuccess("Surat Pesanan Disimpan!", res.message);
+
+        const choice = await swalWorkflowPrompt({
+          title: "Surat Pesanan (SP) Berhasil Disimpan!",
+          html: `
+            <div class="space-y-3 text-left">
+              <p class="text-xs sm:text-sm text-slate-200">
+                Surat Pesanan <strong>${savedSp.nomorSp}</strong> senilai <strong>Rp ${savedSp.totalHarga.toLocaleString("id-ID")}</strong> telah tersimpan di sistem.
+              </p>
+              <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
+                <strong class="text-amber-400 block font-semibold">
+                  Langkah Terakhir: Serah Terima Barang (BAST)
+                </strong>
+                <p class="text-[11px] text-slate-400">
+                  Lanjutkan membuat <strong>Berita Acara (BAST)</strong> agar pemeriksaan & serah terima barang dari rekanan <strong>${savedSp.pihak2Toko}</strong> resmi terhubung?
+                </p>
+              </div>
+            </div>
+          `,
+          confirmText: "📦 Buat Berita Acara (BAST) ➔",
+          cancelText: "Tetap di Halaman Pesanan",
+        });
+
+        if (choice === "confirm") {
+          const linkedRc = initialReceipts.find((r) => r.id === savedSp.receiptId);
+          router.push(
+            `/user/bast?spNo=${encodeURIComponent(savedSp.nomorSp)}&spId=${encodeURIComponent(savedSp.id)}${
+              linkedRc ? `&receiptNo=${encodeURIComponent(linkedRc.nomorBukti)}` : ""
+            }`
+          );
+        }
       } else {
         const err = res.message || "Gagal menyimpan Surat Pesanan.";
         setSaveErrorMsg(err);
@@ -942,54 +985,15 @@ export function PesananForm({
         </div>
 
         {/* ================= ALUR DOKUMEN PENGADAAN TERPADU ================= */}
-        <div className="mb-6 w-full">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
-                1 Realisasi Pembelian Pengadaan Nyambung:
-              </span>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
-                (Surat Pesanan &amp; Berita Acara Terhubung)
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap text-xs">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-950 border border-teal-600/80 text-teal-300 font-bold shadow-[0_0_12px_rgba(20,184,166,0.25)]">
-                <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
-                <span>1. Surat Pesanan (SP)</span>
-              </div>
-
-              <span className="text-slate-600 font-bold">➔</span>
-
-              <Link
-                href={matchedBast ? `/user/bast?no=${encodeURIComponent(matchedBast.nomorBast)}` : `/user/bast?spNo=${encodeURIComponent(formData.nomorSp)}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all btn-press font-medium border border-slate-700/60 shadow-xs"
-              >
-                <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>2. Berita Acara (BAST)</span>
-                {matchedBast && (
-                  <span className="px-1.5 py-0.2 rounded bg-emerald-950 text-[10px] text-emerald-300 border border-emerald-700/50">
-                    Ada
-                  </span>
-                )}
-              </Link>
-
-              <span className="text-slate-600 font-bold">➔</span>
-
-              <Link
-                href="/user/kwitansi"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all btn-press font-medium border border-slate-700/60 shadow-xs"
-              >
-                <ReceiptIcon className="w-3.5 h-3.5 text-emerald-400" />
-                <span>3. Kwitansi Belanja</span>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <ProcurementStepper
+          currentStep={3}
+          relatedReceiptNo={initialReceipts.find((r) => r.id === formData.receiptId)?.nomorBukti}
+          relatedReceiptId={formData.receiptId}
+          relatedSpNo={formData.nomorSp}
+          relatedSpId={formData.id}
+          relatedBastNo={matchedBast?.nomorBast}
+          relatedBastId={matchedBast?.id}
+        />
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* ================= LEFT COLUMN: FORM SETTINGS (5 Cols) ================= */}
