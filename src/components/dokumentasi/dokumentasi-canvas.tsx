@@ -194,7 +194,7 @@ export function DokumentasiCanvas({
                             ? "Klik untuk mengubah / mengedit judul langsung di kertas"
                             : undefined
                         }
-                        className={`text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4 transition-all ${
+                        className={`text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4 transition-all my-0 leading-tight ${
                           onUpdateTitle
                             ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
                             : ""
@@ -208,7 +208,7 @@ export function DokumentasiCanvas({
                         </span>
                       )}
                     </div>
-                    <div className="block">
+                    <div>
                       <p
                         contentEditable={Boolean(onUpdateSubJudul)}
                         suppressContentEditableWarning
@@ -229,7 +229,7 @@ export function DokumentasiCanvas({
                             ? "Klik untuk mengubah / mengedit subjudul langsung di kertas"
                             : undefined
                         }
-                        className={`font-mono text-[12px] sm:text-[12px] text-black mt-1 font-semibold inline-block transition-all ${
+                        className={`font-mono text-[12px] sm:text-[12px] text-black mt-0.5 font-semibold inline-block transition-all ${
                           onUpdateSubJudul
                             ? "cursor-text hover:bg-emerald-50 hover:outline-dashed hover:outline-1 hover:outline-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-amber-50/80 rounded px-1.5 py-0.5 print:hover:bg-transparent print:outline-none print:ring-0 print:p-0"
                             : ""

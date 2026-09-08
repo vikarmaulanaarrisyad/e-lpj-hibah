@@ -135,6 +135,7 @@ export function BastForm({
       ...prev,
       pihak2Toko: v.namaToko,
       pihak2Nama: v.namaPemilik || prev.pihak2Nama,
+      pihak2Jabatan: (v as any).jabatan || prev.pihak2Jabatan,
     }));
   };
 
@@ -197,6 +198,7 @@ export function BastForm({
         pihak1Nama: b.pihak1Nama,
         pihak1Jabatan: cleanPihakJabatan(b.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
         pihak2Nama: b.pihak2Nama,
+        pihak2Jabatan: (b as any).pihak2Jabatan || undefined,
         pihak2Toko: b.pihak2Toko,
         items: parsedItems.length > 0 ? parsedItems : [
           {
@@ -230,6 +232,7 @@ export function BastForm({
       pihak1Nama: defaultChairman,
       pihak1Jabatan: profile?.jabatanKetua || "Ketua",
       pihak2Nama: "",
+      pihak2Jabatan: "",
       pihak2Toko: "",
       items: [
         {
@@ -289,6 +292,7 @@ export function BastForm({
       pihak1Nama: po.pihak1Nama || prev.pihak1Nama,
       pihak1Jabatan: cleanPihakJabatan(po.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || prev.pihak1Jabatan),
       pihak2Nama: po.pihak2Nama || prev.pihak2Nama,
+      pihak2Jabatan: (po as any).pihak2Jabatan || prev.pihak2Jabatan,
       pihak2Toko: po.pihak2Toko || prev.pihak2Toko,
       receiptId: po.receiptId || prev.receiptId,
       items: mappedItems.length > 0 ? mappedItems : prev.items,
@@ -315,6 +319,7 @@ export function BastForm({
         pihak1Alamat: matchedPo.pihak1Alamat || undefined,
         pihak2Toko: matchedPo.pihak2Toko,
         pihak2Nama: matchedPo.pihak2Nama,
+        pihak2Jabatan: (matchedPo as any).pihak2Jabatan || undefined,
         pihak2Alamat: matchedPo.pihak2Alamat || undefined,
         items: parsedItems.length > 0 ? parsedItems : formData.items.map((it, idx) => ({
           id: String(idx + 1),
@@ -354,6 +359,7 @@ export function BastForm({
       pihak1Jabatan: formData.pihak1Jabatan,
       pihak2Toko: formData.pihak2Toko,
       pihak2Nama: formData.pihak2Nama,
+      pihak2Jabatan: formData.pihak2Jabatan,
       items: formData.items.map((it, idx) => {
         const matchQty = it.pesanan?.match(/^(\d+)/);
         const qty = matchQty ? parseInt(matchQty[1], 10) : 1;
@@ -490,6 +496,7 @@ export function BastForm({
       pihak1Nama: b.pihak1Nama,
       pihak1Jabatan: cleanPihakJabatan(b.pihak1Jabatan, profile?.namaLembaga, profile?.jabatanKetua || "Ketua"),
       pihak2Nama: b.pihak2Nama,
+      pihak2Jabatan: (b as any).pihak2Jabatan || undefined,
       pihak2Toko: b.pihak2Toko,
       items: parsedItems.length > 0 ? parsedItems : [
         {
@@ -802,6 +809,7 @@ export function BastForm({
         pihak1Nama: formData.pihak1Nama,
         pihak1Jabatan: formData.pihak1Jabatan,
         pihak2Nama: formData.pihak2Nama,
+        pihak2Jabatan: formData.pihak2Jabatan || undefined,
         pihak2Toko: formData.pihak2Toko,
         items: formData.items,
         catatanUji: formData.catatanUji,
@@ -919,6 +927,7 @@ export function BastForm({
       pihak1Nama: defaultChairman,
       pihak1Jabatan: profile?.jabatanKetua || "Ketua",
       pihak2Nama: "",
+      pihak2Jabatan: "",
       pihak2Toko: "",
       items: [
         {
@@ -1651,6 +1660,20 @@ export function BastForm({
                           setFormData({ ...formData, pihak2Nama: e.target.value })
                         }
                         className="w-full text-xs font-bold uppercase bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400 block mb-1">
+                        Jabatan Pimpinan / Penyedia Barang
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.pihak2Jabatan || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, pihak2Jabatan: e.target.value })
+                        }
+                        placeholder="Contoh: Pimpinan Penyedia barang"
+                        className="w-full text-xs bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-300 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>

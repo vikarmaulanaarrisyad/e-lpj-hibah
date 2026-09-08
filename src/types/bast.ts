@@ -24,6 +24,7 @@ export interface BastFormData {
   pihak1Nama: string;       // Nama Ketua Organisasi (Penerima)
   pihak1Jabatan: string;    // Jabatan Ketua
   pihak2Nama: string;       // Nama Pemilik / Penyedia
+  pihak2Jabatan?: string;   // Jabatan Pimpinan / Penyedia Barang
   pihak2Toko: string;       // Nama Toko / Badan Usaha Rekanan
   items: BastItem[];
   catatanUji?: string;       // Catatan pemeriksaan uji coba fungsi
@@ -47,6 +48,7 @@ export interface CreateBastInput {
   pihak1Nama: string;
   pihak1Jabatan: string;
   pihak2Nama: string;
+  pihak2Jabatan?: string;
   pihak2Toko: string;
   items: BastItem[];
   catatanUji?: string;

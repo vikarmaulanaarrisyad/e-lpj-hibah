@@ -137,6 +137,7 @@ model BastDocument {
   pihak1Jabatan    String    // Jabatan Ketua
   pihak2Nama       String    // Nama Rekanan/Toko (Penyedia)
   pihak2Toko       String    // Nama Toko Rekanan
+  pihak2Jabatan    String?   // Jabatan Pemilik/Pimpinan Toko (cth: "Pemilik", "Pimpinan", "Direktur")
   itemsJson        String    // JSON array barang: [{ no, jenisBarang, spesifikasi, pesanan, realisasi, kondisi }]
   catatanUji       String?   // Uji fungsi audio/fisik
   statusUji        String    @default("Lulus Uji Coba")
@@ -205,6 +206,7 @@ model PurchaseOrder {
   // Pihak Kedua (Penyedia / Rekanan)
   pihak2Toko         String    // Nama Toko / Badan Usaha (cth: "Surya Mas")
   pihak2Nama         String    // Nama Pemilik / Pimpinan Toko (cth: "Anshori")
+  pihak2Jabatan      String?   // Jabatan Pemilik/Pimpinan (cth: "Pemilik", "Pimpinan", "Direktur")
   pihak2Alamat       String?   // Alamat Toko Penyedia
 
   // Rincian Barang (JSON): [{ no, jenisBarang, spesifikasi, jumlah, satuan, hargaSatuan, totalHarga }]
@@ -267,6 +269,7 @@ model Vendor {
   id          String   @id @default(cuid())
   namaToko    String   // Nama Toko / Badan Usaha (cth: "Toko Surya Mas")
   namaPemilik String?  // Nama Pemilik / Rekanan (cth: "Anshori")
+  jabatan     String?  // Jabatan Pemilik (cth: "Pemilik", "Pimpinan")
   alamat      String?  // Alamat Toko Penyedia (cth: "Jl. Raya Talang Tegal")
   noHp        String?  // Kontak Telepon / WA (cth: "085642719869")
   kategori    String?  // Kategori (cth: "Elektronik & Sound", "Percetakan & ATK", "Konsumsi")

@@ -136,6 +136,7 @@ export function PesananForm({
       ...prev,
       pihak2Toko: v.namaToko,
       pihak2Nama: v.namaPemilik || prev.pihak2Nama,
+      pihak2Jabatan: (v as any).jabatan || prev.pihak2Jabatan,
       pihak2Alamat: v.alamat || prev.pihak2Alamat,
     }));
   };
@@ -194,6 +195,7 @@ export function PesananForm({
         pihak1Alamat: p.pihak1Alamat || undefined,
         pihak2Toko: p.pihak2Toko,
         pihak2Nama: p.pihak2Nama,
+        pihak2Jabatan: p.pihak2Jabatan || undefined,
         pihak2Alamat: p.pihak2Alamat || undefined,
         items: parsedItems.length > 0 ? parsedItems : [
           {
@@ -237,6 +239,7 @@ export function PesananForm({
       pihak1Alamat: profile?.alamat || "",
       pihak2Toko: "",
       pihak2Nama: "",
+      pihak2Jabatan: "",
       pihak2Alamat: "",
       items: [
         {
@@ -527,6 +530,7 @@ export function PesananForm({
       pihak1Alamat: p.pihak1Alamat || undefined,
       pihak2Toko: p.pihak2Toko,
       pihak2Nama: p.pihak2Nama,
+      pihak2Jabatan: p.pihak2Jabatan || undefined,
       pihak2Alamat: p.pihak2Alamat || undefined,
       items: parsedItems.length > 0 ? parsedItems : [
         {
@@ -891,6 +895,7 @@ export function PesananForm({
       pihak1Alamat: profile?.alamat || "",
       pihak2Toko: "",
       pihak2Nama: "",
+      pihak2Jabatan: "",
       pihak2Alamat: "",
       items: [
         {
@@ -1562,6 +1567,21 @@ export function PesananForm({
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-300 font-medium block mb-1">
+                    Jabatan Pimpinan / Penyedia Barang
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pihak2Jabatan || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pihak2Jabatan: e.target.value })
+                    }
+                    placeholder="Contoh: Pimpinan Penyedia barang"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
                 </div>
 
                 <div>

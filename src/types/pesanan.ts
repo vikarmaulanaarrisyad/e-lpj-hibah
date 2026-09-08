@@ -12,6 +12,7 @@ export interface PurchaseOrder {
   // Pihak Kedua (Penyedia)
   pihak2Toko: string;
   pihak2Nama: string;
+  pihak2Jabatan?: string | null;
   pihak2Alamat?: string | null;
 
   // Rincian Barang (JSON string)
@@ -72,6 +73,7 @@ export interface PesananFormData {
   // Pihak Kedua (Penyedia)
   pihak2Toko: string;
   pihak2Nama: string;
+  pihak2Jabatan?: string;
   pihak2Alamat?: string;
 
   // Items & Keuangan
@@ -102,6 +104,7 @@ export interface CreatePesananInput {
   pihak1Alamat?: string;
   pihak2Toko: string;
   pihak2Nama: string;
+  pihak2Jabatan?: string;
   pihak2Alamat?: string;
   items: PesananItem[];
   subtotal: number;

@@ -66,6 +66,7 @@ export class BastRepository {
         pihak1Nama: input.pihak1Nama?.trim() || "Ketua",
         pihak1Jabatan: input.pihak1Jabatan?.trim() || "Ketua",
         pihak2Nama: input.pihak2Nama?.trim() || "Penyedia",
+        pihak2Jabatan: input.pihak2Jabatan?.trim() ?? null,
         pihak2Toko: input.pihak2Toko?.trim() || "Toko Penyedia",
         itemsJson: itemsJsonString,
         catatanUji: input.catatanUji ?? null,

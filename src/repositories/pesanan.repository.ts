@@ -52,6 +52,7 @@ export class PesananRepository {
         pihak1Alamat: input.pihak1Alamat ?? null,
         pihak2Toko: input.pihak2Toko,
         pihak2Nama: input.pihak2Nama,
+        pihak2Jabatan: input.pihak2Jabatan ?? null,
         pihak2Alamat: input.pihak2Alamat ?? null,
         itemsJson: itemsJsonString,
         subtotal: input.subtotal,
