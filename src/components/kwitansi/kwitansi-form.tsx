@@ -2112,7 +2112,16 @@ export function KwitansiForm({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Link
+                      href={`/user/nota?receiptNo=${encodeURIComponent(formData.nomorBukti)}&tanggal=${encodeURIComponent(formData.tanggal)}`}
+                      className="px-3 py-2 rounded-lg bg-emerald-950/80 border border-emerald-700/60 hover:border-emerald-500 text-emerald-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                      title="Buka dan Cetak Lembar Penempelan Nota Asli F4"
+                    >
+                      <Scissors className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="truncate">Lembar Nota Asli</span>
+                    </Link>
+
                     <Link
                       href={`/user/pesanan?receiptNo=${encodeURIComponent(formData.nomorBukti)}${
                         formData.id ? `&receiptId=${encodeURIComponent(formData.id)}` : ""
@@ -2121,7 +2130,7 @@ export function KwitansiForm({
                       title="Terbitkan Surat Pesanan (SP) untuk transaksi belanja ini"
                     >
                       <ShoppingBag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                      <span className="truncate">Buat Surat Pesanan</span>
+                      <span className="truncate">Surat Pesanan (SP)</span>
                     </Link>
 
                     <Link
@@ -2132,7 +2141,7 @@ export function KwitansiForm({
                       title="Terbitkan Berita Acara Serah Terima (BAST) untuk transaksi ini"
                     >
                       <FileCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span className="truncate">Buat Berita Acara (BAST)</span>
+                      <span className="truncate">BAST Barang</span>
                     </Link>
                   </div>
                 </div>
@@ -2213,6 +2222,15 @@ export function KwitansiForm({
                   )}
                   <span>Ekspor PDF (F4)</span>
                 </button>
+
+                <Link
+                  href={`/user/nota?receiptNo=${encodeURIComponent(formData.nomorBukti)}&tanggal=${encodeURIComponent(formData.tanggal)}`}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 hover:text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
+                  title="Buka & Cetak Lembar Penempelan Nota Asli untuk kwitansi ini"
+                >
+                  <Scissors className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Lembar Nota</span>
+                </Link>
 
                 <button
                   type="button"

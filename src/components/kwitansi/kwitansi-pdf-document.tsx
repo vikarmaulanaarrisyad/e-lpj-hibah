@@ -389,7 +389,7 @@ export function KwitansiPdfDocument({
                   <View style={styles.signatoryTitleContainer}>
                     <Text style={styles.signatoryTitleTop}>Setuju dibayar</Text>
                     <Text style={styles.signatoryTitleSub}>{ketuaTitles.line1}</Text>
-                    <Text style={styles.signatoryTitleSub}>{ketuaTitles.line2}</Text>
+                    {/* <Text style={styles.signatoryTitleSub}>{ketuaTitles.line2}</Text> */}
                   </View>
                   {/* Ruang Lapang untuk Tanda Tangan */}
                   <View style={styles.signatorySpace} />

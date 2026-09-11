@@ -181,7 +181,7 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
                   <div className="text-slate-800 leading-tight text-center w-full flex flex-col items-center">
                     <p className="font-bold text-slate-950 text-center text-[1.55cqw]">Setuju dibayar</p>
                     <p className="text-[1.36cqw] font-medium text-slate-800 text-center whitespace-nowrap">{ketuaTitles.line1}</p>
-                    <p className="text-[1.36cqw] font-medium text-slate-800 text-center whitespace-nowrap">{ketuaTitles.line2}</p>
+                    {/* <p className="text-[1.36cqw] font-medium text-slate-800 text-center whitespace-nowrap">{ketuaTitles.line2}</p> */}
                   </div>
                   {/* Ruang Tanda Tangan Diperlebar */}
                   <div className="flex-1 min-h-[5.4cqw] flex items-center justify-center pointer-events-none" />

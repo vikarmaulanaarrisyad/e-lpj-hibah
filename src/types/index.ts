@@ -11,3 +11,4 @@ export * from "./cover";
 export * from "./surat-pengantar";
 export * from "./dokumentasi";
 export * from "./vendor";
+export * from "./nota";

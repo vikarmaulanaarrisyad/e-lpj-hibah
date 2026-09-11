@@ -23,6 +23,7 @@ import {
   Calendar,
   ChevronDown,
   Package,
+  Scissors,
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KopSuratModal } from "@/components/kop-surat/kop-surat-modal";
@@ -118,6 +119,13 @@ export function KwitansiHeader({
       href: "/user/kwitansi",
       icon: FileText,
       active: pathname?.startsWith("/user/kwitansi"),
+    },
+    {
+      label: "Lembar Nota",
+      shortLabel: "Nota",
+      href: "/user/nota",
+      icon: Scissors,
+      active: pathname?.startsWith("/user/nota"),
     },
     {
       label: "Buku Kas Umum (BKU)",

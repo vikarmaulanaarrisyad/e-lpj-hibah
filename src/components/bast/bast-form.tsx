@@ -2288,9 +2288,16 @@ export function BastForm({
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
                 <span className="font-mono text-slate-500">Nota Terlampir</span>
-                <span className="text-emerald-400 font-semibold cursor-pointer hover:underline">
-                  Tersedia
-                </span>
+                <Link
+                  href={
+                    formData.linkedReceiptNomor
+                      ? `/user/nota?receiptNo=${encodeURIComponent(formData.linkedReceiptNomor)}`
+                      : "/user/nota"
+                  }
+                  className="text-emerald-400 font-semibold hover:underline flex items-center gap-1"
+                >
+                  <span>Buka Lembar Nota ➔</span>
+                </Link>
               </div>
             </div>
 
