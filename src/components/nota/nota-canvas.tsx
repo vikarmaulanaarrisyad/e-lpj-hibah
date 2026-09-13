@@ -50,7 +50,7 @@ export function NotaCanvas({
   return (
     <div
       id="notaPrintArea"
-      className="w-[780px] min-w-[780px] max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-[9mm] pb-[12mm] pr-[15mm] pl-[28mm] flex flex-col justify-between font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
+      className="w-[780px] min-w-[780px] max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-[9mm] pb-[25mm] pr-[15mm] pl-[28mm] flex flex-col justify-between font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
       style={{
         minHeight: minHeightPx,
         boxSizing: "border-box",
