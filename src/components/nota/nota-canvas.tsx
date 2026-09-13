@@ -50,7 +50,7 @@ export function NotaCanvas({
   return (
     <div
       id="notaPrintArea"
-      className="w-[780px] min-w-[780px] max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-[9mm] pb-[18mm] pr-[15mm] pl-[28mm] flex flex-col justify-between font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
+      className="w-[780px] min-w-[780px] max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-[9mm] pb-[12mm] pr-[15mm] pl-[28mm] flex flex-col justify-between font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
       style={{
         minHeight: minHeightPx,
         boxSizing: "border-box",
@@ -216,7 +216,7 @@ export function NotaCanvas({
       </div>
 
       {/* ================= BLOK PENGESAHAN / TANDA TANGAN (PAS DI TENGAH) ================= */}
-      <div className="w-full mt-auto pt-3 pb-6 sm:pb-8 font-serif">
+      <div className="w-full mt-auto pt-6 font-serif">
         <div
           className={`w-full flex ${
             data.signaturePosition === "right"
@@ -272,7 +272,7 @@ export function NotaCanvas({
             </div>
 
             {/* Ruang Bebas Bersih untuk Tanda Tangan Basah & Cap Stempel Lembaga */}
-            <div className="h-16 sm:h-18 flex items-center justify-center">
+            <div className="h-20 sm:h-24 flex items-center justify-center">
               {/* Ruang bersih fisik */}
             </div>
 

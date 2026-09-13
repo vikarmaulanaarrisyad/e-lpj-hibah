@@ -85,7 +85,7 @@ async function captureNotaImage(
         paddingLeft: "28mm",
         paddingRight: "15mm",
         paddingTop: "9mm",
-        paddingBottom: "18mm",
+        paddingBottom: "12mm",
         boxSizing: "border-box",
       },
       filter: (node: HTMLElement) => {
@@ -141,7 +141,7 @@ async function captureNotaImage(
         clonedCanvas.style.paddingLeft = "28mm";
         clonedCanvas.style.paddingRight = "15mm";
         clonedCanvas.style.paddingTop = "9mm";
-        clonedCanvas.style.paddingBottom = "18mm";
+        clonedCanvas.style.paddingBottom = "12mm";
         clonedCanvas.style.boxSizing = "border-box";
 
         if (clonedCanvas.parentElement) {
