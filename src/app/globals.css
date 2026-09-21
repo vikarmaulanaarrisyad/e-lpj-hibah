@@ -284,23 +284,39 @@ body {
   /* ================= LEMBAR PENEMPELAN NOTA ASLI PRINT SPEC (F4 PORTRAIT + MARGIN JILID) ================= */
   body:has(#notaPrintArea) {
     width: 215mm !important;
-    height: auto !important;
+    height: 330mm !important;
+    max-height: 330mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
+  body:has(#notaPrintArea) div:has(#notaPrintArea),
+  body:has(#notaPrintArea) main {
+    background: transparent !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
   body:has(#notaPrintArea) #notaPrintArea {
-    page: notaF4;
     width: 215mm !important;
     max-width: 215mm !important;
-    min-height: 330mm !important;
+    height: 330mm !important;
+    max-height: 330mm !important;
     margin: 0 auto !important;
-    padding-top: 18mm !important;
+    padding-top: 9mm !important;
     padding-bottom: 25mm !important;
     padding-left: 28mm !important; /* Margin kiri 28mm khusus penjilidan dokumen */
     padding-right: 15mm !important;
@@ -308,8 +324,13 @@ body {
     box-shadow: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
     box-sizing: border-box !important;
     background: #ffffff !important;
+    overflow: hidden !important;
   }
 
   /* ================= BUKU KAS UMUM (BKU) PRINT SPEC ================= */

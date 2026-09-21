@@ -51,12 +51,22 @@ export function NotaCanvas({
   return (
     <div
       id="notaPrintArea"
-      className="w-[780px] min-w-[780px] max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-[9mm] pb-[25mm] pr-[15mm] pl-[28mm] flex flex-col justify-between font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
+      className="w-[780px] min-w-[780px] max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-[9mm] pb-[25mm] pr-[15mm] pl-[28mm] flex flex-col justify-between font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none print:m-0 relative"
       style={{
         minHeight: minHeightPx,
         boxSizing: "border-box",
       }}
     >
+      {/* Khusus Cetak Nota: Kunci ukuran kertas F4/A4 Portrait dan margin 0mm agar tidak pecah jadi 2 halaman */}
+      <style>{`
+        @media print {
+          @page {
+            size: ${data.paperSize === "A4" ? "210mm 297mm" : "215mm 330mm"} portrait !important;
+            margin: 0mm !important;
+          }
+        }
+      `}</style>
+
       {/* ================= INDIKATOR RUANG JILID (Hanya Layar, Tersembunyi saat Cetak) ================= */}
       <div
         className="absolute left-1 top-1/2 -translate-y-1/2 hidden print:hidden opacity-30 pointer-events-none font-mono"
@@ -68,7 +78,7 @@ export function NotaCanvas({
       </div>
 
       {/* Bagian Atas: KOP SURAT RESMI */}
-      <div>
+      <div className="flex-1 flex flex-col">
         {/* ================= KOP SURAT RESMI LEMBAGA ================= */}
         <div className="w-full flex items-center justify-between pb-2 relative font-sans">
           {/* Logo Lembaga (Cloudinary / Vektor Resmi Fatayat NU) */}
@@ -171,19 +181,19 @@ export function NotaCanvas({
         )}
 
         {/* ================= AREA PENEMPELAN NOTA ASLI ================= */}
-        <div className="w-full min-h-[440px] sm:min-h-[500px] flex flex-col items-center justify-center my-4 relative">
+        <div className="w-full min-h-[380px] sm:min-h-[460px] flex-1 flex flex-col items-center justify-center my-3 print:my-1 print:min-h-0 relative">
           {data.mode === "photo" && data.photoUrl ? (
             /* Mode Foto Digital: Tampilkan Foto Nota yang diunggah / terhubung dengan Kwitansi */
-            <div className="w-full max-w-[560px] flex flex-col items-center p-2">
-              <div className="relative border border-slate-300 shadow-sm bg-slate-50 p-2 rounded max-h-[560px] flex items-center justify-center overflow-hidden">
+            <div className="w-full max-w-[560px] flex flex-col items-center p-2 print:p-0 print:max-h-[140mm]">
+              <div className="relative border border-slate-300 shadow-sm bg-slate-50 p-2 rounded max-h-[560px] print:max-h-[135mm] flex items-center justify-center overflow-hidden">
                 <img
                   src={data.photoUrl}
                   alt={data.photoCaption || "Nota Asli Belanja Toko"}
-                  className="max-h-[520px] max-w-full object-contain"
+                  className="max-h-[520px] print:max-h-[130mm] max-w-full object-contain"
                 />
               </div>
               {data.photoCaption && (
-                <p className="text-[11px] font-sans text-slate-600 mt-2 italic text-center">
+                <p className="text-[11px] font-sans text-slate-600 mt-2 italic text-center print:text-[10px] print:mt-1">
                   {data.photoCaption}
                 </p>
               )}
@@ -191,9 +201,9 @@ export function NotaCanvas({
           ) : (
             /* Mode Blanko Bersih (Default Sesuai Permintaan Pengguna): Area Kosong Bersih untuk Tempel Fisik Manual */
             <div
-              className={`w-full h-full min-h-[460px] sm:min-h-[520px] flex flex-col items-center justify-center transition-all ${
+              className={`w-full h-full min-h-[380px] sm:min-h-[460px] flex-1 flex flex-col items-center justify-center transition-all print:min-h-0 ${
                 data.showGuideBorder
-                  ? "border-2 border-dashed border-slate-200/90 rounded-md p-6 bg-slate-50/30 print:border-transparent print:bg-transparent"
+                  ? "border-2 border-dashed border-slate-200/90 rounded-md p-6 bg-slate-50/30 print:border-transparent print:bg-transparent print:p-0"
                   : ""
               }`}
             >
@@ -217,7 +227,7 @@ export function NotaCanvas({
       </div>
 
       {/* ================= BLOK PENGESAHAN / TANDA TANGAN (PAS DI TENGAH) ================= */}
-      <div className="w-full mt-auto pt-6 font-serif">
+      <div className="w-full mt-auto pt-4 print:pt-2 font-serif shrink-0">
         <div
           className={`w-full flex ${
             data.signaturePosition === "right"
@@ -273,7 +283,7 @@ export function NotaCanvas({
             </div>
 
             {/* Ruang Bebas Bersih untuk Tanda Tangan Basah & Cap Stempel Lembaga */}
-            <div className="h-20 sm:h-24 flex items-center justify-center">
+            <div className="h-20 sm:h-24 print:h-20 flex items-center justify-center">
               {/* Ruang bersih fisik */}
             </div>
 

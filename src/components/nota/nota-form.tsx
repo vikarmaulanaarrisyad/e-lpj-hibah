@@ -207,12 +207,86 @@ export function NotaForm({
       .trim()
       .replace(/[/\\?%*:|"<>.]/g, "_")
       .replace(/\s+/g, "_");
-    document.title = `Lembar_Nota_${cleanNo}_F4`;
+    const paperSize = formData.paperSize || "F4";
+    document.title = `Lembar_Nota_${cleanNo}_${paperSize}`;
+
+    // Kunci ukuran kertas dan isolasi cetak 1 halaman presisi F4 (215x330mm) atau A4 (210x297mm)
+    const isA4 = paperSize === "A4";
+    const pageSize = isA4 ? "210mm 297mm portrait" : "215mm 330mm portrait";
+    const pageWidth = isA4 ? "210mm" : "215mm";
+    const pageHeight = isA4 ? "297mm" : "330mm";
+
+    const printStyle = document.createElement("style");
+    printStyle.id = "nota-print-dynamic-rules";
+    printStyle.innerHTML = `
+      @media print {
+        @page {
+          size: ${pageSize} !important;
+          margin: 0mm !important;
+        }
+        html, body {
+          width: ${pageWidth} !important;
+          height: ${pageHeight} !important;
+          max-height: ${pageHeight} !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          overflow: hidden !important;
+        }
+        body div:has(#notaPrintArea),
+        body main {
+          background: transparent !important;
+          min-height: 0 !important;
+          height: auto !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          transform: none !important;
+          display: block !important;
+        }
+        #notaPrintArea {
+          width: ${pageWidth} !important;
+          max-width: ${pageWidth} !important;
+          height: ${pageHeight} !important;
+          max-height: ${pageHeight} !important;
+          margin: 0 auto !important;
+          border: none !important;
+          box-shadow: none !important;
+          box-sizing: border-box !important;
+          background: #ffffff !important;
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          overflow: hidden !important;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
+
     window.print();
+
     setTimeout(() => {
       document.title = prevTitle;
+      const el = document.getElementById("nota-print-dynamic-rules");
+      if (el) el.remove();
     }, 2000);
   };
+
+  // Keyboard shortcut Ctrl + P / Cmd + P untuk cetak langsung format presisi
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [formData.nomorBukti, formData.paperSize]);
 
   const handleExportPdf = async () => {
     if (isExportingPdf) return;
@@ -231,7 +305,7 @@ export function NotaForm({
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased">
+    <div className="w-full min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased print:bg-white print:min-h-0 print:p-0 print:m-0 print:block">
       {/* ================= TOP COMMAND & WORKSPACE HEADER ================= */}
       <div
         id="topCommandBar"
@@ -363,7 +437,7 @@ export function NotaForm({
       </div>
 
       {/* ================= WORKSPACE BODY DUA KOLOM ================= */}
-      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-8 py-6 flex-1 flex flex-col lg:flex-row gap-8 items-start">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-8 py-6 flex-1 flex flex-col lg:flex-row gap-8 items-start print:max-w-none print:w-full print:p-0 print:m-0 print:block">
         {/* ================= KOLOM KIRI: FORM KONTROL & PILIH KWITANSI ================= */}
         <div
           id="formLedgerPanel"
@@ -761,7 +835,7 @@ export function NotaForm({
 
         {/* ================= KOLOM KANAN: PRATINJAU KANVAS DOKUMEN F4 ================= */}
         <div
-          className={`flex-1 w-full flex flex-col items-center justify-start overflow-x-auto ${
+          className={`flex-1 w-full flex flex-col items-center justify-start overflow-x-auto print:overflow-visible print:w-full print:p-0 print:m-0 print:block ${
             mobileTab === "form" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -800,7 +874,7 @@ export function NotaForm({
 
           {/* Wrapper Kanvas dengan Skala Zoom Dinamis */}
           <div
-            className="transition-transform origin-top shrink-0 flex flex-col items-center gap-6 duration-150"
+            className="transition-transform origin-top shrink-0 flex flex-col items-center gap-6 duration-150 print:transform-none print:p-0 print:m-0 print:gap-0 print:block print:w-full"
             style={{
               transform: `scale(${zoomScale / 100})`,
               transformOrigin: "top center",
