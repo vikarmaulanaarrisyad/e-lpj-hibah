@@ -78,11 +78,39 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
   return (
     <div
       id="pesananPrintArea"
-      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-5 sm:pt-5 md:pt-[9mm] pb-6 sm:pb-7 md:pb-[12mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
+      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-5 sm:pt-5 md:pt-[9mm] pb-6 sm:pb-7 md:pb-[12mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none print:m-0 print:min-h-0 print:pt-[8mm] print:pb-[8mm] print:pl-[28mm] print:pr-[14mm] relative"
       style={{
         minHeight: "1198px",
       }}
     >
+      {/* Khusus Cetak Surat Pesanan: Kunci ukuran kertas F4 Portrait 215mm x 330mm dan margin 0mm */}
+      <style>{`
+        @media print {
+          @page {
+            size: 215mm 330mm portrait !important;
+            margin: 0mm !important;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+          }
+          #pesananPrintArea {
+            min-height: 0 !important;
+            max-height: 330mm !important;
+            padding-top: 8mm !important;
+            padding-bottom: 8mm !important;
+            padding-left: 28mm !important;
+            padding-right: 14mm !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+            overflow: hidden !important;
+          }
+        }
+      `}</style>
       {/* Indikator Panduan Margin Jilid Dokumen (Hidden) */}
       <div
         className="hidden"
@@ -94,9 +122,9 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       </div>
 
       {/* ================= KOP SURAT RESMI (DARI DATABASE & CLOUDINARY) ================= */}
-      <div className="flex items-center justify-between pb-2 relative">
+      <div className="flex items-center justify-between pb-2 print:pb-1.5 relative">
         {/* Logo Lambang (Cloudinary Image / Fallback Vektor Hijau Resmi) */}
-        <div className="w-16 h-16 sm:w-[88px] sm:h-[88px] shrink-0 flex items-center justify-center">
+        <div className="w-16 h-16 sm:w-[88px] sm:h-[88px] shrink-0 flex items-center justify-center print:w-[76px] print:h-[76px]">
           {logoUrl ? (
             <img
               src={logoUrl}
@@ -145,46 +173,46 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         </div>
 
         {/* Kop Text Content */}
-        <div className="flex-1 text-center px-3 flex flex-col justify-center">
-          <h2 className="text-[17px] sm:text-[16px] leading-[19px] font-bold text-[#006c4e] uppercase tracking-wide">
+        <div className="flex-1 text-center px-3 flex flex-col justify-center print:px-2">
+          <h2 className="text-[17px] sm:text-[16px] leading-[19px] font-bold text-[#006c4e] uppercase tracking-wide print:text-[16px] print:leading-[20px]">
             {namaLembaga}
           </h2>
-          <h3 className="text-[16px] sm:text-[16px] leading-[19px] font-bold text-[#006c4e] uppercase">
+          <h3 className="text-[16px] sm:text-[16px] leading-[19px] font-bold text-[#006c4e] uppercase print:text-[15px] print:leading-[19px]">
             {subNama}
           </h3>
-          <h4 className="text-[14px] sm:text-[15px] leading-[19px] font-bold text-[#006c4e] uppercase tracking-normal">
+          <h4 className="text-[14px] sm:text-[15px] leading-[19px] font-bold text-[#006c4e] uppercase tracking-normal print:text-[13.5px] print:leading-[17px]">
             {instansiInduk}
           </h4>
-          <p className="text-[11px] sm:text-[11px] leading-[15px] text-[#006c4e] mt-0 font-medium">
+          <p className="text-[11px] sm:text-[11px] leading-[15px] text-[#006c4e] mt-0 font-medium print:text-[11px] print:leading-[15px]">
             Alamat : {alamat}
           </p>
-          <p className="text-[10.5px] sm:text-[11px] leading-[14px] text-[#006c4e]">
+          <p className="text-[10.5px] sm:text-[11px] leading-[14px] text-[#006c4e] print:text-[11px] print:leading-[15px]">
             Email : <span className="underline">{email}</span> | No. Hp: {noHp}
           </p>
         </div>
       </div>
 
       {/* Formal Kop Dual Border Line */}
-      <div className="w-full flex flex-col gap-[2px] mb-1">
+      <div className="w-full flex flex-col gap-[2px] mb-1.5 print:mb-1.5 print:gap-[2px]">
         <div className="w-full h-[2.5px] bg-[#006c4e]"></div>
         <div className="w-full h-[0.75px] bg-[#006c4e]"></div>
       </div>
 
       {/* ================= TITLE & REGISTER NUMBER ================= */}
-      <div className="text-center mb-2">
-        <h3 className="text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4">
+      <div className="text-center mb-2 print:mb-2">
+        <h3 className="text-[14px] sm:text-[14px] font-bold tracking-wider uppercase text-black underline decoration-2 decoration-[#006c4e] underline-offset-4 print:text-[14.5px] print:leading-snug">
           SURAT PESANAN
         </h3>
-        <p className="font-mono text-[12px] sm:text-[12px] text-black mt-1 font-semibold">
+        <p className="font-mono text-[12px] sm:text-[12px] text-black mt-1 font-semibold print:text-[12px] print:mt-0.5">
           Nomor : <span>{data.nomorSp || "02/A/PR.FNU/VIII/2026"}</span>
         </p>
-        <p className="text-[12px] sm:text-[12.5px] text-black font-semibold mt-1">
+        <p className="text-[12px] sm:text-[12.5px] text-black font-semibold mt-1 print:text-[12px] print:mt-0.5">
           Paket Pekerjaan : <span className="font-bold">{cleanTitle(data.namaPaket) || "Pembelian Alat Rebana"}</span>
         </p>
       </div>
 
       {/* ================= SALUTATION & NARRATIVE (PEMESAN & PENYEDIA) ================= */}
-      <div className="text-black text-[12px] sm:text-[12.5px] leading-[18.5px] mb-3 space-y-2">
+      <div className="text-black text-[12px] sm:text-[12.5px] leading-[18.5px] mb-3 space-y-2 print:text-[12px] print:leading-[17px] print:mb-2 print:space-y-1.5">
         {/* Pihak Kesatu: Pemesan */}
         <div>
           <p className="font-semibold text-black mb-0.5">Yang bertanda tangan di bawah ini :</p>
@@ -221,14 +249,6 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <span className="text-black font-medium">Yang dalam hal ini diwakili oleh</span>
             <span>:</span>
             <span className="font-bold text-black">{data.pihak2Nama || "ANSHORI"}</span>
-
-            {/* {data.pihak2Jabatan && (
-              <>
-                <span className="text-black font-medium">Jabatan</span>
-                <span>:</span>
-                <span className="text-black">{data.pihak2Jabatan}</span>
-              </>
-            )} */}
           </div>
           <p className="text-black italic mt-0.5 pl-4 text-[11px] sm:text-[11.5px]">
             Selanjutnya disebut sebagai <strong>Penyedia Barang</strong>
@@ -241,10 +261,10 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       </div>
 
       {/* ================= 1) TABEL RINCIAN BARANG ================= */}
-      <div className="w-full mb-3">
-        <p className="font-bold text-black text-[12.5px] sm:text-[12px] mb-1.5">1) Rincian Barang</p>
+      <div className="w-full mb-3 print:mb-2">
+        <p className="font-bold text-black text-[12.5px] sm:text-[12px] mb-1.5 print:mb-1 print:text-[12px]">1) Rincian Barang</p>
         <table
-          className="w-full text-left text-[11.5px] sm:text-[12px] border-collapse"
+          className="w-full text-left text-[11.5px] sm:text-[12px] border-collapse print:text-[12px]"
           style={{ border: "1.5px solid #000" }}
         >
           <thead>
@@ -252,19 +272,19 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
               className="bg-white text-black font-bold uppercase text-center"
               style={{ borderBottom: "1.5px solid #000" }}
             >
-              <th className="p-1.5 sm:p-2 w-8 text-center" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 w-8 text-center print:py-1.5 print:px-1.5" style={{ borderRight: "1px solid #000" }}>
                 No
               </th>
-              <th className="p-1.5 sm:p-2" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 print:py-1.5 print:px-2" style={{ borderRight: "1px solid #000" }}>
                 Jenis Barang
               </th>
-              <th className="p-1.5 sm:p-2 w-20 text-center" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 w-20 text-center print:py-1.5 print:px-1.5" style={{ borderRight: "1px solid #000" }}>
                 Jumlah
               </th>
-              <th className="p-1.5 sm:p-2 w-28 text-right" style={{ borderRight: "1px solid #000" }}>
+              <th className="p-1.5 sm:p-2 w-28 text-right print:py-1.5 print:px-2" style={{ borderRight: "1px solid #000" }}>
                 Harga Satuan
               </th>
-              <th className="p-1.5 sm:p-2 w-32 text-right">
+              <th className="p-1.5 sm:p-2 w-32 text-right print:py-1.5 print:px-2">
                 Harga Total
               </th>
             </tr>
@@ -274,27 +294,27 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
               data.items.map((item, index) => (
                 <tr key={item.id || index} style={{ borderBottom: "1px solid #000" }}>
                   <td
-                    className="p-1.5 sm:p-2 text-center font-mono align-top"
+                    className="p-1.5 sm:p-2 text-center font-mono align-top print:py-1.5 print:px-1.5"
                     style={{ borderRight: "1px solid #000" }}
                   >
                     {index + 1}
                   </td>
-                  <td className="p-1.5 sm:p-2 align-top" style={{ borderRight: "1px solid #000" }}>
+                  <td className="p-1.5 sm:p-2 align-top print:py-1.5 print:px-2" style={{ borderRight: "1px solid #000" }}>
                     <span className="font-bold block">{cleanTitle(item.jenisBarang)}</span>
                   </td>
                   <td
-                    className="p-1.5 sm:p-2 text-center font-mono align-top whitespace-nowrap"
+                    className="p-1.5 sm:p-2 text-center font-mono align-top whitespace-nowrap print:py-1.5 print:px-1.5"
                     style={{ borderRight: "1px solid #000" }}
                   >
                     {item.jumlah} {item.satuan || "paket"}
                   </td>
                   <td
-                    className="p-1.5 sm:p-2 text-right font-mono align-top whitespace-nowrap"
+                    className="p-1.5 sm:p-2 text-right font-mono align-top whitespace-nowrap print:py-1.5 print:px-2"
                     style={{ borderRight: "1px solid #000" }}
                   >
                     Rp {item.hargaSatuan.toLocaleString("id-ID")}
                   </td>
-                  <td className="p-1.5 sm:p-2 text-right font-mono font-semibold align-top whitespace-nowrap">
+                  <td className="p-1.5 sm:p-2 text-right font-mono font-semibold align-top whitespace-nowrap print:py-1.5 print:px-2">
                     Rp {item.totalHarga.toLocaleString("id-ID")}
                   </td>
                 </tr>
@@ -308,29 +328,29 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             )}
 
             {/* Jumlah Subtotal */}
-            <tr className="bg-white font-semibold text-[12px] sm:text-[12.5px]" style={{ borderBottom: "1px solid #000" }}>
+            <tr className="bg-white font-semibold text-[12px] sm:text-[12.5px] print:text-[12px]" style={{ borderBottom: "1px solid #000" }}>
               <td
-                className="p-1.5 sm:p-2 text-right font-sans"
+                className="p-1.5 sm:p-2 text-right font-sans print:py-1.5 print:px-2"
                 colSpan={4}
                 style={{ borderRight: "1px solid #000" }}
               >
                 Jumlah
               </td>
-              <td className="p-1.5 sm:p-2 text-right font-mono text-black">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-black print:py-1.5 print:px-2">
                 Rp {(data.subtotal || totalCalculated).toLocaleString("id-ID")}
               </td>
             </tr>
 
             {/* PPN / Pajak */}
-            <tr className="bg-white text-[11px] sm:text-[11.5px]" style={{ borderBottom: "1px solid #000" }}>
+            <tr className="bg-white text-[11px] sm:text-[11.5px] print:text-[11px]" style={{ borderBottom: "1px solid #000" }}>
               <td
-                className="p-1.5 sm:p-2 text-right font-sans"
+                className="p-1.5 sm:p-2 text-right font-sans print:py-1.5 print:px-2"
                 colSpan={4}
                 style={{ borderRight: "1px solid #000" }}
               >
                 PPN
               </td>
-              <td className="p-1.5 sm:p-2 text-right font-mono text-black">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-black print:py-1.5 print:px-2">
                 {data.pajak > 0
                   ? `Rp ${data.pajak.toLocaleString("id-ID")}`
                   : "-"}
@@ -338,15 +358,15 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             </tr>
 
             {/* Jumlah Total */}
-            <tr className="bg-white font-bold text-[12px] sm:text-[12.5px]">
+            <tr className="bg-white font-bold text-[12px] sm:text-[12.5px] print:text-[12px]">
               <td
-                className="p-1.5 sm:p-2 text-right uppercase text-black"
+                className="p-1.5 sm:p-2 text-right uppercase text-black print:py-1.5 print:px-2"
                 colSpan={4}
                 style={{ borderRight: "1px solid #000" }}
               >
                 Jumlah Total
               </td>
-              <td className="p-1.5 sm:p-2 text-right font-mono text-black">
+              <td className="p-1.5 sm:p-2 text-right font-mono text-black print:py-1.5 print:px-2">
                 Rp {totalCalculated.toLocaleString("id-ID")}
               </td>
             </tr>
@@ -354,7 +374,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
         </table>
 
         {/* Terbilang & Catatan Pajak */}
-        <div className="mt-1.5 p-2 bg-slate-50 border border-slate-300 rounded text-[11.5px] sm:text-[12px] text-black space-y-0.5">
+        <div className="mt-1.5 p-2 bg-slate-50 border border-slate-300 rounded text-[11.5px] sm:text-[12px] text-black space-y-0.5 print:mt-1.5 print:p-2 print:text-[11.5px] print:space-y-0.5">
           <div>
             <strong>Terbilang : </strong>
             <span className="italic font-semibold text-black">
@@ -370,7 +390,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       </div>
 
       {/* ================= KETENTUAN 2 S/D 6 ================= */}
-      <div className="mb-3 text-[11.5px] sm:text-[12px] text-black leading-[18px] space-y-1.5">
+      <div className="mb-3 text-[11.5px] sm:text-[12px] text-black leading-[18px] space-y-1.5 print:text-[11.5px] print:leading-[17px] print:space-y-1 print:mb-2">
         <p>
           <strong>2) Tanggal barang harus sudah diterima :</strong>{" "}
           <span>{formatDateIndo(data.batasWaktu || "2026-08-04")}</span>
@@ -402,14 +422,14 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
       </div>
 
       {/* ================= TANDA TANGAN BILATERAL RESMI ================= */}
-      <div className="pt-1 text-[12px] sm:text-[12.5px] text-black mt-1">
-        <div className="flex justify-end mb-1 pr-[5rem]">
+      <div className="pt-1 text-[12px] sm:text-[12.5px] text-black mt-1 print:pt-1 print:mt-1 print:text-[12px] print:break-inside-avoid">
+        <div className="flex justify-end mb-1 pr-[5rem] print:mb-1 print:pr-[3.5rem]">
           <p className="font-semibold text-black">
             {namaTempat}, {formatDateIndo(data.tanggal || "2026-08-01")}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 print:gap-3">
           {/* Kolom Kiri: Penyedia Barang (ADHUFU) */}
           <div className="flex flex-col items-center text-center">
             <p className="font-medium text-black">Menerima dan Menyetujui</p>
@@ -417,12 +437,12 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-bold text-black uppercase">{data.pihak2Toko || "ADHUFU"}</p>
 
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Toko */}
-            <div className="h-20 my-1" />
+            <div className="h-20 my-1 print:h-16 print:my-1" />
 
-            <p className="font-bold text-black underline decoration-1">
+            <p className="font-bold text-black underline decoration-1 print:text-[12px]">
               {formatPersonName(data.pihak2Nama || "ELIN")}
             </p>
-            <p className="text-[11px] sm:text-[11.5px] text-black">Penyedia Barang</p>
+            <p className="text-[11px] sm:text-[11.5px] text-black print:text-[11.5px]">Penyedia Barang</p>
           </div>
 
           {/* Kolom Kanan: Pemesan (Fatayat NU Dawuhan Selatan) */}
@@ -434,12 +454,12 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             <p className="font-medium text-black mt-0.5">Pemesan</p>
 
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
-            <div className="h-20 my-1" />
+            <div className="h-20 my-1 print:h-16 print:my-1" />
 
-            <p className="font-bold text-black underline decoration-1">
+            <p className="font-bold text-black underline decoration-1 print:text-[12px]">
               {formatPersonName(data.pihak1Nama || "HENI FUJIATI, S.Pd.I")}
             </p>
-            <p className="text-[10.5px] sm:text-[11px] text-black">{cleanJabatan}</p>
+            <p className="text-[10.5px] sm:text-[11px] text-black print:text-[11px]">{cleanJabatan}</p>
           </div>
         </div>
       </div>

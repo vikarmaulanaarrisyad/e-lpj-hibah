@@ -76,11 +76,25 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
   return (
     <div
       id="bastPrintArea"
-      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-6 sm:pt-8 md:pt-[18mm] pb-6 sm:pb-8 md:pb-[18mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none relative"
+      className="w-full max-w-[780px] bg-white text-slate-900 shadow-2xl rounded-sm pt-6 sm:pt-8 md:pt-[18mm] pb-6 sm:pb-8 md:pb-[18mm] pr-4 sm:pr-6 md:pr-[15mm] pl-8 sm:pl-12 md:pl-[28mm] flex flex-col font-sans select-text border border-slate-300/60 print:shadow-none print:border-none print:w-full print:max-w-none print:m-0 print:min-h-0 relative"
       style={{
         minHeight: "1198px",
       }}
     >
+      {/* Khusus Cetak BAST: Kunci ukuran kertas F4 Portrait 215mm x 330mm dan margin 0mm */}
+      <style>{`
+        @media print {
+          @page {
+            size: 215mm 330mm portrait !important;
+            margin: 0mm !important;
+          }
+          #bastPrintArea {
+            min-height: 0 !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+        }
+      `}</style>
       {/* Indikator Panduan Margin Jilid Dokumen (Hidden) */}
       <div
         className="hidden"

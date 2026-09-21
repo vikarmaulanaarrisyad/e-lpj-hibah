@@ -751,12 +751,96 @@ export function PesananForm({
       .trim()
       .replace(/[/\\?%*:|"<>.]/g, "_")
       .replace(/\s+/g, "_");
-    document.title = `Surat_Pesanan_${cleanNo}`;
-    window.print();
+    document.title = `Surat_Pesanan_${cleanNo}_F4`;
+
+    if (mobileTab !== "preview") {
+      setMobileTab("preview");
+    }
+
+    // Kunci aturan cetak F4 Portrait 215mm x 330mm dengan margin 0mm dan isolasi canvas
+    const printStyle = document.createElement("style");
+    printStyle.id = "pesanan-print-dynamic-rules";
+    printStyle.innerHTML = `
+      @media print {
+        @page {
+          size: 215mm 330mm portrait !important;
+          margin: 0mm !important;
+        }
+        html, body {
+          width: 215mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+        }
+        body div:has(#pesananPrintArea),
+        body main {
+          background: transparent !important;
+          min-height: 0 !important;
+          height: auto !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          transform: none !important;
+          display: block !important;
+        }
+        #topCommandBar,
+        #pesananInputForm,
+        #bastInputForm,
+        #daftarArsipPesanan,
+        #daftarArsipBast,
+        footer,
+        .no-print {
+          display: none !important;
+        }
+        #pesananPrintArea {
+          width: 215mm !important;
+          max-width: 215mm !important;
+          min-height: 0 !important;
+          max-height: 330mm !important;
+          margin: 0 auto !important;
+          padding-top: 6mm !important;
+          padding-bottom: 6mm !important;
+          padding-left: 28mm !important;
+          padding-right: 12mm !important;
+          border: none !important;
+          box-shadow: none !important;
+          box-sizing: border-box !important;
+          background: #ffffff !important;
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          overflow: hidden !important;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
+
+    setTimeout(() => {
+      window.print();
+    }, 120);
+
     setTimeout(() => {
       document.title = prevTitle;
+      const el = document.getElementById("pesanan-print-dynamic-rules");
+      if (el) el.remove();
     }, 2000);
   };
+
+  // Keyboard shortcut Ctrl + P / Cmd + P untuk cetak langsung format presisi
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [formData.nomorSp, mobileTab]);
 
   // Add Item Row
   const handleAddItem = () => {
@@ -1046,36 +1130,52 @@ export function PesananForm({
   );
 
   return (
-    <div className="w-full">
-      {/* ================= TOP SUB-HEADER COMMAND RIBBON ================= */}
-      <div className="w-full bg-slate-900 border-b border-slate-800 py-2.5 px-4 sm:px-8 mb-6 shadow-sm">
-        <div className="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/user/kwitansi"
-              className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kwitansi</span>
-            </Link>
-            <span className="text-slate-600">•</span>
-            <div className="flex items-center gap-2 font-mono text-slate-300">
-              <span className="text-slate-400">SP No:</span>
-              <span className="font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                {formData.nomorSp}
-              </span>
-              <span className="px-2 py-0.5 bg-teal-950 border border-teal-700/60 text-teal-300 rounded font-semibold text-[11px]">
-                Dokumen Kontrak Pengadaan
-              </span>
+    <div className="w-full print:bg-white print:min-h-0 print:p-0 print:m-0 print:block">
+      {/* ================= TOP COMMAND BAR ================= */}
+      <div
+        id="topCommandBar"
+        className="w-full bg-slate-900/90 border-b border-slate-800 px-4 sm:px-8 py-3.5 mb-6 shadow-md backdrop-blur-md no-print"
+      >
+        <div className="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          {/* Bagian Kiri: Judul Modul, Badge & Navigasi Terkait */}
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center shadow-glow shrink-0">
+              <ShoppingBag className="w-6 h-6 text-teal-400" />
             </div>
-            <span className="text-slate-600">•</span>
-            <Link
-              href={matchedBast ? `/user/bast?no=${encodeURIComponent(matchedBast.nomorBast)}` : `/user/bast?spNo=${encodeURIComponent(formData.nomorSp)}`}
-              className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
-            >
-              <FileCheck className="w-4 h-4" />
-              <span>Berita Acara (BAST)</span>
-            </Link>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-bold text-white tracking-tight">
+                  Surat Pesanan Pengadaan (SP)
+                </h2>
+                <span className="px-2 py-0.5 rounded bg-teal-950/80 border border-teal-700/60 text-teal-300 text-xs font-semibold">
+                  KONTRAK RESMI
+                </span>
+                <span className="font-mono text-xs font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                  {formData.nomorSp}
+                </span>
+                <span className="hidden md:inline text-slate-600">•</span>
+                <div className="hidden md:flex items-center gap-2 text-xs">
+                  <Link
+                    href="/user/kwitansi"
+                    className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Kwitansi</span>
+                  </Link>
+                  <span className="text-slate-600">|</span>
+                  <Link
+                    href={matchedBast ? `/user/bast?no=${encodeURIComponent(matchedBast.nomorBast)}` : `/user/bast?spNo=${encodeURIComponent(formData.nomorSp)}`}
+                    className="flex items-center gap-1 text-teal-400 hover:text-teal-300 transition-colors font-medium"
+                  >
+                    <FileCheck className="w-3.5 h-3.5" />
+                    <span>Berita Acara (BAST)</span>
+                  </Link>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Penerbitan Surat Pesanan Pengadaan Barang, Komitmen Pembayaran, dan Validasi Spesifikasi Pihak Kedua
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -1112,14 +1212,24 @@ export function PesananForm({
               )}
               <span>Ekspor PDF (F4)</span>
             </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 border border-slate-700 btn-press cursor-pointer"
+              title="Cetak Surat Pesanan langsung ke mesin printer fisik (1 Lembar F4 Portrait)"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-300" />
+              <span>Cetak Printer</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* ================= WORKSPACE (Left Form : Right A4 Preview) ================= */}
-      <div className="max-w-[1720px] w-full mx-auto px-3 sm:px-8 pb-12">
+      <div className="max-w-[1720px] w-full mx-auto px-3 sm:px-8 pb-12 print:max-w-none print:w-full print:p-0 print:m-0 print:block">
         {/* Responsive Mobile / Tablet View Switcher Tab (< xl screens) */}
-        <div className="xl:hidden mb-6 flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-2xl shadow-lg">
+        <div className="xl:hidden mb-6 flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-2xl shadow-lg no-print">
           <button
             type="button"
             onClick={() => setMobileTab("form")}
@@ -1157,11 +1267,11 @@ export function PesananForm({
           relatedBastId={matchedBast?.id}
         />
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start print:block print:w-full print:p-0 print:m-0">
           {/* ================= LEFT COLUMN: FORM SETTINGS (5 Cols) ================= */}
           <div
             id="pesananInputForm"
-            className={`xl:col-span-5 flex-col gap-6 scroll-mt-6 ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}
+            className={`xl:col-span-5 flex-col gap-6 scroll-mt-6 no-print ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}
           >
             <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-6 flex flex-col gap-5">
               {/* Mode Edit vs Baru Banner */}
@@ -2158,9 +2268,9 @@ export function PesananForm({
           </div>
 
           {/* ================= RIGHT COLUMN: Exact A4/F4 Physical Printed Document Preview (7 Cols) ================= */}
-          <div className={`xl:col-span-7 flex-col gap-4 items-center w-full ${mobileTab === "form" ? "hidden xl:flex" : "flex"}`}>
+          <div className={`xl:col-span-7 flex-col gap-4 items-center w-full print:!flex print:w-full print:p-0 print:m-0 print:block ${mobileTab === "form" ? "hidden xl:flex" : "flex"}`}>
             {/* Live Document Control Header Bar */}
-            <div className="w-full max-w-[780px] bg-slate-900 border border-slate-800 rounded-xl px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+            <div className="w-full max-w-[780px] bg-slate-900 border border-slate-800 rounded-xl px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-sm no-print">
               {/* TABS PREVIEW SWITCHER */}
               <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
                 <button
@@ -2264,9 +2374,9 @@ export function PesananForm({
             </div>
 
             {/* Canvas Container with dynamic zoom and multi-mode view */}
-            <div className="w-full overflow-x-auto pb-6 flex flex-col items-center">
+            <div className="w-full overflow-x-auto pb-6 flex flex-col items-center print:p-0 print:m-0 print:overflow-visible">
               <div
-                className="transition-transform origin-top shrink-0 flex flex-col items-center gap-6"
+                className="transition-transform origin-top shrink-0 flex flex-col items-center gap-6 print:transform-none print:p-0 print:m-0 print:gap-0 print:block print:w-full"
                 style={{
                   transform: `scale(${zoomScale / 100})`,
                   transformOrigin: "top center",
@@ -2360,7 +2470,7 @@ export function PesananForm({
         </div>
 
         {/* ================= DAFTAR ARSIP SURAT PESANAN (TABEL REKAP & MANAJEMEN) ================= */}
-        <div className="w-full mt-10 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-7">
+        <div id="daftarArsipPesanan" className="w-full mt-10 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-7 no-print">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
@@ -2535,7 +2645,7 @@ export function PesananForm({
               setMobileTab("preview");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="xl:hidden fixed bottom-6 right-5 z-40 px-4 py-3 bg-[#006c4e] hover:bg-[#004532] text-white rounded-full shadow-2xl flex items-center gap-2 border border-[#97f5cc]/30 text-xs font-bold transition-transform active:scale-95"
+            className="xl:hidden fixed bottom-6 right-5 z-40 px-4 py-3 bg-[#006c4e] hover:bg-[#004532] text-white rounded-full shadow-2xl flex items-center gap-2 border border-[#97f5cc]/30 text-xs font-bold transition-transform active:scale-95 no-print"
           >
             <Printer className="w-4 h-4 text-emerald-300" />
             <span>Lihat Lembar A4</span>
@@ -2548,7 +2658,7 @@ export function PesananForm({
               setMobileTab("form");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="xl:hidden fixed bottom-6 left-5 z-40 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full shadow-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-transform active:scale-95"
+            className="xl:hidden fixed bottom-6 left-5 z-40 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full shadow-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-transform active:scale-95 no-print"
           >
             <FileText className="w-4 h-4 text-emerald-400" />
             <span>Kembali ke Formulir</span>

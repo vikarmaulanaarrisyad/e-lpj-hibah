@@ -45,7 +45,7 @@ export default async function KwitansiPage() {
   const initialRabSummary = rabStatusRes.data;
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col print:bg-white print:min-h-0 print:p-0 print:m-0 print:block">
       {/* ================= MAIN HEADER NAVBAR (CLIENT COMPONENT) ================= */}
       <KwitansiHeader
         institution={institution}
@@ -55,7 +55,7 @@ export default async function KwitansiPage() {
       />
 
       {/* ================= WORKSPACE BODY ================= */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-16 print:min-h-0 print:p-0 print:m-0 print:block">
         <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat Generator Kwitansi...</div>}>
           <KwitansiForm
             initialInstitution={institution}

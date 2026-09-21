@@ -119,7 +119,11 @@ body {
   .no-print,
   #formLedgerPanel,
   #topCommandBar,
-  #actionToolbar {
+  #actionToolbar,
+  #pesananInputForm,
+  #bastInputForm,
+  #daftarArsipPesanan,
+  #daftarArsipBast {
     display: none !important;
   }
 
@@ -127,6 +131,7 @@ body {
   body:has(#kwitansiPrintContainer) {
     width: 330mm !important;
     height: 215mm !important;
+    max-height: 215mm !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -136,9 +141,23 @@ body {
     print-color-adjust: exact !important;
   }
 
+  body:has(#kwitansiPrintContainer) div:has(#kwitansiPrintContainer),
+  body:has(#kwitansiPrintContainer) main {
+    background: transparent !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
   /* Kontainer Induk Menempati 1 Lembar Penuh F4 Landscape & Menengahkan Konten */
   #kwitansiPrintContainer {
-    page: kwitansiF4;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -150,8 +169,13 @@ body {
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    overflow: hidden !important;
   }
 
   /* Lembar Kertas F4 Transparan Saat Cetak */
@@ -202,47 +226,73 @@ body {
   body:has(#bastPrintArea) {
     width: 215mm !important;
     height: auto !important;
+    max-height: 330mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  body:has(#pesananPrintArea) #pesananPrintArea {
-    page: pesananF4;
-    width: 215mm !important;
-    max-width: 215mm !important;
-    min-height: 330mm !important;
-    margin: 0 auto !important;
-    padding-top: 18mm !important;
-    padding-bottom: 18mm !important;
-    padding-left: 28mm !important; /* Margin kiri 28mm khusus penjilidan dokumen */
-    padding-right: 15mm !important;
+  body:has(#pesananPrintArea) div:has(#pesananPrintArea),
+  body:has(#pesananPrintArea) main,
+  body:has(#bastPrintArea) div:has(#bastPrintArea),
+  body:has(#bastPrintArea) main {
+    background: transparent !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    page-break-inside: auto !important;
-    break-inside: auto !important;
+    transform: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  body:has(#pesananPrintArea) #pesananPrintArea {
+    width: 215mm !important;
+    max-width: 215mm !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    padding-top: 6mm !important;
+    padding-bottom: 6mm !important;
+    padding-left: 28mm !important; /* Margin kiri 28mm khusus penjilidan dokumen */
+    padding-right: 12mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     box-sizing: border-box !important;
+    background: #ffffff !important;
   }
 
   body:has(#bastPrintArea) #bastPrintArea {
-    page: bastF4;
     width: 215mm !important;
     max-width: 215mm !important;
-    min-height: 330mm !important;
+    min-height: 0 !important;
     margin: 0 auto !important;
-    padding-top: 18mm !important;
-    padding-bottom: 18mm !important;
+    padding-top: 6mm !important;
+    padding-bottom: 6mm !important;
     padding-left: 28mm !important; /* Margin kiri 28mm khusus penjilidan dokumen */
-    padding-right: 15mm !important;
+    padding-right: 12mm !important;
     border: none !important;
     box-shadow: none !important;
-    page-break-inside: auto !important;
-    break-inside: auto !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     box-sizing: border-box !important;
+    background: #ffffff !important;
   }
 
   /* ================= LEMBAR DOKUMENTASI KEGIATAN PRINT SPEC (F4 PORTRAIT MULTI-PAGE + MARGIN JILID) ================= */

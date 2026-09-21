@@ -735,6 +735,10 @@ export function KwitansiForm({
     }
     document.title = `Kwitansi_${cleanNoBukti}_F4`;
 
+    if (mobileTab !== "preview") {
+      setMobileTab("preview");
+    }
+
     // Pastikan orientasi cetak browser terkunci khusus Kwitansi pada F4 Landscape (330mm x 215mm)
     const printStyle = document.createElement("style");
     printStyle.id = "kwitansi-landscape-print-rule";
@@ -743,6 +747,78 @@ export function KwitansiForm({
         @page {
           size: 330mm 215mm landscape !important;
           margin: 0mm !important;
+        }
+        html, body {
+          width: 330mm !important;
+          height: 215mm !important;
+          max-height: 215mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          overflow: hidden !important;
+        }
+        body div:has(#kwitansiPrintContainer),
+        body main {
+          background: transparent !important;
+          min-height: 0 !important;
+          height: auto !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          transform: none !important;
+          display: block !important;
+        }
+        #topCommandBar,
+        #formLedgerPanel,
+        #actionToolbar,
+        .no-print {
+          display: none !important;
+        }
+        #kwitansiPrintContainer {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          width: 330mm !important;
+          height: 215mm !important;
+          max-height: 215mm !important;
+          margin: 0 auto !important;
+          padding: 0 !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          overflow: hidden !important;
+        }
+        #f4PaperSheet {
+          width: 330mm !important;
+          height: 215mm !important;
+          max-height: 215mm !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          margin: 0 auto !important;
+          padding: 0 !important;
+        }
+        #kwitansiCanvas {
+          width: 27.99cm !important;
+          height: 9.6cm !important;
+          max-height: 9.6cm !important;
+          margin: auto !important;
+          border: none !important;
+          box-shadow: none !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
       }
     `;
@@ -756,6 +832,18 @@ export function KwitansiForm({
       if (el) el.remove();
     }, 2000);
   };
+
+  // Keyboard shortcut Ctrl + P / Cmd + P untuk cetak langsung format presisi
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [formData.nomorBukti, mobileTab]);
 
   // Real-time RAB Ceiling & Deficit Calculations
   const currentRabStatus = useMemo(() => {
@@ -984,11 +1072,11 @@ export function KwitansiForm({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full print:bg-white print:min-h-0 print:p-0 print:m-0 print:block">
       {/* ================= TOP COMMAND BAR ================= */}
       <div
         id="topCommandBar"
-        className="w-full bg-slate-900/90 border-b border-slate-800 px-4 sm:px-8 py-4 mb-6 shadow-md backdrop-blur-md"
+        className="w-full bg-slate-900/90 border-b border-slate-800 px-4 sm:px-8 py-4 mb-6 shadow-md backdrop-blur-md no-print"
       >
         <div className="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -1061,7 +1149,7 @@ export function KwitansiForm({
       </div>
 
       {/* ================= WORKSPACE LAYOUT ================= */}
-      <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-8">
+      <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-8 print:max-w-none print:w-full print:p-0 print:m-0 print:block">
         {/* Visual Procurement Flow Stepper */}
         <ProcurementStepper
           currentStep={2}
@@ -1070,7 +1158,7 @@ export function KwitansiForm({
         />
 
         {/* Responsive Mobile / Tablet View Switcher Tab (< xl screens) */}
-        <div className="xl:hidden mb-6 flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-2xl shadow-lg">
+        <div className="xl:hidden mb-6 flex items-center bg-slate-900 border border-slate-800 p-1.5 rounded-2xl shadow-lg no-print">
           <button
             type="button"
             onClick={() => setMobileTab("form")}
@@ -1097,9 +1185,9 @@ export function KwitansiForm({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start print:block print:w-full print:p-0 print:m-0">
           {/* ================= LEFT COLUMN: FORM LEDGER & CONTROLS (~40%) ================= */}
-          <div id="formLedgerPanel" className={`xl:col-span-5 flex-col gap-5 ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}>
+          <div id="formLedgerPanel" className={`xl:col-span-5 flex-col gap-5 no-print ${mobileTab === "preview" ? "hidden xl:flex" : "flex"}`}>
             {/* Database Saved Receipts Picker */}
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
               <div className="flex items-center justify-between mb-2">
@@ -2180,11 +2268,11 @@ export function KwitansiForm({
           </div>
 
           {/* ================= RIGHT COLUMN: LIVE CANVAS PREVIEW (~60%) ================= */}
-          <div className={`xl:col-span-7 flex-col gap-4 w-full ${mobileTab === "form" ? "hidden xl:flex" : "flex"}`}>
+          <div className={`xl:col-span-7 flex-col gap-4 w-full print:!flex print:w-full print:p-0 print:m-0 print:block ${mobileTab === "form" ? "hidden xl:flex" : "flex"}`}>
             {/* Canvas Action Bar */}
             <div
               id="actionToolbar"
-              className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-md flex flex-wrap items-center justify-between gap-3"
+              className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-md flex flex-wrap items-center justify-between gap-3 no-print"
             >
               <div className="flex items-center gap-2">
                 <div className="flex items-center bg-slate-950 px-3 py-1.5 rounded-lg gap-2 border border-slate-800">
@@ -2305,7 +2393,7 @@ export function KwitansiForm({
               setMobileTab("preview");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="xl:hidden fixed bottom-6 right-5 z-40 px-4 py-3 bg-[#006c4e] hover:bg-[#004532] text-white rounded-full shadow-2xl flex items-center gap-2 border border-[#97f5cc]/30 text-xs font-bold transition-transform active:scale-95"
+            className="xl:hidden fixed bottom-6 right-5 z-40 px-4 py-3 bg-[#006c4e] hover:bg-[#004532] text-white rounded-full shadow-2xl flex items-center gap-2 border border-[#97f5cc]/30 text-xs font-bold transition-transform active:scale-95 no-print"
           >
             <Printer className="w-4 h-4 text-emerald-300" />
             <span>Lihat Blanko F4</span>
@@ -2318,7 +2406,7 @@ export function KwitansiForm({
               setMobileTab("form");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="xl:hidden fixed bottom-6 left-5 z-40 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full shadow-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-transform active:scale-95"
+            className="xl:hidden fixed bottom-6 left-5 z-40 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full shadow-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-transform active:scale-95 no-print"
           >
             <FileText className="w-4 h-4 text-emerald-400" />
             <span>Kembali ke Formulir</span>

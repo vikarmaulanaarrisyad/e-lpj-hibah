@@ -45,7 +45,7 @@ export default async function BastPage() {
     : session.institution;
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col antialiased print:bg-white print:min-h-0 print:p-0 print:m-0 print:block">
       {/* Universal Top Header */}
       <KwitansiHeader
         userName={session.name}
@@ -55,7 +55,7 @@ export default async function BastPage() {
       />
 
       {/* Main BAST Workspace */}
-      <main className="w-full flex-1">
+      <main className="w-full flex-1 print:min-h-0 print:p-0 print:m-0 print:block">
         <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat Berita Acara (BAST)...</div>}>
           <BastForm
             initialBastList={bastList}
@@ -73,7 +73,7 @@ export default async function BastPage() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full bg-slate-950 border-t border-slate-800 py-4 mt-12">
+      <footer className="w-full bg-slate-950 border-t border-slate-800 py-4 mt-12 no-print">
         <div className="max-w-[1720px] mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-emerald-400">E-LPJ Hibah Amanah</span>

@@ -104,7 +104,7 @@ export function ProcurementStepper({
   ];
 
   return (
-    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl mb-6 backdrop-blur-md">
+    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl mb-6 backdrop-blur-md no-print">
       {/* Header Info Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-800/80">
         <div className="flex items-center gap-2">

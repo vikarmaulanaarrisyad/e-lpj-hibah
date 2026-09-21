@@ -33,7 +33,7 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
   return (
     <div
       id="kwitansiPrintContainer"
-      className="w-full overflow-x-auto pb-4 flex justify-start sm:justify-center items-center"
+      className="w-full overflow-x-auto pb-4 flex justify-start sm:justify-center items-center print:p-0 print:m-0 print:overflow-hidden"
     >
       {/* Khusus Kwitansi: Kunci Orientasi Cetak Browser ke F4 Landscape (330mm x 215mm) */}
       <style>{`
@@ -48,7 +48,7 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
       {/* ================= F4 PAPER SHEET CONTAINER (330mm × 215mm LANDSCAPE) ================= */}
       <div
         id="f4PaperSheet"
-        className="relative bg-white rounded-xl shadow-2xl p-0 flex flex-col justify-center items-center border border-slate-700/60 transition-all duration-300 w-full overflow-hidden shrink-0"
+        className="relative bg-white rounded-xl shadow-2xl p-0 flex flex-col justify-center items-center border border-slate-700/60 transition-all duration-300 w-full overflow-hidden shrink-0 print:shadow-none print:border-none print:rounded-none print:m-0 print:p-0"
         style={{
           maxWidth: "1080px",
           minWidth: "680px",
