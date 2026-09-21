@@ -62,6 +62,105 @@ export function formatDateIndo(dateStr?: string | Date | null): string {
   }
 }
 
+const DAY_NAMES = [
+  "Minggu",
+  "Senin",
+  "Selasa",
+  "Rabu",
+  "Kamis",
+  "Jumat",
+  "Sabtu",
+];
+
+const MONTH_MAP_INDO: Record<string, number> = {
+  januari: 0,
+  februari: 1,
+  maret: 2,
+  april: 3,
+  mei: 4,
+  juni: 5,
+  juli: 6,
+  agustus: 7,
+  september: 8,
+  oktober: 9,
+  november: 10,
+  desember: 11,
+};
+
+/**
+ * Format tanggal menjadi format Hari, Tanggal Bulan Tahun (Bahasa Indonesia):
+ * Contoh: "2026-08-01" -> "Sabtu, 1 Agustus 2026"
+ * Contoh: "1 Agustus 2026" -> "Sabtu, 1 Agustus 2026"
+ */
+export function formatDateIndoWithDay(dateInput?: string | Date | null): string {
+  if (!dateInput) return "-";
+
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return "-";
+    const hari = DAY_NAMES[dateInput.getDay()];
+    const tgl = dateInput.getDate();
+    const bln = MONTH_NAMES[dateInput.getMonth()];
+    const thn = dateInput.getFullYear();
+    return `${hari}, ${tgl} ${bln} ${thn}`;
+  }
+
+  const str = String(dateInput).trim();
+  if (!str) return "-";
+
+  // Cek jika sudah diawali nama hari (cth: "Senin, 1 Agustus 2026")
+  if (/^(Minggu|Senin|Selasa|Rabu|Kamis|Jum'?at|Sabtu)[,\s]+/i.test(str)) {
+    return str;
+  }
+
+  // Format ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const clean = str.split("T")[0];
+    const [yStr, mStr, dStr] = clean.split("-");
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10);
+    const d = parseInt(dStr, 10);
+    const dateObj = new Date(y, m - 1, d);
+    if (!isNaN(dateObj.getTime())) {
+      const hari = DAY_NAMES[dateObj.getDay()];
+      const bln = MONTH_NAMES[m - 1] || MONTH_NAMES[dateObj.getMonth()];
+      return `${hari}, ${d} ${bln} ${y}`;
+    }
+  }
+
+  // Format tanggal teks Indonesia, cth: "1 Agustus 2026" atau "01 Agustus 2026"
+  const textMatch = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/);
+  if (textMatch) {
+    const d = parseInt(textMatch[1], 10);
+    const monthKey = textMatch[2].toLowerCase();
+    const y = parseInt(textMatch[3], 10);
+    if (monthKey in MONTH_MAP_INDO) {
+      const mIdx = MONTH_MAP_INDO[monthKey];
+      const dateObj = new Date(y, mIdx, d);
+      if (!isNaN(dateObj.getTime())) {
+        const hari = DAY_NAMES[dateObj.getDay()];
+        const bln = MONTH_NAMES[mIdx];
+        return `${hari}, ${d} ${bln} ${y}`;
+      }
+    }
+  }
+
+  try {
+    const dObj = new Date(str);
+    if (!isNaN(dObj.getTime())) {
+      const hari = DAY_NAMES[dObj.getDay()];
+      const tgl = dObj.getDate();
+      const bln = MONTH_NAMES[dObj.getMonth()];
+      const thn = dObj.getFullYear();
+      return `${hari}, ${tgl} ${bln} ${thn}`;
+    }
+  } catch {
+    // fallback
+  }
+
+  return formatDateIndo(str);
+}
+
+
 /**
  * Mendapatkan angka romawi bulan (0-11 atau 1-12)
  */

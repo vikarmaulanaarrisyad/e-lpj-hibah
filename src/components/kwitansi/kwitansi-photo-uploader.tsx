@@ -151,7 +151,7 @@ export function KwitansiPhotoUploader({
           url: compressedDataUrl,
           caption: autoCaption,
           tanggal: tanggal ? tanggal.split("T")[0] : new Date().toISOString().split("T")[0],
-          lokasi: pemberi || "Sekretariat Lembaga",
+          lokasi: "",
         });
       }
 

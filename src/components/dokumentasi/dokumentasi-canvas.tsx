@@ -1,7 +1,7 @@
 "use client";
 
 import type { DokumentasiFormData, DokumentasiPhoto, InstitutionProfile } from "@/types";
-import { extractNamaTempat } from "@/lib/utils/pesanan-date";
+import { extractNamaTempat, formatDateIndoWithDay } from "@/lib/utils/pesanan-date";
 import { formatPersonName } from "@/lib/utils/title-case";
 
 interface DokumentasiCanvasProps {
@@ -262,7 +262,7 @@ export function DokumentasiCanvas({
                           <td className="font-semibold text-black align-top py-0.5">Hari / Tanggal</td>
                           <td className="text-black align-top py-0.5">:</td>
                           <td className="text-black align-top py-0.5">
-                            {formatDateIndo(data.tanggalKegiatan)}
+                            {formatDateIndoWithDay(data.tanggalKegiatan)}
                           </td>
                         </tr>
                         <tr className="leading-relaxed">
@@ -347,10 +347,9 @@ export function DokumentasiCanvas({
                           <p className="text-[11px] font-medium text-slate-800 leading-snug line-clamp-3">
                             {photo.caption || "Dokumentasi kegiatan penerimaan & pemanfaatan sarana hibah."}
                           </p>
-                          {(photo.tanggal || photo.lokasi) && (
+                          {photo.tanggal && (
                             <p className="text-[9.5px] text-slate-500 mt-1 flex items-center gap-2">
-                              {photo.tanggal && <span>📅 {formatDateIndo(photo.tanggal)}</span>}
-                              {photo.lokasi && <span>📍 {photo.lokasi}</span>}
+                              <span>📅 {formatDateIndo(photo.tanggal)}</span>
                             </p>
                           )}
                         </div>
@@ -387,10 +386,9 @@ export function DokumentasiCanvas({
                           <p className="text-xs sm:text-[13px] font-semibold text-slate-900 leading-relaxed">
                             {photo.caption || "Dokumentasi serah terima barang dan kegiatan penerima hibah."}
                           </p>
-                          {(photo.tanggal || photo.lokasi) && (
+                          {photo.tanggal && (
                             <p className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
-                              {photo.tanggal && <span>Tanggal: {formatDateIndo(photo.tanggal)}</span>}
-                              {photo.lokasi && <span>Lokasi: {photo.lokasi}</span>}
+                              <span>Tanggal: {formatDateIndo(photo.tanggal)}</span>
                             </p>
                           )}
                         </div>
@@ -429,10 +427,9 @@ export function DokumentasiCanvas({
                           <p className="text-[12px] font-semibold text-slate-900 leading-snug">
                             {photo.caption || "Serah terima barang dan fisik kegiatan hibah Fatayat NU."}
                           </p>
-                          {(photo.tanggal || photo.lokasi) && (
+                          {photo.tanggal && (
                             <p className="text-[10px] text-slate-600 mt-1 flex items-center gap-3">
-                              {photo.tanggal && <span>📅 {formatDateIndo(photo.tanggal)}</span>}
-                              {photo.lokasi && <span>📍 {photo.lokasi}</span>}
+                              <span>📅 {formatDateIndo(photo.tanggal)}</span>
                             </p>
                           )}
                         </div>
