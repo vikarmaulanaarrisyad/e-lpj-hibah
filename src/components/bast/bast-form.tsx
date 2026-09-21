@@ -167,7 +167,7 @@ export function BastForm({
     }
   };
 
-  const defaultChairman = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
+  const defaultChairman = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI, S.Pd.I";
   const defaultInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
     : userProfile?.institution || "PR Fatayat NU Dawuhan Selatan";
@@ -1666,7 +1666,8 @@ export function BastForm({
                         onChange={(e) =>
                           setFormData({ ...formData, pihak1Nama: e.target.value })
                         }
-                        className="w-full text-xs font-bold uppercase bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500"
+                        placeholder="Contoh: HENI FUJIATI, S.Pd.I"
+                        className="w-full text-xs font-bold bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>

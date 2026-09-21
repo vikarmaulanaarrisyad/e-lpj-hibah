@@ -37,7 +37,7 @@ export default async function BkuPage() {
     ? `${profile.namaLembaga} ${profile.subNama}`
     : session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
   const userName = session.name || "NUR ALIMAH";
-  const leaderName = profile?.namaKetua || session.leaderName || "HENI FUJIATI";
+  const leaderName = profile?.namaKetua || session.leaderName || "HENI FUJIATI, S.Pd.I";
 
   const entries = ledgerRes.data?.entries || [];
   const summary = ledgerRes.data?.summary || {

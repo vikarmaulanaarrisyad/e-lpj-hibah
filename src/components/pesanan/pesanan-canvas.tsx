@@ -2,7 +2,7 @@
 
 import type { PesananFormData, InstitutionProfile } from "@/types";
 import { extractNamaTempat, cleanPihakJabatan } from "@/lib/utils/pesanan-date";
-import { cleanAndFormatTitle } from "@/lib/utils/title-case";
+import { cleanAndFormatTitle, formatPersonName } from "@/lib/utils/title-case";
 
 interface PesananCanvasProps {
   data: PesananFormData;
@@ -191,7 +191,7 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
           <div className="pl-4 grid grid-cols-[90px_12px_1fr] sm:grid-cols-[100px_12px_1fr] gap-y-0.5 text-[12px] sm:text-[12.5px]">
             <span className="text-black font-medium">Nama</span>
             <span>:</span>
-            <span className="font-bold uppercase text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
+            <span className="font-bold text-black">{formatPersonName(data.pihak1Nama || "HENI FUJIATI, S.Pd.I")}</span>
 
             <span className="text-black font-medium">Jabatan</span>
             <span>:</span>
@@ -419,8 +419,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Toko */}
             <div className="h-20 my-1" />
 
-            <p className="font-bold text-black uppercase underline decoration-1">
-              {data.pihak2Nama || "ELIN"}
+            <p className="font-bold text-black underline decoration-1">
+              {formatPersonName(data.pihak2Nama || "ELIN")}
             </p>
             <p className="text-[11px] sm:text-[11.5px] text-black">Penyedia Barang</p>
           </div>
@@ -436,8 +436,8 @@ export function PesananCanvas({ data, profile }: PesananCanvasProps) {
             {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
             <div className="h-20 my-1" />
 
-            <p className="font-bold text-black uppercase underline decoration-1">
-              {data.pihak1Nama || "HENI FUJIATI"}
+            <p className="font-bold text-black underline decoration-1">
+              {formatPersonName(data.pihak1Nama || "HENI FUJIATI, S.Pd.I")}
             </p>
             <p className="text-[10.5px] sm:text-[11px] text-black">{cleanJabatan}</p>
           </div>

@@ -49,7 +49,7 @@ export function SuratPengantarForm({
       : "Pimpinan Ranting Fatayat NU Dawuhan Selatan Desa Dawuhan Kecamatan Talang Kabupaten Tegal";
 
   const defaultNamaKetua =
-    profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
+    profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI, S.Pd.I";
 
   const [rawDate, setRawDate] = useState<string>("2026-12-31");
 
@@ -513,8 +513,8 @@ export function SuratPengantarForm({
                         penandatanganNama: e.target.value,
                       }))
                     }
-                    placeholder="HENI FUJIATI"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-bold uppercase"
+                    placeholder="Contoh: HENI FUJIATI, S.Pd.I"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-bold"
                   />
                 </div>
               </div>

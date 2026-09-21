@@ -1,6 +1,7 @@
 "use client";
 
 import type { NotaFormData, InstitutionProfile } from "@/types";
+import { formatPersonName } from "@/lib/utils/title-case";
 
 interface NotaCanvasProps {
   data: NotaFormData;
@@ -276,8 +277,8 @@ export function NotaCanvas({
               {/* Ruang bersih fisik */}
             </div>
 
-            {/* Baris Nama Pejabat Bertandatangan (Huruf Kapital Tegas) */}
-            <div className="grid grid-cols-2 text-center text-[12.5px] sm:text-[13px] font-bold text-black uppercase tracking-wide">
+            {/* Baris Nama Pejabat Bertandatangan (Huruf Terstandar) */}
+            <div className="grid grid-cols-2 text-center text-[12.5px] sm:text-[13px] font-bold text-black tracking-wide">
               <div
                 contentEditable={Boolean(onUpdateKetuaNama)}
                 suppressContentEditableWarning
@@ -293,7 +294,7 @@ export function NotaCanvas({
                     : ""
                 }
               >
-                {data.ketuaNama || "HENI FUJIATI"}
+                {formatPersonName(data.ketuaNama || "HENI FUJIATI, S.Pd.I")}
               </div>
               <div
                 contentEditable={Boolean(onUpdateBendaharaNama)}
@@ -310,7 +311,7 @@ export function NotaCanvas({
                     : ""
                 }
               >
-                {data.bendaharaNama || "NUR ALIMAH"}
+                {formatPersonName(data.bendaharaNama || "NUR ALIMAH")}
               </div>
             </div>
           </div>

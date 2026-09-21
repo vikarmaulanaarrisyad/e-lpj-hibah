@@ -41,7 +41,7 @@ export default async function KwitansiPage() {
     ? `${profile.namaLembaga} ${profile.subNama}`
     : session.institution || "PR Fatayat NU Dawuhan Selatan";
   const userName = session.name;
-  const leaderName = profile?.namaKetua || session.leaderName || "HENI FUJIATI";
+  const leaderName = profile?.namaKetua || session.leaderName || "HENI FUJIATI, S.Pd.I";
   const initialRabSummary = rabStatusRes.data;
 
   return (

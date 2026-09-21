@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import type { RabSummary, InstitutionProfile } from "@/types";
 import { angkaKeTerbilang, formatRupiahNumber } from "@/lib/utils/terbilang";
 import { extractNamaTempat } from "@/lib/utils/pesanan-date";
+import { formatPersonName } from "@/lib/utils/title-case";
 
 interface RabCanvasProps {
   summary: RabSummary;
@@ -19,7 +20,7 @@ export function RabCanvas({
   summary,
   profile,
   institutionName,
-  leaderName = "HENI FUJIATI",
+  leaderName = "HENI FUJIATI, S.Pd.I",
   treasurerName = "NUR ALIMAH",
   tahunAnggaran = "2026",
   tanggalDokumen,
@@ -346,8 +347,8 @@ export function RabCanvas({
           <div className="h-20 flex items-center justify-center">
             {/* Space for Signature & Official Stamp */}
           </div>
-          <p className="font-bold underline text-[10.5px] uppercase tracking-wide">
-            {ketuaName}
+          <p className="font-bold underline text-[10.5px] tracking-wide">
+            {formatPersonName(ketuaName)}
           </p>
         </div>
 
@@ -360,8 +361,8 @@ export function RabCanvas({
           <div className="h-20 flex items-center justify-center">
             {/* Space for Signature */}
           </div>
-          <p className="font-bold underline text-[10.5px] uppercase tracking-wide">
-            {bendaharaName}
+          <p className="font-bold underline text-[10.5px] tracking-wide">
+            {formatPersonName(bendaharaName)}
           </p>
         </div>
       </div>

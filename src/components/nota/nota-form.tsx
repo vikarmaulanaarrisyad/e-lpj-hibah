@@ -66,7 +66,7 @@ export function NotaForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const defaultKota = extractNamaTempat(profile, "Dawuhan");
-  const defaultKetua = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
+  const defaultKetua = profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI, S.Pd.I";
   const defaultBendahara = profile?.namaBendahara || userProfile?.name || "NUR ALIMAH";
 
   const initialReceipt = initialSelectedReceiptNo
@@ -664,7 +664,7 @@ export function NotaForm({
                   type="text"
                   value={formData.ketuaNama}
                   onChange={(e) => setFormData((prev) => ({ ...prev, ketuaNama: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs uppercase font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -678,7 +678,7 @@ export function NotaForm({
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, bendaharaNama: e.target.value }))
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs uppercase font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
             </div>

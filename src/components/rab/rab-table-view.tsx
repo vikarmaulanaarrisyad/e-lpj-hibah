@@ -27,7 +27,7 @@ import type {
   UpdateRabDetailRowInput,
   InstitutionProfile,
 } from "@/types";
-import { formatProperCase } from "@/lib/utils/title-case";
+import { formatProperCase, formatPersonName } from "@/lib/utils/title-case";
 import { RabCanvas } from "./rab-canvas";
 import {
   addRabDetailRowAction,
@@ -176,7 +176,7 @@ export function RabTableView({
   summary,
   onSummaryUpdated,
   institutionName = "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN",
-  leaderName = "HENI FUJIATI",
+  leaderName = "HENI FUJIATI, S.Pd.I",
   treasurerName = "NUR ALIMAH",
   profile,
   onOpenAddGroupModal,
@@ -1156,7 +1156,7 @@ export function RabTableView({
           <p>Mengetahui,</p>
           <p className="font-bold">Ketua {institutionName}</p>
           <div className="h-20"></div>
-          <p className="font-bold underline">{leaderName}</p>
+          <p className="font-bold underline">{formatPersonName(leaderName)}</p>
         </div>
         <div className="text-center w-64">
           <p suppressHydrationWarning>
@@ -1164,7 +1164,7 @@ export function RabTableView({
           </p>
           <p className="font-bold">Bendahara Pengeluaran</p>
           <div className="h-20"></div>
-          <p className="font-bold underline">{treasurerName}</p>
+          <p className="font-bold underline">{formatPersonName(treasurerName)}</p>
         </div>
       </div>
 

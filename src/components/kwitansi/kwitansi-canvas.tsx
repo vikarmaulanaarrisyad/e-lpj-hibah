@@ -2,7 +2,7 @@
 
 import type { ReceiptFormData, InstitutionProfile } from "@/types";
 import { getSignatoryKetuaTitles } from "@/lib/utils/kwitansi-signatory";
-import { formatUraianBelanja } from "@/lib/utils/title-case";
+import { formatUraianBelanja, formatPersonName } from "@/lib/utils/title-case";
 
 interface KwitansiCanvasProps {
   data: ReceiptFormData;
@@ -186,8 +186,8 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
                   {/* Ruang Tanda Tangan Diperlebar */}
                   <div className="flex-1 min-h-[5.4cqw] flex items-center justify-center pointer-events-none" />
                   <div className="w-full text-center">
-                    <span className="text-[1.6cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
-                      {data.ketua || "HENI FUJIATI"}
+                    <span className="text-[1.6cqw] font-bold text-slate-950 tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
+                      {formatPersonName(data.ketua || "HENI FUJIATI, S.Pd.I")}
                     </span>
                   </div>
                 </div>
@@ -204,8 +204,8 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
                   {/* Ruang Tanda Tangan Diperlebar */}
                   <div className="flex-1 min-h-[5.4cqw] flex items-center justify-center pointer-events-none" />
                   <div className="w-full text-center">
-                    <span className="text-[1.6cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
-                      {data.bendahara || "NUR ALIMAH"}
+                    <span className="text-[1.6cqw] font-bold text-slate-950 tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
+                      {formatPersonName(data.bendahara || "NUR ALIMAH")}
                     </span>
                   </div>
                 </div>
@@ -235,8 +235,8 @@ export function KwitansiCanvas({ data, profile, showCutGuides = false }: Kwitans
                   <div className="w-full text-center">
                     {data.penerima ? (
                       <div>
-                        <span className="text-[1.6cqw] font-bold text-slate-950 uppercase tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
-                          {data.penerima}
+                        <span className="text-[1.6cqw] font-bold text-slate-950 tracking-wider block underline decoration-slate-950 decoration-1 underline-offset-2 text-center">
+                          {formatPersonName(data.penerima)}
                         </span>
                       </div>
                     ) : (

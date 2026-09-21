@@ -8,7 +8,7 @@ export interface NotaFormData {
   kota: string;
   ketuaJabatanLabel: string; // default: "Setuju dibayar"
   ketuaJabatan: string;      // default: "Ketua"
-  ketuaNama: string;         // default: "HENI FUJIATI"
+  ketuaNama: string;         // default: "HENI FUJIATI, S.Pd.I"
   bendaharaJabatanLabel: string; // default: "Dibayar oleh"
   bendaharaJabatan: string;      // default: "Bendahara"
   bendaharaNama: string;         // default: "NUR ALIMAH"

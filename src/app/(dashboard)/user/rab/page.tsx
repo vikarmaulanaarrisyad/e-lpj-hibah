@@ -65,7 +65,7 @@ export default async function UserRabPage() {
           receipts={receipts}
           institutionName={institution}
           userName={userName}
-          leaderName={profile?.namaKetua || session.leaderName || "HENI FUJIATI"}
+          leaderName={profile?.namaKetua || session.leaderName || "HENI FUJIATI, S.Pd.I"}
           treasurerName={profile?.namaBendahara || userName || "NUR ALIMAH"}
           profile={profile}
         />

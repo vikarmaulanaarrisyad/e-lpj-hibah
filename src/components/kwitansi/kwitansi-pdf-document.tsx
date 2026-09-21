@@ -2,7 +2,7 @@ import React from "react";
 import * as ReactPdfAll from "@react-pdf/renderer";
 import type { ReceiptFormData, InstitutionProfile } from "@/types";
 import { getSignatoryKetuaTitles } from "@/lib/utils/kwitansi-signatory";
-import { formatUraianBelanja } from "@/lib/utils/title-case";
+import { formatUraianBelanja, formatPersonName } from "@/lib/utils/title-case";
 
 // Handle both ES module default and named exports from @react-pdf/renderer in browser/webpack
 const ReactPDF = (ReactPdfAll as any).default || ReactPdfAll;
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "bold",
     color: "#020617",
-    textTransform: "uppercase",
     letterSpacing: 0.4,
     textDecoration: "underline",
     textAlign: "center",
@@ -393,7 +392,7 @@ export function KwitansiPdfDocument({
                   </View>
                   {/* Ruang Lapang untuk Tanda Tangan */}
                   <View style={styles.signatorySpace} />
-                  <Text style={styles.signatoryName}>{data.ketua || "HENI FUJIATI"}</Text>
+                  <Text style={styles.signatoryName}>{formatPersonName(data.ketua || "HENI FUJIATI, S.Pd.I")}</Text>
                 </View>
 
                 {/* Column 2: Lunas Dibayar (Bendahara) */}
@@ -409,7 +408,7 @@ export function KwitansiPdfDocument({
                   </View>
                   {/* Ruang Lapang untuk Tanda Tangan */}
                   <View style={styles.signatorySpace} />
-                  <Text style={styles.signatoryName}>{data.bendahara || "NUR ALIMAH"}</Text>
+                  <Text style={styles.signatoryName}>{formatPersonName(data.bendahara || "NUR ALIMAH")}</Text>
                 </View>
 
                 {/* Column 3: Yang Menerima */}
@@ -430,7 +429,7 @@ export function KwitansiPdfDocument({
                   <View style={styles.signatorySpace} />
 
                   {data.penerima ? (
-                    <Text style={styles.signatoryName}>{data.penerima}</Text>
+                    <Text style={styles.signatoryName}>{formatPersonName(data.penerima)}</Text>
                   ) : (
                     <Text style={styles.signatoryDots}>.......................................</Text>
                   )}

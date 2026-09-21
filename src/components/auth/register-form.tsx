@@ -303,7 +303,7 @@ export function RegisterForm() {
                     <input
                       id="leaderName"
                       type="text"
-                      placeholder="Contoh: Heni Fujiati"
+                      placeholder="Contoh: Heni Fujiati, S.Pd.I"
                       disabled={isPending}
                       {...register("leaderName")}
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-950/90 border border-slate-800 hover:border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500 disabled:opacity-50"

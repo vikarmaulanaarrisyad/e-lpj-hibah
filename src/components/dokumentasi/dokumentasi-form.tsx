@@ -165,7 +165,7 @@ export function DokumentasiForm({
   const totalSourceOptions = bastOptions.length + spOptions.length + receiptOptions.length;
 
   const defaultLeader =
-    profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI";
+    profile?.namaKetua || userProfile?.leaderName || "HENI FUJIATI, S.Pd.I";
 
   const searchParams = useSearchParams();
   const urlId = searchParams.get("id");

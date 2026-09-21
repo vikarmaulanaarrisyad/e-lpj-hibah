@@ -2,6 +2,7 @@
 
 import type { DokumentasiFormData, DokumentasiPhoto, InstitutionProfile } from "@/types";
 import { extractNamaTempat } from "@/lib/utils/pesanan-date";
+import { formatPersonName } from "@/lib/utils/title-case";
 
 interface DokumentasiCanvasProps {
   data: DokumentasiFormData;
@@ -457,8 +458,8 @@ export function DokumentasiCanvas({
                       <div className="h-16 flex items-end">
                         <span className="text-[10px] text-slate-400 italic">(Tanda tangan & stempel toko)</span>
                       </div>
-                      <p className="font-bold text-slate-900 underline uppercase tracking-wide">
-                        {data.penandatangan1Nama || "ANSHORI"}
+                      <p className="font-bold text-slate-900 underline tracking-wide">
+                        {formatPersonName(data.penandatangan1Nama || "ANSHORI")}
                       </p>
                     </div>
 
@@ -473,8 +474,8 @@ export function DokumentasiCanvas({
                       <div className="h-16 flex items-end justify-end">
                         <span className="text-[10px] text-slate-400 italic">(Tanda tangan & cap stempel)</span>
                       </div>
-                      <p className="font-bold text-slate-900 underline uppercase tracking-wide">
-                        {data.penandatangan2Nama || profile?.namaKetua || "HENI FUJIATI"}
+                      <p className="font-bold text-slate-900 underline tracking-wide">
+                        {formatPersonName(data.penandatangan2Nama || profile?.namaKetua || "HENI FUJIATI, S.Pd.I")}
                       </p>
                     </div>
                   </div>

@@ -15,6 +15,7 @@ import Link from "next/link";
 import { deleteBkuTransactionAction } from "@/app/actions/bku.action";
 import { deleteReceiptAction } from "@/app/actions/receipt.action";
 import { swalLoading, swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import { formatPersonName } from "@/lib/utils/title-case";
 
 interface BkuTableProps {
   entries: BkuLedgerEntry[];
@@ -30,7 +31,7 @@ export function BkuTable({
   entries,
   summary,
   institutionName = "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN",
-  leaderName = "HENI FUJIATI",
+  leaderName = "HENI FUJIATI, S.Pd.I",
   treasurerName = "NUR ALIMAH",
   onOpenIncomeModal,
   onRefresh,
@@ -419,8 +420,8 @@ export function BkuTable({
                 Ketua {institutionName}
               </p>
               <div className="h-16 flex items-end justify-center">
-                <span className="text-xs font-bold text-slate-100 uppercase underline tracking-wider print:text-black">
-                  {leaderName}
+                <span className="text-xs font-bold text-slate-100 underline tracking-wider print:text-black">
+                  {formatPersonName(leaderName)}
                 </span>
               </div>
             </div>
@@ -433,8 +434,8 @@ export function BkuTable({
                 Bendahara Pengeluaran
               </p>
               <div className="h-16 flex items-end justify-center">
-                <span className="text-xs font-bold text-slate-100 uppercase underline tracking-wider print:text-black">
-                  {treasurerName}
+                <span className="text-xs font-bold text-slate-100 underline tracking-wider print:text-black">
+                  {formatPersonName(treasurerName)}
                 </span>
               </div>
             </div>

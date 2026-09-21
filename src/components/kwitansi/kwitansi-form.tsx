@@ -185,7 +185,7 @@ export function KwitansiForm({
     }
   };
 
-  const defaultChairman = profile?.namaKetua || initialLeaderName || "HENI FUJIATI";
+  const defaultChairman = profile?.namaKetua || initialLeaderName || "HENI FUJIATI, S.Pd.I";
   const defaultTreasurer = profile?.namaBendahara || initialUserName || "NUR ALIMAH";
   const defaultInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
@@ -1875,7 +1875,8 @@ export function KwitansiForm({
                       onChange={(e) =>
                         setFormData({ ...formData, ketua: e.target.value })
                       }
-                      className="w-full text-xs font-semibold bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-emerald-600 uppercase"
+                      placeholder="Contoh: HENI FUJIATI, S.Pd.I"
+                      className="w-full text-xs font-semibold bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-emerald-600"
                     />
                   </div>
 
@@ -1889,7 +1890,7 @@ export function KwitansiForm({
                       onChange={(e) =>
                         setFormData({ ...formData, bendahara: e.target.value })
                       }
-                      className="w-full text-xs font-semibold bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-emerald-600 uppercase"
+                      className="w-full text-xs font-semibold bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-emerald-600"
                     />
                   </div>
                 </div>

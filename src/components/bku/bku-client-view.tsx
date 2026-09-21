@@ -22,7 +22,7 @@ export function BkuClientView({
   initialSummary,
   institutionName = "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN",
   userName,
-  leaderName = "HENI FUJIATI",
+  leaderName = "HENI FUJIATI, S.Pd.I",
   treasurerName = "NUR ALIMAH",
 }: BkuClientViewProps) {
   const [entries, setEntries] = useState<BkuLedgerEntry[]>(initialEntries);

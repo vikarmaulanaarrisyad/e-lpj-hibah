@@ -2,7 +2,7 @@
 
 import type { BastFormData, InstitutionProfile } from "@/types";
 import { cleanPihakJabatan, formatPihak2Jabatan } from "@/lib/utils/pesanan-date";
-import { cleanAndFormatTitle } from "@/lib/utils/title-case";
+import { cleanAndFormatTitle, formatPersonName } from "@/lib/utils/title-case";
 
 interface BastCanvasProps {
   data: BastFormData;
@@ -196,7 +196,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
         <div className="grid grid-cols-12 gap-1 items-baseline">
           <span className="col-span-1">1.</span>
           <span className="col-span-2 font-medium">Nama</span>
-          <span className="col-span-9 font-bold uppercase">: {data.pihak1Nama || "HENI FUJIATI"}</span>
+          <span className="col-span-9 font-bold">: {formatPersonName(data.pihak1Nama || "HENI FUJIATI, S.Pd.I")}</span>
         </div>
         <div className="grid grid-cols-12 gap-1 items-baseline -mt-0.5">
           <span className="col-span-1"></span>
@@ -337,7 +337,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Toko Rekanan */}
           <div className="h-24 w-full my-1" />
 
-          <span className="font-bold underline uppercase tracking-wide">{data.pihak2Nama || "ANSHORI"}</span>
+          <span className="font-bold underline tracking-wide">{formatPersonName(data.pihak2Nama || "ANSHORI")}</span>
           <span className="text-[10.5px] text-black font-mono">Penyedia Barang</span>
         </div>
 
@@ -348,7 +348,7 @@ export function BastCanvas({ data, profile, institutionName }: BastCanvasProps) 
           {/* Ruang Bersih untuk Tanda Tangan & Stempel Basah Lembaga */}
           <div className="h-24 w-full my-1" />
 
-          <span className="font-bold underline uppercase tracking-wide text-black">{data.pihak1Nama || "HENI FUJIATI"}</span>
+          <span className="font-bold underline tracking-wide text-black">{formatPersonName(data.pihak1Nama || "HENI FUJIATI, S.Pd.I")}</span>
           <span className="text-[10.5px] text-black font-mono">{cleanJabatan}</span>
         </div>
       </div>

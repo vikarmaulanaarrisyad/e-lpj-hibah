@@ -53,7 +53,7 @@ export class InstitutionRepository {
         noRegistrasi: data.noRegistrasi,
         logoUrl: data.logoUrl ?? null,
         logoPublicId: data.logoPublicId ?? null,
-        namaKetua: data.namaKetua ?? "HENI FUJIATI",
+        namaKetua: data.namaKetua ?? "HENI FUJIATI, S.Pd.I",
         jabatanKetua: data.jabatanKetua ?? "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
         namaBendahara: data.namaBendahara ?? "NUR ALIMAH",
         formatNomorSp: data.formatNomorSp ?? "/A/PR.FNU/",

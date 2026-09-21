@@ -32,7 +32,7 @@ export class InstitutionService {
           noRegistrasi: "HBH-2026-NU-0428",
           logoUrl: null,
           logoPublicId: null,
-          namaKetua: user?.leaderName || "HENI FUJIATI",
+          namaKetua: user?.leaderName || "HENI FUJIATI, S.Pd.I",
           jabatanKetua: "Ketua Pimpinan Ranting Fatayat NU Dawuhan Selatan",
           namaBendahara: user?.name || "NUR ALIMAH",
           formatNomorSp: "/A/PR.FNU/",

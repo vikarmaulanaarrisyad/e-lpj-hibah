@@ -177,7 +177,7 @@ model InstitutionProfile {
   logoPublicId  String?
 
   // Pejabat Lembaga
-  namaKetua     String?  @default("HENI FUJIATI")
+  namaKetua     String?  @default("HENI FUJIATI, S.Pd.I")
   jabatanKetua  String?  @default("Ketua")
   namaBendahara String?  @default("NUR ALIMAH")
 
@@ -199,7 +199,7 @@ model PurchaseOrder {
   namaPaket          String    // Paket Pekerjaan / Pengadaan (cth: "Pembelian Sound Aktif & Sarana")
 
   // Pihak Kesatu (Pemesan)
-  pihak1Nama         String    // Nama Ketua (cth: "HENI FUJIATI")
+  pihak1Nama         String    // Nama Ketua (cth: "HENI FUJIATI, S.Pd.I")
   pihak1Jabatan      String    // Jabatan Pemesan
   pihak1Alamat       String?   // Alamat Sekretariat
 

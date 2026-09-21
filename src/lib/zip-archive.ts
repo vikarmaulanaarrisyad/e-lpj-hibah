@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { jsPDF } from "jspdf";
 import { generateBkuPdf } from "./bku-pdf";
 import { angkaKeTerbilang } from "./utils/terbilang";
-import { formatUraianBelanja, cleanAndFormatTitle } from "./utils/title-case";
+import { formatUraianBelanja, cleanAndFormatTitle, formatPersonName } from "./utils/title-case";
 import { cleanPihakJabatan, formatPihak2Jabatan } from "./utils/pesanan-date";
 import type { LpjArchiveData } from "@/app/actions/archive.action";
 import type { Receipt, PurchaseOrder, BastDocument, BastItem, PesananItem } from "@/types";
@@ -237,13 +237,13 @@ function createSuratPengantarPdf(data: LpjArchiveData): Blob {
   y += 24;
 
   doc.setFont("helvetica", "bold");
-  const ketua = data.profile?.namaKetua || data.user.leaderName || "HENI FUJIATI";
-  doc.text(ketua.toUpperCase(), leftX, y, { align: "center" });
+  const ketua = formatPersonName(data.profile?.namaKetua || data.user.leaderName || "HENI FUJIATI, S.Pd.I");
+  doc.text(ketua, leftX, y, { align: "center" });
   doc.setLineWidth(0.3);
   doc.line(leftX - 22, y + 1, leftX + 22, y + 1);
 
-  const bendahara = data.profile?.namaBendahara || data.user.name || "NUR ALIMAH";
-  doc.text(bendahara.toUpperCase(), rightX, y, { align: "center" });
+  const bendahara = formatPersonName(data.profile?.namaBendahara || data.user.name || "NUR ALIMAH");
+  doc.text(bendahara, rightX, y, { align: "center" });
   doc.line(rightX - 22, y + 1, rightX + 22, y + 1);
 
   return doc.output("blob");
@@ -394,13 +394,13 @@ function createRabPdf(data: LpjArchiveData): Blob {
 
   y += 22;
   doc.setFont("helvetica", "bold");
-  const ketua = data.profile?.namaKetua || data.user.leaderName || "HENI FUJIATI";
-  doc.text(ketua.toUpperCase(), leftX, y, { align: "center" });
+  const ketua = formatPersonName(data.profile?.namaKetua || data.user.leaderName || "HENI FUJIATI, S.Pd.I");
+  doc.text(ketua, leftX, y, { align: "center" });
   doc.setLineWidth(0.3);
   doc.line(leftX - 22, y + 1, leftX + 22, y + 1);
 
-  const bendahara = data.profile?.namaBendahara || data.user.name || "NUR ALIMAH";
-  doc.text(bendahara.toUpperCase(), rightX, y, { align: "center" });
+  const bendahara = formatPersonName(data.profile?.namaBendahara || data.user.name || "NUR ALIMAH");
+  doc.text(bendahara, rightX, y, { align: "center" });
   doc.line(rightX - 22, y + 1, rightX + 22, y + 1);
 
   return doc.output("blob");
@@ -514,9 +514,9 @@ function createSingleReceiptPdf(receipt: Receipt, data: LpjArchiveData): Blob {
   y += 18;
 
   doc.setFont("helvetica", "bold");
-  doc.text(receipt.ketua.toUpperCase(), col1X, y, { align: "center" });
-  doc.text(receipt.bendahara.toUpperCase(), col2X, y, { align: "center" });
-  doc.text(receipt.penerima.toUpperCase(), col3X, y, { align: "center" });
+  doc.text(formatPersonName(receipt.ketua || "HENI FUJIATI, S.Pd.I"), col1X, y, { align: "center" });
+  doc.text(formatPersonName(receipt.bendahara || "NUR ALIMAH"), col2X, y, { align: "center" });
+  doc.text(formatPersonName(receipt.penerima), col3X, y, { align: "center" });
 
   return doc.output("blob");
 }
@@ -691,8 +691,8 @@ function createSingleSpPdf(sp: PurchaseOrder, data: LpjArchiveData): Blob {
   y += 20;
 
   doc.setFont("helvetica", "bold");
-  doc.text(sp.pihak1Nama.toUpperCase(), col1X, y, { align: "center" });
-  doc.text(sp.pihak2Nama.toUpperCase(), col2X, y, { align: "center" });
+  doc.text(formatPersonName(sp.pihak1Nama || "HENI FUJIATI, S.Pd.I"), col1X, y, { align: "center" });
+  doc.text(formatPersonName(sp.pihak2Nama), col2X, y, { align: "center" });
 
   return doc.output("blob");
 }
@@ -831,8 +831,8 @@ function createSingleBastPdf(bast: BastDocument, data: LpjArchiveData): Blob {
   y += 20;
 
   doc.setFont("helvetica", "bold");
-  doc.text(bast.pihak2Nama.toUpperCase(), col2X, y, { align: "center" });
-  doc.text(bast.pihak1Nama.toUpperCase(), col1X, y, { align: "center" });
+  doc.text(formatPersonName(bast.pihak2Nama), col2X, y, { align: "center" });
+  doc.text(formatPersonName(bast.pihak1Nama || "HENI FUJIATI, S.Pd.I"), col1X, y, { align: "center" });
   y += 4;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
@@ -866,8 +866,8 @@ TAHUN ANGGARAN: ${data.tahun}
 LEMBAGA PENERIMA : ${lembaga.toUpperCase()}
 KODE REGISTRASI  : ${data.profile?.noRegistrasi || "-"}
 ALAMAT           : ${data.profile?.alamat || "-"}
-KETUA LEMBAGA    : ${ketua.toUpperCase()}
-BENDAHARA        : ${bendahara.toUpperCase()}
+KETUA LEMBAGA    : ${formatPersonName(ketua)}
+BENDAHARA        : ${formatPersonName(bendahara)}
 WAKTU PENGARSIPAN: ${nowStr}
 
 ------------------------------------------------------------------------

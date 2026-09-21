@@ -3,6 +3,7 @@
 import type { SuratPengantarFormData, InstitutionProfile } from "@/types";
 import { formatRupiahNumber } from "@/lib/utils/terbilang";
 import { buildFormattedDocumentNumber } from "@/lib/utils/pesanan-date";
+import { formatPersonName } from "@/lib/utils/title-case";
 
 interface SuratPengantarCanvasProps {
   data: SuratPengantarFormData;
@@ -196,8 +197,8 @@ export function SuratPengantarCanvas({ data, profile }: SuratPengantarCanvasProp
           <div className="h-20 sm:h-24 w-full flex items-center justify-center relative" />
 
           {/* Nama Terang Ketua */}
-          <p className="font-extrabold uppercase tracking-wide">
-            {data.penandatanganNama || "HENI FUJIATI"}
+          <p className="font-extrabold tracking-wide">
+            {formatPersonName(data.penandatanganNama || "HENI FUJIATI, S.Pd.I")}
           </p>
         </div>
       </div>

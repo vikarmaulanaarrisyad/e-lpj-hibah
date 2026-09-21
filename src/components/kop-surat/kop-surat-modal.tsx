@@ -50,7 +50,7 @@ export function KopSuratModal({
     email: initialProfile?.email || "prfnudawuhanselatan@gmail.com",
     noHp: initialProfile?.noHp || "085642719869",
     noRegistrasi: initialProfile?.noRegistrasi || "HBH-2026-NU-0428",
-    namaKetua: initialProfile?.namaKetua || "HENI FUJIATI",
+    namaKetua: initialProfile?.namaKetua || "HENI FUJIATI, S.Pd.I",
     jabatanKetua: initialProfile?.jabatanKetua || "Ketua",
     namaBendahara: initialProfile?.namaBendahara || "NUR ALIMAH",
     logoBase64OrUrl: initialProfile?.logoUrl || "",
@@ -76,7 +76,7 @@ export function KopSuratModal({
         email: initialProfile.email || "prfnudawuhanselatan@gmail.com",
         noHp: initialProfile.noHp || "085642719869",
         noRegistrasi: initialProfile.noRegistrasi || "HBH-2026-NU-0428",
-        namaKetua: initialProfile.namaKetua || "HENI FUJIATI",
+        namaKetua: initialProfile.namaKetua || "HENI FUJIATI, S.Pd.I",
         jabatanKetua: initialProfile.jabatanKetua || "Ketua",
         namaBendahara: initialProfile.namaBendahara || "NUR ALIMAH",
         logoBase64OrUrl: initialProfile.logoUrl || "",
@@ -456,7 +456,8 @@ export function KopSuratModal({
                     onChange={(e) =>
                       setFormData({ ...formData, namaKetua: e.target.value })
                     }
-                    className="w-full text-xs font-bold uppercase bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                    placeholder="Contoh: HENI FUJIATI, S.Pd.I"
+                    className="w-full text-xs font-bold bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -484,7 +485,7 @@ export function KopSuratModal({
                     onChange={(e) =>
                       setFormData({ ...formData, namaBendahara: e.target.value })
                     }
-                    className="w-full text-xs font-bold uppercase bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full text-xs font-bold bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>

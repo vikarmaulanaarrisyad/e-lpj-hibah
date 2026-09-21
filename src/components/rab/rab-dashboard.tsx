@@ -50,7 +50,7 @@ export function RabDashboard({
   receipts = [],
   institutionName = "PR Fatayat NU Dawuhan Selatan",
   userName = "NUR ALIMAH",
-  leaderName = "HENI FUJIATI",
+  leaderName = "HENI FUJIATI, S.Pd.I",
   treasurerName,
   profile,
 }: RabDashboardProps) {

@@ -194,3 +194,215 @@ export function cleanAndFormatTitle(text?: string | null): string {
   clean = clean.split(/\s*=\s*Rp/i)[0].trim();
   return formatProperCase(clean);
 }
+
+/**
+ * Pemetaan gelar akademik & kehormatan baku (PUEBI/EYD).
+ * Memastikan gelar seperti S.Pd.I tidak menjadi kapital penuh (S.PD.I).
+ */
+const GELAR_STANDAR_MAP: Record<string, string> = {
+  "S.PD.I": "S.Pd.I",
+  "S.PDI": "S.Pd.I",
+  "S.PD": "S.Pd",
+  "S.AG": "S.Ag",
+  "S.AG.I": "S.Ag.I",
+  "S.E": "S.E",
+  "S.EI": "S.E.I",
+  "S.E.I": "S.E.I",
+  "S.KOM": "S.Kom",
+  "S.SOS": "S.Sos",
+  "S.SOS.I": "S.Sos.I",
+  "S.KED": "S.Ked",
+  "S.H": "S.H",
+  "S.HI": "S.H.I",
+  "S.H.I": "S.H.I",
+  "S.T": "S.T",
+  "S.SI": "S.Si",
+  "S.PSI": "S.Psi",
+  "S.HUM": "S.Hum",
+  "S.FARM": "S.Farm",
+  "S.STAT": "S.Stat",
+  "S.MAT": "S.Mat",
+  "S.GZ": "S.Gz",
+  "S.IP": "S.IP",
+  "S.IP.": "S.IP",
+  "S.KEL": "S.Kel",
+  "S.PI": "S.Pi",
+  "S.PT": "S.Pt",
+  "S.P": "S.P",
+  "S.SN": "S.Sn",
+  "S.TH": "S.Th",
+  "S.TH.I": "S.Th.I",
+  "S.TR.T": "S.Tr.T",
+  "S.TR.KOM": "S.Tr.Kom",
+  "S.TR.SOS": "S.Tr.Sos",
+  "S.TR.KEB": "S.Tr.Keb",
+  "S.TR.KES": "S.Tr.Kes",
+  "S.TR": "S.Tr",
+  "M.PD.I": "M.Pd.I",
+  "M.PDI": "M.Pd.I",
+  "M.PD": "M.Pd",
+  "M.AG": "M.Ag",
+  "M.E": "M.E",
+  "M.EI": "M.E.I",
+  "M.E.I": "M.E.I",
+  "M.KOM": "M.Kom",
+  "M.M": "M.M",
+  "M.SI": "M.Si",
+  "M.SC": "M.Sc",
+  "M.H": "M.H",
+  "M.T": "M.T",
+  "M.KES": "M.Kes",
+  "M.HUM": "M.Hum",
+  "M.KN": "M.Kn",
+  "M.SOS": "M.Sos",
+  "M.FARM": "M.Farm",
+  "M.STAT": "M.Stat",
+  "A.MD": "A.Md",
+  "A.MD.KEB": "A.Md.Keb",
+  "A.MD.KEP": "A.Md.Kep",
+  "A.MD.KOM": "A.Md.Kom",
+  "A.MD.FARM": "A.Md.Farm",
+  "A.MD.RMIK": "A.Md.RMIK",
+  "A.MD.AK": "A.Md.Ak",
+  "A.MD.P": "A.Md.P",
+  "A.MA.PD": "A.Ma.Pd",
+  "A.MA": "A.Ma",
+  "PH.D": "Ph.D",
+  "LL.M": "LL.M",
+  "MBA": "MBA",
+  "M.B.A": "M.B.A",
+};
+
+/**
+ * Format satu fragmen gelar akademik
+ */
+function formatSingleGelar(g: string): string {
+  const clean = g.trim();
+  if (!clean) return "";
+
+  const upper = clean.toUpperCase();
+  const upperNoDot = upper.endsWith(".") ? upper.slice(0, -1) : upper;
+  const upperWithDot = upper.endsWith(".") ? upper : upper + ".";
+
+  if (GELAR_STANDAR_MAP[upper]) return GELAR_STANDAR_MAP[upper];
+  if (GELAR_STANDAR_MAP[upperNoDot]) return GELAR_STANDAR_MAP[upperNoDot];
+  if (GELAR_STANDAR_MAP[upperWithDot]) return GELAR_STANDAR_MAP[upperWithDot];
+
+  // Pola umum sarjana/magister: S.Xxx / M.Xxx / A.Md.Xxx
+  const pattern = /^([SMA])\.([A-Za-z]+)(?:\.([A-Za-z]+))?\.?$/;
+  const match = clean.match(pattern);
+  if (match) {
+    const prefix = match[1].toUpperCase();
+    const mid =
+      match[2].length === 1
+        ? match[2].toUpperCase()
+        : match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase();
+    const suffix = match[3]
+      ? match[3].toUpperCase() === "I"
+        ? ".I"
+        : "." + match[3].charAt(0).toUpperCase() + match[3].slice(1).toLowerCase()
+      : "";
+    return `${prefix}.${mid}${suffix}`;
+  }
+
+  // Jika pengguna menulis dengan mixed-case (ada huruf kecil), pertahankan
+  if (clean !== clean.toUpperCase() && clean !== clean.toLowerCase()) {
+    return clean;
+  }
+
+  return clean;
+}
+
+/**
+ * Format nama orang & penandatangan dokumen dinas/LPJ:
+ * - Nama lengkap orang: HURUF KAPITAL (Contoh: "HENI FUJIATI")
+ * - Gelar akademik / kehormatan: Casing baku EYD/PUEBI (Contoh: "S.Pd.I", bukan "S.PD.I")
+ *
+ * Contoh:
+ * - "HENI FUJIATI, S.Pd.I" -> "HENI FUJIATI, S.Pd.I"
+ * - "HENI FUJIATI, S.PD.I" -> "HENI FUJIATI, S.Pd.I"
+ * - "heni fujiati, s.pd.i" -> "HENI FUJIATI, S.Pd.I"
+ * - "Heni Fujiati, S.Pd.I" -> "HENI FUJIATI, S.Pd.I"
+ * - "HENI FUJIATI S.PD.I" -> "HENI FUJIATI, S.Pd.I"
+ * - "NUR ALIMAH" -> "NUR ALIMAH"
+ * - "Drs. Ahmad Fauzi, M.Pd.I" -> "Drs. AHMAD FAUZI, M.Pd.I"
+ */
+export function formatPersonName(name?: string | null): string {
+  if (!name) return "";
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+
+  // Pisahkan bagian nama utama dan bagian gelar (berdasarkan tanda koma)
+  let mainPart = trimmed;
+  let gelarParts: string[] = [];
+
+  if (trimmed.includes(",")) {
+    const parts = trimmed.split(",");
+    mainPart = parts[0].trim();
+    gelarParts = parts.slice(1).map((s) => s.trim()).filter(Boolean);
+  } else {
+    // Jika tidak ada koma tapi berakhiran pola gelar umum (misal: "HENI FUJIATI S.PD.I")
+    const match = trimmed.match(
+      /^(.*?)(?:,\s*|\s+)((?:[SMA]\.[A-Za-z]+(?:\.[A-Za-z]+)?\.?|S\.Kom|M\.Kom|S\.Sos|M\.M|Ph\.D|LL\.M|MBA)(?:,\s*.*)?)$/i
+    );
+    if (match) {
+      mainPart = match[1].trim();
+      gelarParts = match[2].split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  }
+
+  // Tangani gelar kehormatan / gelar depan (Drs., Dra., Dr., dr., Prof., H., Hj., K.H., dll.)
+  const PREFIX_TITLES = [
+    "Drs.",
+    "Dra.",
+    "Dr.",
+    "dr.",
+    "drg.",
+    "drh.",
+    "Prof.",
+    "H.",
+    "Hj.",
+    "K.H.",
+    "K.",
+    "Ust.",
+    "Ir.",
+    "Ns.",
+    "Apt.",
+  ];
+
+  let currentMain = mainPart;
+  const foundPrefixes: string[] = [];
+  let prefixFound = true;
+
+  while (prefixFound) {
+    prefixFound = false;
+    for (const p of PREFIX_TITLES) {
+      const pRegex = new RegExp("^" + p.replace(".", "\\.") + "\\s*", "i");
+      const m = currentMain.match(pRegex);
+      if (m) {
+        foundPrefixes.push(p);
+        currentMain = currentMain.slice(m[0].length).trim();
+        prefixFound = true;
+        break;
+      }
+    }
+  }
+
+  // Nama orang utama dikonversi ke HURUF KAPITAL
+  const formattedName = currentMain.toUpperCase();
+  const fullMain =
+    foundPrefixes.length > 0
+      ? `${foundPrefixes.join(" ")} ${formattedName}`
+      : formattedName;
+
+  if (gelarParts.length === 0) {
+    return fullMain;
+  }
+
+  const formattedGelars = gelarParts
+    .map((g) => formatSingleGelar(g))
+    .filter(Boolean);
+
+  return `${fullMain}, ${formattedGelars.join(", ")}`;
+}
+

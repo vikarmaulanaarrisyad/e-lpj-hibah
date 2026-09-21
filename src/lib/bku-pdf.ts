@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { BkuLedgerEntry, BkuSummary, InstitutionProfile } from "@/types";
+import { formatPersonName } from "./utils/title-case";
 
 export interface GenerateBkuPdfOptions {
   entries: BkuLedgerEntry[];
@@ -22,7 +23,7 @@ export function generateBkuPdf(options: GenerateBkuPdfOptions): jsPDF {
     summary,
     profile,
     institutionName = profile?.namaLembaga || "PR FATAYAT NU DAWUHAN SELATAN",
-    leaderName = profile?.namaKetua || "HENI FUJIATI",
+    leaderName = profile?.namaKetua || "HENI FUJIATI, S.Pd.I",
     treasurerName = profile?.namaBendahara || "NUR ALIMAH",
     tahunAnggaran = "2026",
     tanggalCetak = new Date().toLocaleDateString("id-ID", {
@@ -259,7 +260,7 @@ export function generateBkuPdf(options: GenerateBkuPdfOptions): jsPDF {
   doc.text(profile?.jabatanKetua || "Ketua Lembaga", leftColX, signY + 4, { align: "center" });
 
   doc.setFont("helvetica", "bold");
-  doc.text(leaderName.toUpperCase(), leftColX, signY + 22, { align: "center" });
+  doc.text(formatPersonName(leaderName), leftColX, signY + 22, { align: "center" });
   doc.setLineWidth(0.3);
   doc.line(leftColX - 25, signY + 23, leftColX + 25, signY + 23);
 
@@ -269,7 +270,7 @@ export function generateBkuPdf(options: GenerateBkuPdfOptions): jsPDF {
   doc.text("Bendahara Pengeluaran,", rightColX, signY + 4, { align: "center" });
 
   doc.setFont("helvetica", "bold");
-  doc.text(treasurerName.toUpperCase(), rightColX, signY + 22, { align: "center" });
+  doc.text(formatPersonName(treasurerName), rightColX, signY + 22, { align: "center" });
   doc.setLineWidth(0.3);
   doc.line(rightColX - 25, signY + 23, rightColX + 25, signY + 23);
 
