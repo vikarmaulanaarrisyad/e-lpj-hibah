@@ -1,6 +1,8 @@
 import { cache } from "react";
-import { prisma } from "@/lib/prisma";
+import { prisma, withPrismaRetry } from "@/lib/prisma";
 import type { User, CreateUserData } from "@/types";
+
+const safeCache = typeof cache === "function" ? cache : <T extends Function>(fn: T) => fn;
 
 export class UserRepository {
   /**
@@ -8,51 +10,57 @@ export class UserRepository {
    * Strictly raw database query, no business rules or validation logic.
    */
   async findByEmail(email: string): Promise<User | null> {
-    try {
-      return await prisma.user.findUnique({
-        where: { email: email.toLowerCase().trim() },
-      });
-    } catch (error) {
-      console.error("[UserRepository] Error in findByEmail:", error);
-      throw error;
-    }
+    return withPrismaRetry(async () => {
+      try {
+        return await prisma.user.findUnique({
+          where: { email: email.toLowerCase().trim() },
+        });
+      } catch (error) {
+        console.error("[UserRepository] Error in findByEmail:", error);
+        throw error;
+      }
+    });
   }
 
   /**
    * Find a user by their unique ID.
    * Di-memoize per-request dengan React cache agar tidak memicu query ganda.
    */
-  findById = cache(async (id: string): Promise<User | null> => {
-    try {
-      return await prisma.user.findUnique({
-        where: { id },
-      });
-    } catch (error) {
-      console.error("[UserRepository] Error in findById:", error);
-      throw error;
-    }
+  findById = safeCache(async (id: string): Promise<User | null> => {
+    return withPrismaRetry(async () => {
+      try {
+        return await prisma.user.findUnique({
+          where: { id },
+        });
+      } catch (error) {
+        console.error("[UserRepository] Error in findById:", error);
+        throw error;
+      }
+    });
   });
 
   /**
    * Create a new user record in the database.
    */
   async create(data: CreateUserData): Promise<User> {
-    try {
-      return await prisma.user.create({
-        data: {
-          email: data.email.toLowerCase().trim(),
-          name: data.name,
-          password: data.password,
-          role: data.role,
-          institution: data.institution ?? null,
-          leaderName: data.leaderName ?? null,
-          nip: data.nip ?? null,
-        },
-      });
-    } catch (error) {
-      console.error("[UserRepository] Failed to create user:", error);
-      throw new Error("Gagal menyimpan data pengguna ke database.");
-    }
+    return withPrismaRetry(async () => {
+      try {
+        return await prisma.user.create({
+          data: {
+            email: data.email.toLowerCase().trim(),
+            name: data.name,
+            password: data.password,
+            role: data.role,
+            institution: data.institution ?? null,
+            leaderName: data.leaderName ?? null,
+            nip: data.nip ?? null,
+          },
+        });
+      } catch (error) {
+        console.error("[UserRepository] Failed to create user:", error);
+        throw new Error("Gagal menyimpan data pengguna ke database.");
+      }
+    });
   }
 
   /**
