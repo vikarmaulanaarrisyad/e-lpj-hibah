@@ -412,6 +412,52 @@ export function BastForm({
     };
   }, [pesananList, formData, defaultInstitution, todayStr]);
 
+  // State toggle penyembunyian Surat Pesanan terealisasi & Kwitansi ber-BAST
+  const [hideRealizedSpForBast, setHideRealizedSpForBast] = useState<boolean>(true);
+  const [hideLinkedReceiptsForBast, setHideLinkedReceiptsForBast] = useState<boolean>(true);
+
+  // Filter Surat Pesanan: sembunyikan yang sudah terealisasi ke BAST lain jika hideRealizedSpForBast aktif
+  const availablePesananForBast = useMemo(() => {
+    return pesananList.filter((p) => {
+      // Tetap munculkan jika SP ini sedang terhubung ke BAST yang sedang dibuka/diedit
+      if (formData.nomorSpk && p.nomorSp === formData.nomorSpk) return true;
+
+      const isAlreadyRealized = bastList.some(
+        (b) => b.nomorSpk === p.nomorSp && b.id !== formData.id
+      );
+
+      if (hideRealizedSpForBast && isAlreadyRealized) return false;
+      return true;
+    });
+  }, [pesananList, bastList, formData.nomorSpk, formData.id, hideRealizedSpForBast]);
+
+  const realizedSpForBastCount = useMemo(() => {
+    return pesananList.filter((p) =>
+      bastList.some((b) => b.nomorSpk === p.nomorSp && b.id !== formData.id)
+    ).length;
+  }, [pesananList, bastList, formData.id]);
+
+  // Filter Kwitansi: sembunyikan kwitansi yang sudah memiliki BAST jika hideLinkedReceiptsForBast aktif
+  const availableReceiptsForBast = useMemo(() => {
+    return initialReceipts.filter((rc) => {
+      // Tetap munculkan kwitansi yang sedang tertaut pada BAST aktif
+      if (formData.receiptId && rc.id === formData.receiptId) return true;
+
+      const isAlreadyLinked = bastList.some(
+        (b) => b.receiptId === rc.id && b.id !== formData.id
+      );
+
+      if (hideLinkedReceiptsForBast && isAlreadyLinked) return false;
+      return true;
+    });
+  }, [initialReceipts, bastList, formData.receiptId, formData.id, hideLinkedReceiptsForBast]);
+
+  const linkedReceiptsForBastCount = useMemo(() => {
+    return initialReceipts.filter((rc) =>
+      bastList.some((b) => b.receiptId === rc.id && b.id !== formData.id)
+    ).length;
+  }, [initialReceipts, bastList, formData.id]);
+
   // Ekspor Dokumen Bundel Pengadaan (SP + BAST) 2 Halaman PDF
   const handleExportBundlePdf = async () => {
     const spEl = document.getElementById("pesananPrintArea");
@@ -1211,17 +1257,33 @@ export function BastForm({
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                     <ReceiptIcon className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Tautkan dari Kwitansi Belanja Barang:</span>
+                    <span>Tautkan dari Kwitansi Belanja Barang ({availableReceiptsForBast.length}):</span>
                   </label>
-                  {formData.receiptId && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectReceipt("")}
-                      className="text-[11px] text-slate-400 hover:text-red-400 transition-colors"
-                    >
-                      Lepas Tautan
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2.5">
+                    {linkedReceiptsForBastCount > 0 && (
+                      <label
+                        className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer select-none"
+                        title="Sembunyikan kwitansi yang sudah dibuatkan dokumen BAST"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={hideLinkedReceiptsForBast}
+                          onChange={(e) => setHideLinkedReceiptsForBast(e.target.checked)}
+                          className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer accent-emerald-500"
+                        />
+                        <span>Sembunyikan yg ada BAST ({linkedReceiptsForBastCount})</span>
+                      </label>
+                    )}
+                    {formData.receiptId && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectReceipt("")}
+                        className="text-[11px] text-slate-400 hover:text-red-400 transition-colors"
+                      >
+                        Lepas Tautan
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <select
                   value={formData.receiptId || ""}
@@ -1229,7 +1291,7 @@ export function BastForm({
                   className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- Pilih Kwitansi Barang (Otomatis Isi Data) --</option>
-                  {initialReceipts.map((rc) => {
+                  {availableReceiptsForBast.map((rc) => {
                     const linkedBast = bastList.find(
                       (b) => b.receiptId === rc.id && b.id !== formData.id
                     );
@@ -1451,11 +1513,27 @@ export function BastForm({
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-white flex items-center gap-1.5">
                       <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
-                      <span>Hubungkan dengan Surat Pesanan (SP)</span>
+                      <span>Hubungkan dengan Surat Pesanan (SP) ({availablePesananForBast.length}):</span>
                     </label>
-                    <span className="text-[10px] text-emerald-400 font-medium font-mono">
-                      1 Pembelian Nyambung
-                    </span>
+                    <div className="flex items-center gap-2.5">
+                      {realizedSpForBastCount > 0 && (
+                        <label
+                          className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer select-none"
+                          title="Sembunyikan Surat Pesanan yang sudah dibuatkan dokumen BAST lain"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={hideRealizedSpForBast}
+                            onChange={(e) => setHideRealizedSpForBast(e.target.checked)}
+                            className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer accent-emerald-500"
+                          />
+                          <span>Sembunyikan yg sudah BAST ({realizedSpForBastCount})</span>
+                        </label>
+                      )}
+                      <span className="text-[10px] text-emerald-400 font-medium font-mono">
+                        1 Pembelian Nyambung
+                      </span>
+                    </div>
                   </div>
                   <select
                     value={
@@ -1473,12 +1551,23 @@ export function BastForm({
                     }}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
                   >
-                    <option value="">-- Pilih dari Surat Pesanan yang Ada ({pesananList.length}) --</option>
-                    {pesananList.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nomorSp} • {p.namaPaket} • {p.pihak2Toko} (Rp {p.totalHarga.toLocaleString("id-ID")})
-                      </option>
-                    ))}
+                    <option value="">-- Pilih dari Surat Pesanan ({availablePesananForBast.length}) --</option>
+                    {availablePesananForBast.map((p) => {
+                      const isAlreadyLinked = bastList.some(
+                        (b) => b.nomorSpk === p.nomorSp && b.id !== formData.id
+                      );
+                      return (
+                        <option
+                          key={p.id}
+                          value={p.id}
+                          disabled={isAlreadyLinked}
+                          className={isAlreadyLinked ? "text-slate-500 bg-slate-950" : "text-white bg-slate-900"}
+                        >
+                          {p.nomorSp} • {p.namaPaket} • {p.pihak2Toko} (Rp {p.totalHarga.toLocaleString("id-ID")})
+                          {isAlreadyLinked ? " ⚠️ (Sudah ada BAST)" : ""}
+                        </option>
+                      );
+                    })}
                   </select>
 
                   {/* Connection Status Banner */}

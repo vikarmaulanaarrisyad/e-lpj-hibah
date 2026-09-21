@@ -995,6 +995,52 @@ export function PesananForm({
     setSaveErrorMsg(null);
   };
 
+  // Helper untuk memeriksa apakah suatu SP sudah terealisasi (sudah memiliki BAST)
+  const isSpRealized = (sp: PurchaseOrder) => {
+    return bastList.some(
+      (b) => b.nomorSpk === sp.nomorSp || (sp.receiptId && b.receiptId === sp.receiptId)
+    );
+  };
+
+  // State toggle penyembunyian arsip & kwitansi
+  const [hideRealizedSp, setHideRealizedSp] = useState<boolean>(true);
+  const [hideLinkedReceipts, setHideLinkedReceipts] = useState<boolean>(true);
+
+  // Filter daftar SP: sembunyikan yang sudah terealisasi (ada BAST) jika hideRealizedSp aktif
+  const filteredPesananList = useMemo(() => {
+    if (!hideRealizedSp) return pesananList;
+    return pesananList.filter((p) => {
+      // Pertahankan dokumen yang sedang aktif diedit agar tidak hilang dari dropdown
+      if (formData.id && p.id === formData.id) return true;
+      return !isSpRealized(p);
+    });
+  }, [pesananList, bastList, hideRealizedSp, formData.id]);
+
+  const realizedSpCount = useMemo(() => {
+    return pesananList.filter(isSpRealized).length;
+  }, [pesananList, bastList]);
+
+  // Filter daftar Kwitansi: sembunyikan kwitansi yang sudah memiliki SP jika hideLinkedReceipts aktif
+  const availableReceipts = useMemo(() => {
+    return initialReceipts.filter((rc) => {
+      // Kwitansi yang sedang tertaut pada form aktif tetap ditampilkan
+      if (formData.receiptId && rc.id === formData.receiptId) return true;
+
+      const hasSp = pesananList.some(
+        (p) => p.receiptId === rc.id && p.id !== formData.id
+      );
+
+      if (hideLinkedReceipts && hasSp) return false;
+      return true;
+    });
+  }, [initialReceipts, pesananList, formData.receiptId, formData.id, hideLinkedReceipts]);
+
+  const linkedReceiptsCount = useMemo(() => {
+    return initialReceipts.filter((rc) =>
+      pesananList.some((p) => p.receiptId === rc.id && p.id !== formData.id)
+    ).length;
+  }, [initialReceipts, pesananList, formData.id]);
+
   const matchedBast = bastList.find(
     (b) => b.nomorSpk === formData.nomorSp || (formData.receiptId && b.receiptId === formData.receiptId)
   );
@@ -1153,16 +1199,32 @@ export function PesananForm({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                     <ShoppingBag className="w-4 h-4 text-emerald-400" />
-                    Pilih Arsip Surat Pesanan ({pesananList.length})
+                    Pilih Arsip Surat Pesanan ({filteredPesananList.length}{pesananList.length !== filteredPesananList.length ? ` / ${pesananList.length}` : ""})
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleCreateNew}
-                    className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
-                  >
-                    <PlusCircle className="w-3 h-3" />
-                    <span>Baru (+)</span>
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {realizedSpCount > 0 && (
+                      <label
+                        className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer select-none"
+                        title="Sembunyikan Surat Pesanan yang sudah diterbitkan Berita Acara (BAST)"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={hideRealizedSp}
+                          onChange={(e) => setHideRealizedSp(e.target.checked)}
+                          className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer accent-emerald-500"
+                        />
+                        <span>Sembunyikan Realisasi ({realizedSpCount})</span>
+                      </label>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleCreateNew}
+                      className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                      <span>Baru (+)</span>
+                    </button>
+                  </div>
                 </div>
 
                 <select
@@ -1178,11 +1240,15 @@ export function PesananForm({
                   className="w-full text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- Buat Baru / Pilih Arsip Tersimpan --</option>
-                  {pesananList.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nomorSp} • Rp {p.totalHarga.toLocaleString("id-ID")} • {p.pihak2Toko}
-                    </option>
-                  ))}
+                  {filteredPesananList.map((p) => {
+                    const isRealized = isSpRealized(p);
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.nomorSp} • Rp {p.totalHarga.toLocaleString("id-ID")} • {p.pihak2Toko}
+                        {isRealized ? " (✅ Sudah BAST)" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -1191,17 +1257,33 @@ export function PesananForm({
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                     <ReceiptIcon className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Tautkan dari Kwitansi Belanja:</span>
+                    <span>Tautkan dari Kwitansi Belanja ({availableReceipts.length}):</span>
                   </label>
-                  {formData.receiptId && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectReceipt("")}
-                      className="text-[11px] text-slate-400 hover:text-red-400 transition-colors"
-                    >
-                      Lepas Tautan
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2.5">
+                    {linkedReceiptsCount > 0 && (
+                      <label
+                        className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer select-none"
+                        title="Sembunyikan kwitansi yang sudah memiliki dokumen Surat Pesanan"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={hideLinkedReceipts}
+                          onChange={(e) => setHideLinkedReceipts(e.target.checked)}
+                          className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer accent-emerald-500"
+                        />
+                        <span>Sembunyikan yg ada SP ({linkedReceiptsCount})</span>
+                      </label>
+                    )}
+                    {formData.receiptId && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectReceipt("")}
+                        className="text-[11px] text-slate-400 hover:text-red-400 transition-colors"
+                      >
+                        Lepas Tautan
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <select
                   value={formData.receiptId || ""}
@@ -1209,7 +1291,7 @@ export function PesananForm({
                   className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- Pilih Kwitansi Belanja (Otomatis Isi Data) --</option>
-                  {initialReceipts.map((rc) => {
+                  {availableReceipts.map((rc) => {
                     const linkedSP = pesananList.find(
                       (p) => p.receiptId === rc.id && p.id !== formData.id
                     );
