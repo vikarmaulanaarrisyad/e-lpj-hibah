@@ -148,15 +148,83 @@ export class RabService {
           ];
         }
 
-        // Hitung realisasi per baris rincian berdasarkan kwitansi yang uraiannya berkaitan
+        // Pemetaan cerdas kwitansi ke baris rincian:
+        // Setiap kwitansi hanya dialokasikan ke 1 baris rincian yang paling sesuai (Best Match)
+        // untuk mencegah 1 kwitansi dihitung ganda di beberapa baris yang menyebabkan defisit semu.
+        const rowReceiptsMap = new Map<string, typeof matchingReceipts>();
+        for (const row of rincian) {
+          rowReceiptsMap.set(row.id, []);
+        }
+
+        const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        if (rincian.length === 1) {
+          rowReceiptsMap.set(rincian[0].id, [...matchingReceipts]);
+        } else {
+          for (const rc of matchingReceipts) {
+            if (!rc.uraian) continue;
+            const rLow = rc.uraian.toLowerCase();
+
+            let bestRowId: string | null = null;
+            let highestScore = -1;
+
+            for (const row of rincian) {
+              const uLow = (row.uraian || "").trim().toLowerCase();
+              if (!uLow) continue;
+
+              const wordRegex = new RegExp(`(?:^|[^a-z0-9])${escapeRegex(uLow)}(?:[^a-z0-9]|$)`, "i");
+              const hasWordMatch = wordRegex.test(rLow);
+              const hasSubMatch = rLow.includes(uLow) || uLow.includes(rLow);
+
+              if (!hasWordMatch && !hasSubMatch) continue;
+
+              let score = 0;
+              if (hasWordMatch) {
+                score += 500 + uLow.length * 10;
+              } else if (hasSubMatch) {
+                score += 200 + uLow.length * 5;
+              }
+
+              // Keyword position: keyword yang muncul lebih awal mendapat prioritas
+              const pos = rLow.indexOf(uLow);
+              if (pos >= 0) {
+                score += Math.max(0, 100 - pos);
+              }
+
+              // Kecocokan finansial & kuantitatif (memberikan bobot penentu)
+              if (row.total && rc.nominal === row.total) {
+                score += 400; // Cocok persis dengan total pagu baris
+              } else if (row.hargaSatuan && rc.nominal === row.hargaSatuan) {
+                score += 300; // Cocok persis dengan harga satuan
+              } else if (row.hargaSatuan && row.hargaSatuan > 0 && rc.nominal % row.hargaSatuan === 0) {
+                score += 150; // Kelipatan bulat dari harga satuan
+              }
+
+              // Kehadiran harga satuan dalam teks kwitansi
+              if (row.hargaSatuan && rLow.includes(row.hargaSatuan.toLocaleString("id-ID"))) {
+                score += 200;
+              }
+
+              // Kehadiran satuan barang/jasa dalam teks kwitansi
+              if (row.koefisien1Satuan && rLow.includes(row.koefisien1Satuan.toLowerCase())) {
+                score += 100;
+              }
+
+              if (score > highestScore) {
+                highestScore = score;
+                bestRowId = row.id;
+              }
+            }
+
+            if (bestRowId && highestScore > 0) {
+              rowReceiptsMap.get(bestRowId)?.push(rc);
+            }
+          }
+        }
+
+        // Hitung realisasi per baris rincian berdasarkan kwitansi yang dialokasikan
         rincian = rincian.map((row) => {
-          const rowReceipts = matchingReceipts.filter((r) => {
-            if (!r.uraian) return false;
-            const rLow = r.uraian.toLowerCase();
-            const uLow = row.uraian.toLowerCase();
-            if (rincian.length === 1) return true;
-            return rLow.includes(uLow) || uLow.includes(rLow);
-          });
+          const rowReceipts = rowReceiptsMap.get(row.id) || [];
           const rowRealisasi = rowReceipts.reduce((sum, r) => sum + r.nominal, 0);
           const rowSisa = row.total - rowRealisasi;
           let statusSerapan: RabDetailRow["statusSerapan"] = "BELUM";
