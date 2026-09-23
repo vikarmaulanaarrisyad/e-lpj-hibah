@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import type { BkuLedgerEntry, BkuSummary } from "@/types";
+import type { BkuLedgerEntry, BkuSummary, RabSummary } from "@/types";
 import { BkuStatsCards } from "@/components/bku/bku-stats-cards";
 import { BkuTable } from "@/components/bku/bku-table";
 import { BkuIncomeModal } from "@/components/bku/bku-income-modal";
 import { getBkuLedgerAction, syncBkuReceiptsAction } from "@/app/actions/bku.action";
+import { getRabStatusAction } from "@/app/actions/rab.action";
 import { RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface BkuClientViewProps {
   initialEntries: BkuLedgerEntry[];
   initialSummary: BkuSummary;
+  initialRabSummary?: RabSummary;
   institutionName?: string;
   userName: string;
   leaderName?: string;
@@ -20,6 +22,7 @@ interface BkuClientViewProps {
 export function BkuClientView({
   initialEntries,
   initialSummary,
+  initialRabSummary,
   institutionName = "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN",
   userName,
   leaderName = "HENI FUJIATI, S.Pd.I",
@@ -27,6 +30,7 @@ export function BkuClientView({
 }: BkuClientViewProps) {
   const [entries, setEntries] = useState<BkuLedgerEntry[]>(initialEntries);
   const [summary, setSummary] = useState<BkuSummary>(initialSummary);
+  const [rabSummary, setRabSummary] = useState<RabSummary | undefined>(initialRabSummary);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{
@@ -38,16 +42,23 @@ export function BkuClientView({
   useEffect(() => {
     setEntries(initialEntries);
     setSummary(initialSummary);
-  }, [initialEntries, initialSummary]);
+    setRabSummary(initialRabSummary);
+  }, [initialEntries, initialSummary, initialRabSummary]);
 
   const handleRefresh = async () => {
     startTransition(async () => {
       // Automatic sync unsynced receipts first
       await syncBkuReceiptsAction();
-      const res = await getBkuLedgerAction();
-      if (res.success && res.data) {
-        setEntries(res.data.entries);
-        setSummary(res.data.summary);
+      const [ledgerRes, rabRes] = await Promise.all([
+        getBkuLedgerAction(),
+        getRabStatusAction(),
+      ]);
+      if (ledgerRes.success && ledgerRes.data) {
+        setEntries(ledgerRes.data.entries);
+        setSummary(ledgerRes.data.summary);
+      }
+      if (rabRes.success && rabRes.data) {
+        setRabSummary(rabRes.data);
       }
     });
   };
@@ -60,10 +71,18 @@ export function BkuClientView({
   const handleForceSync = async () => {
     startTransition(async () => {
       const syncRes = await syncBkuReceiptsAction();
-      const res = await getBkuLedgerAction();
+      const [res, rabRes] = await Promise.all([
+        getBkuLedgerAction(),
+        getRabStatusAction(),
+      ]);
       if (res.success && res.data) {
         setEntries(res.data.entries);
         setSummary(res.data.summary);
+      }
+      if (rabRes.success && rabRes.data) {
+        setRabSummary(rabRes.data);
+      }
+      if (res.success && res.data) {
         setFeedback({
           type: "success",
           message: syncRes.message || "Buku Kas Umum berhasil disinkronisasi dengan seluruh kwitansi tersimpan.",
@@ -130,6 +149,7 @@ export function BkuClientView({
       <BkuTable
         entries={entries}
         summary={summary}
+        rabSummary={rabSummary}
         institutionName={institutionName}
         leaderName={leaderName}
         treasurerName={treasurerName}

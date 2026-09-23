@@ -112,6 +112,33 @@ export async function getReceiptByNomorBuktiAction(
 }
 
 /**
+ * Server action to retrieve a specific receipt by id
+ */
+export async function getReceiptByIdAction(
+  id: string
+): Promise<ActionResponse<Receipt | null>> {
+  try {
+    const session = await authService.getSession();
+    if (!session) {
+      return {
+        success: false,
+        message: "Sesi tidak valid.",
+        data: null,
+      };
+    }
+
+    return await receiptService.getReceiptById(id, session.sub);
+  } catch (error) {
+    console.error("[getReceiptByIdAction] Error:", error);
+    return {
+      success: false,
+      message: "Gagal memuat kwitansi dari database.",
+      data: null,
+    };
+  }
+}
+
+/**
  * Server action to get next suggested BKU nomor bukti (anti-double & unique)
  */
 export async function getNextNomorBuktiAction(dateString?: string): Promise<ActionResponse<string>> {

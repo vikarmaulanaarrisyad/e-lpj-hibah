@@ -70,12 +70,15 @@ export class ReceiptService {
           finalNomorBukti = existingReceipt.nomorBukti;
         }
       } else {
-        // Create Mode: ensure nomorBukti is not empty and is not already taken
-        const conflict = finalNomorBukti
+        // Create Mode: check if user is targeting an existing nomorBukti
+        const existing = finalNomorBukti && finalNomorBukti.toUpperCase() !== "AUTO"
           ? await receiptRepository.findByNomorBukti(finalNomorBukti, userId)
           : null;
 
-        if (conflict || !finalNomorBukti || finalNomorBukti.toUpperCase() === "AUTO") {
+        if (existing) {
+          // If a receipt with this exact nomorBukti already exists, update it instead of silently creating duplicate
+          input.id = existing.id;
+        } else if (!finalNomorBukti || finalNomorBukti.toUpperCase() === "AUTO") {
           // Otomatis tentukan nomor urut berikutnya yang 100% bebas bentrok
           finalNomorBukti = await this.generateNextNomorBukti(userId, parsedDate);
         }
@@ -187,6 +190,37 @@ export class ReceiptService {
       };
     } catch (error) {
       console.error("[ReceiptService] Failed to find receipt:", error);
+      return {
+        success: false,
+        message: "Gagal memuat data kwitansi.",
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * Get single receipt by ID
+   */
+  async getReceiptById(
+    id: string,
+    userId: string
+  ): Promise<ServiceResponse<Receipt | null>> {
+    try {
+      const receipt = await receiptRepository.findById(id);
+      if (!receipt || receipt.userId !== userId) {
+        return {
+          success: false,
+          message: "Kwitansi tidak ditemukan atau bukan milik Anda.",
+          data: null,
+        };
+      }
+      return {
+        success: true,
+        message: "Kwitansi berhasil ditemukan.",
+        data: receipt,
+      };
+    } catch (error) {
+      console.error("[ReceiptService] Failed to find receipt by id:", error);
       return {
         success: false,
         message: "Gagal memuat data kwitansi.",

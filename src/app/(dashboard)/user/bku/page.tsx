@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { authService } from "@/services/auth.service";
 import { bkuService } from "@/services/bku.service";
 import { institutionService } from "@/services/institution.service";
+import { rabService } from "@/services/rab.service";
 import { redirect } from "next/navigation";
 import { KwitansiHeader } from "@/components/kwitansi/kwitansi-header";
 import { BkuClientView } from "@/components/bku/bku-client-view";
@@ -26,13 +27,15 @@ export default async function BkuPage() {
     cookies().get(COOKIE_TAHUN_ANGGARAN)?.value
   );
 
-  // Preload ledger entries for active year and institution profile concurrently
-  const [ledgerRes, profileRes] = await Promise.all([
+  // Preload ledger entries, institution profile, and RAB summary concurrently
+  const [ledgerRes, profileRes, rabStatusRes] = await Promise.all([
     bkuService.getBkuLedger(session.sub, activeTahun),
     institutionService.getProfile(session.sub),
+    rabService.getRabStatus(session.sub, activeTahun),
   ]);
 
   const profile = profileRes.data || null;
+  const rabSummary = rabStatusRes.data || undefined;
   const institution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
     : session.institution || "PIMPINAN RANTING FATAYAT NU DAWUHAN SELATAN";
@@ -70,6 +73,7 @@ export default async function BkuPage() {
         <BkuClientView
           initialEntries={entries}
           initialSummary={summary}
+          initialRabSummary={rabSummary}
           institutionName={institution}
           userName={userName}
           leaderName={leaderName}

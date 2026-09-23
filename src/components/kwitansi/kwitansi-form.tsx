@@ -47,6 +47,7 @@ import {
   saveReceiptAction,
   getNextNomorBuktiAction,
   getReceiptByNomorBuktiAction,
+  getReceiptByIdAction,
   deleteReceiptAction,
 } from "@/app/actions/receipt.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
@@ -123,8 +124,24 @@ export function KwitansiForm({
     searchParams.get("mode") === "new"
   );
 
+  const initialTargetReceipt = useMemo(() => {
+    if (isPrefillFromRab) return null;
+    const idParam = searchParams.get("id");
+    const noParam = searchParams.get("no") || searchParams.get("receiptNo");
+    if (idParam) {
+      const found = savedReceipts.find((r) => r.id === idParam);
+      if (found) return found;
+    }
+    if (noParam) {
+      const found = savedReceipts.find((r) => r.nomorBukti === noParam);
+      if (found) return found;
+    }
+    return savedReceipts.length > 0 ? savedReceipts[0] : null;
+  }, [isPrefillFromRab, searchParams, savedReceipts]);
+
   const [selectedReceiptNo, setSelectedReceiptNo] = useState<string>(() => {
     if (isPrefillFromRab) return "NEW";
+    if (initialTargetReceipt) return initialTargetReceipt.nomorBukti;
     return savedReceipts.length > 0 ? savedReceipts[0].nomorBukti : "NEW";
   });
 
@@ -254,8 +271,8 @@ export function KwitansiForm({
       };
     }
 
-    if (savedReceipts && savedReceipts.length > 0) {
-      const first = savedReceipts[0];
+    if (initialTargetReceipt) {
+      const first = initialTargetReceipt;
       const initialNominal = first.nominal;
       const isPpn = Boolean(first.isPpn);
       const isPpnIncluded = true; // default include
@@ -513,9 +530,26 @@ export function KwitansiForm({
     }));
   };
 
-  // Check URL query param ?no=... (e.g. clicked from BKU table or "Realisasikan" from RAB Table)
+  // Check URL query param ?id=... or ?no=... (e.g. clicked from BKU table or "Realisasikan" from RAB Table)
   useEffect(() => {
-    const noParam = searchParams.get("no");
+    const idParam = searchParams.get("id");
+    const noParam = searchParams.get("no") || searchParams.get("receiptNo");
+
+    if (idParam) {
+      const match = receiptsList.find((r) => r.id === idParam);
+      if (match) {
+        loadReceiptIntoForm(match);
+      } else {
+        getReceiptByIdAction(idParam).then((res) => {
+          if (res.success && res.data) {
+            loadReceiptIntoForm(res.data);
+            setReceiptsList((prev) => [res.data!, ...prev.filter((p) => p.id !== idParam)]);
+          }
+        });
+      }
+      return;
+    }
+
     if (noParam) {
       const match = receiptsList.find((r) => r.nomorBukti === noParam);
       if (match) {
@@ -955,8 +989,14 @@ export function KwitansiForm({
 
     swalLoading("Menyimpan Kwitansi...", "Mencatat bukti transaksi belanja ke Buku Kas Umum...");
     startTransition(async () => {
+      let targetReceiptId = selectedReceiptNo === "NEW" ? undefined : formData.id;
+      if (selectedReceiptNo !== "NEW" && !targetReceiptId) {
+        const found = receiptsList.find((r) => r.nomorBukti === selectedReceiptNo);
+        if (found) targetReceiptId = found.id;
+      }
+
       const response = await saveReceiptAction({
-        id: selectedReceiptNo === "NEW" ? undefined : formData.id,
+        id: targetReceiptId,
         nomorBukti: formData.nomorBukti.trim(),
         tanggal: formData.tanggal,
         pemberi: formData.pemberi,
