@@ -33,6 +33,7 @@ import {
   ShoppingBag,
   Trash2,
   RotateCw,
+  RotateCcw,
   Settings,
   Store,
   BookmarkPlus,
@@ -43,6 +44,7 @@ import { angkaKeTerbilang, formatRupiahNumber, parseRupiahToNumber } from "@/lib
 import { calculateTaxBreakdown } from "@/lib/utils/tax";
 import { getRomanMonth, syncNomorDokumenBulanTahun, determineDokumentasiTitle } from "@/lib/utils/pesanan-date";
 import { formatUraianBelanja } from "@/lib/utils/title-case";
+import { resolveJabatanKetua } from "@/lib/utils/kwitansi-signatory";
 import {
   saveReceiptAction,
   getNextNomorBuktiAction,
@@ -50,6 +52,7 @@ import {
   getReceiptByIdAction,
   deleteReceiptAction,
 } from "@/app/actions/receipt.action";
+import { saveInstitutionProfileAction } from "@/app/actions/institution.action";
 import { getRabStatusAction } from "@/app/actions/rab.action";
 import { getVendorsAction, quickSaveVendorAction } from "@/app/actions/vendor.action";
 import {
@@ -207,6 +210,11 @@ export function KwitansiForm({
   const defaultInstitution = profile?.subNama
     ? `${profile.namaLembaga} ${profile.subNama}`
     : initialInstitution || "PR Fatayat NU Dawuhan Selatan";
+  const defaultJabatanKetua = resolveJabatanKetua(profile || initialProfile, {
+    pemberi: defaultInstitution,
+    namaLembaga: (profile || initialProfile)?.namaLembaga,
+    subNama: (profile || initialProfile)?.subNama,
+  });
 
   // Form State initialized from database if available
   const [formData, setFormData] = useState<ReceiptFormData>(() => {
@@ -267,7 +275,7 @@ export function KwitansiForm({
         keteranganPajak: taxCalc.keteranganPajak,
         namaLembaga: initialProfile?.namaLembaga,
         subNama: initialProfile?.subNama,
-        jabatanKetua: initialProfile?.jabatanKetua,
+        jabatanKetua: defaultJabatanKetua,
       };
     }
 
@@ -331,7 +339,11 @@ export function KwitansiForm({
         keteranganPajak: first.keteranganPajak || taxCalc.keteranganPajak,
         namaLembaga: initialProfile?.namaLembaga,
         subNama: initialProfile?.subNama,
-        jabatanKetua: initialProfile?.jabatanKetua,
+        jabatanKetua: resolveJabatanKetua(initialProfile, {
+          pemberi: first.pemberi,
+          namaLembaga: initialProfile?.namaLembaga,
+          subNama: initialProfile?.subNama,
+        }),
       };
     }
 
@@ -369,11 +381,60 @@ export function KwitansiForm({
       keteranganPajak: "",
       namaLembaga: initialProfile?.namaLembaga,
       subNama: initialProfile?.subNama,
-      jabatanKetua: initialProfile?.jabatanKetua,
+      jabatanKetua: defaultJabatanKetua,
     };
   });
 
   const [kwitansiPhotos, setKwitansiPhotos] = useState<DokumentasiPhoto[]>([]);
+  const [isSavingJabatan, startSaveJabatan] = useTransition();
+
+  // Handler: Sinkronkan jabatan ketua otomatis dari profil database / pembayar
+  const handleResetJabatanKetuaFromProfile = () => {
+    const resolved = resolveJabatanKetua(profile, {
+      pemberi: formData.pemberi,
+      namaLembaga: profile?.namaLembaga,
+      subNama: profile?.subNama,
+    });
+    setFormData((prev) => ({
+      ...prev,
+      jabatanKetua: resolved,
+    }));
+    swalSuccess("Disinkronkan!", `Teks jabatan diatur otomatis dari profil database: "${resolved}"`);
+  };
+
+  // Handler: Simpan teks jabatan ketua ke profil lembaga di database agar permanen
+  const handleSaveJabatanKetuaToProfile = () => {
+    const newJabatan = formData.jabatanKetua?.trim();
+    if (!newJabatan) {
+      swalError("Peringatan", "Teks jabatan ketua tidak boleh kosong.");
+      return;
+    }
+    startSaveJabatan(async () => {
+      swalLoading("Menyimpan ke Database...", "Memperbarui jabatan ketua di profil lembaga database...");
+      const res = await saveInstitutionProfileAction({
+        namaLembaga: profile?.namaLembaga || "PIMPINAN RANTING FATAYAT NU",
+        subNama: profile?.subNama || "DAWUHAN SELATAN",
+        instansiInduk: profile?.instansiInduk || "KECAMATAN TALANG KABUPATEN TEGAL",
+        alamat: profile?.alamat || "",
+        email: profile?.email || "",
+        noHp: profile?.noHp || "",
+        noRegistrasi: profile?.noRegistrasi || "",
+        namaKetua: profile?.namaKetua || formData.ketua,
+        jabatanKetua: newJabatan,
+        namaBendahara: profile?.namaBendahara || formData.bendahara,
+        formatNomorSp: profile?.formatNomorSp || undefined,
+        formatNomorBast: profile?.formatNomorBast || undefined,
+        formatNomorKwitansi: profile?.formatNomorKwitansi || undefined,
+      });
+
+      if (res.success && res.data) {
+        setProfile(res.data);
+        swalSuccess("Tersimpan ke Database!", "Teks jabatan ketua berhasil disimpan ke Profil Lembaga di database dan otomatis menjadi default permanen.");
+      } else {
+        swalError("Gagal Menyimpan", res.message || "Gagal menyimpan jabatan ke profil database.");
+      }
+    });
+  };
 
   // Re-fetch RAB summary on mount if not provided
   useEffect(() => {
@@ -462,6 +523,9 @@ export function KwitansiForm({
       totalPajak: r.totalPajak || taxCalc.totalPajak,
       nominalBersih: r.nominalBersih || taxCalc.nominalBersih,
       keteranganPajak: r.keteranganPajak || taxCalc.keteranganPajak,
+      namaLembaga: profile?.namaLembaga,
+      subNama: profile?.subNama,
+      jabatanKetua: resolveJabatanKetua(profile, { pemberi: r.pemberi }),
     });
     setSelectedReceiptNo(r.nomorBukti);
     setSaveSuccessMsg(null);
@@ -595,6 +659,7 @@ export function KwitansiForm({
               pemberi: defaultInstitution,
               ketua: defaultChairman,
               bendahara: defaultTreasurer,
+              jabatanKetua: defaultJabatanKetua,
               template: "bank",
             },
             {
@@ -727,6 +792,9 @@ export function KwitansiForm({
         totalPajak: 0,
         nominalBersih: 0,
         keteranganPajak: "",
+        namaLembaga: profile?.namaLembaga,
+        subNama: profile?.subNama,
+        jabatanKetua: resolveJabatanKetua(profile, { pemberi: defaultInstitution }),
       });
       setSelectedReceiptNo("NEW");
       setSelectedVendorId("");
@@ -2023,6 +2091,49 @@ export function KwitansiForm({
                   </div>
                 </div>
 
+                {/* Jabatan / Teks di bawah 'Setuju dibayar' */}
+                <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                    <label className="block text-[11px] text-slate-300 font-medium">
+                      Jabatan / Teks di bawah "Setuju dibayar"
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleResetJabatanKetuaFromProfile}
+                        title="Otomatis sinkronkan dengan Profil Lembaga dari database"
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-800/60 hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>Otomatis dari Profil</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveJabatanKetuaToProfile}
+                        disabled={isSavingJabatan}
+                        title="Simpan teks jabatan ini ke database agar otomatis menjadi default permanen untuk semua kwitansi berikutnya"
+                        className="text-[10px] text-sky-400 hover:text-sky-300 flex items-center gap-1 px-2 py-0.5 rounded bg-sky-950/70 border border-sky-800/60 hover:bg-sky-900/60 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Save className="w-2.5 h-2.5" />
+                        <span>{isSavingJabatan ? "Menyimpan..." : "Simpan ke Database"}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.jabatanKetua || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, jabatanKetua: e.target.value })
+                    }
+                    placeholder="Contoh: Ketua Pimpinan Ranting Fatayat NU Dukuhmalang"
+                    className="w-full text-xs font-semibold bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-emerald-300 focus:outline-none focus:border-emerald-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                    <Info className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <span>Teks ini tercetak tepat di bawah tulisan <strong className="text-white">"Setuju dibayar"</strong> dan di atas nama Ketua pada blanko kwitansi fisik.</span>
+                  </p>
+                </div>
+
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-[11px] text-slate-400">
@@ -2460,6 +2571,21 @@ export function KwitansiForm({
           onProfileUpdated={(updated) => {
             setProfile(updated);
             handleGenerateNewNomorBukti();
+            const newDefaultPemberi = updated.subNama
+              ? `${updated.namaLembaga} ${updated.subNama}`
+              : updated.namaLembaga;
+            const newJabatan = resolveJabatanKetua(updated, {
+              pemberi: newDefaultPemberi,
+            });
+            setFormData((prev) => ({
+              ...prev,
+              pemberi: newDefaultPemberi,
+              namaLembaga: updated.namaLembaga,
+              subNama: updated.subNama,
+              jabatanKetua: newJabatan,
+              ketua: updated.namaKetua || prev.ketua,
+              bendahara: updated.namaBendahara || prev.bendahara,
+            }));
           }}
         />
 

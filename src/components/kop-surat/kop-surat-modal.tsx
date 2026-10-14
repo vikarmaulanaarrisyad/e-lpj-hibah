@@ -471,8 +471,12 @@ export function KopSuratModal({
                     onChange={(e) =>
                       setFormData({ ...formData, jabatanKetua: e.target.value })
                     }
-                    className="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 focus:outline-none focus:border-emerald-500"
+                    placeholder="Contoh: Ketua Pimpinan Ranting Fatayat NU Dukuhmalang"
+                    className="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500"
                   />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Gelar/jabatan resmi penandatangan pada kolom "Setuju dibayar" Kwitansi, BAST, dan Surat Pesanan.
+                  </p>
                 </div>
 
                 <div>
